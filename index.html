@@ -250,7 +250,7 @@
             padding: 0.5rem 0; border-bottom: 1px solid var(--border);
         }
         .card-specs li:last-child { border-bottom: none; }
-        .card-specs li::before { content: '▸'; color: var(--accent); font-size: 0.5rem; flex-shrink: 0; }
+        .card-specs li::before { content: '\25B8'; color: var(--accent); font-size: 0.5rem; flex-shrink: 0; }
 
         /* ── ABOUT ── */
         #about { background: var(--bg-primary); }
@@ -406,7 +406,6 @@
 </head>
 <body>
 
-<!-- ══ NAV ══════════════════════════════════════════════════════ -->
 <nav>
     <div class="container nav-inner">
         <a href="#home" class="nav-logo">
@@ -416,14 +415,12 @@
                 <span class="nav-logo-sub">Dubbo · Central West NSW</span>
             </div>
         </a>
-
         <ul class="nav-links">
             <li><a href="#capabilities">Capabilities</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#certifications">Certifications</a></li>
             <li><a href="#contact">Contact</a></li>
         </ul>
-
         <div class="nav-right">
             <span class="nav-phone">02 6884 9292</span>
             <a href="#contact" class="btn-primary">Get a Quote</a>
@@ -431,51 +428,31 @@
     </div>
 </nav>
 
-
-<!-- ══ HERO ═════════════════════════════════════════════════════ -->
 <section id="home" class="hero">
     <div class="hero-grid"></div>
     <div class="hero-glow"></div>
-
     <div class="container hero-content">
         <div class="hero-eyebrow">
             <span class="dot"></span>
             <span>EST. 1986 — DUBBO, NSW 2830 — OPERATIONAL</span>
         </div>
-
         <h1 class="hero-headline">
             <span class="line-1">Keeping Central West</span>
             <span class="line-2">Businesses Powered</span>
         </h1>
-
-        <p class="hero-sub">
-            Industrial <span>·</span> Commercial <span>·</span> Compliance
-        </p>
-
+        <p class="hero-sub">Industrial <span>·</span> Commercial <span>·</span> Compliance</p>
         <div class="hero-actions">
             <a href="#capabilities" class="btn-primary">Explore Capabilities →</a>
             <a href="#contact" class="btn-secondary">Contact Operations</a>
         </div>
-
         <div class="hero-stats stagger">
-            <div class="stat-item">
-                <div class="stat-value">40<span class="hi">+</span></div>
-                <div class="stat-label">Years Operating</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value"><span class="hi">24</span>/7</div>
-                <div class="stat-label">Breakdown Response</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value"><span class="hi">ISO</span></div>
-                <div class="stat-label">9001 · 45001</div>
-            </div>
+            <div class="stat-item"><div class="stat-value">40<span class="hi">+</span></div><div class="stat-label">Years Operating</div></div>
+            <div class="stat-item"><div class="stat-value"><span class="hi">24</span>/7</div><div class="stat-label">Breakdown Response</div></div>
+            <div class="stat-item"><div class="stat-value"><span class="hi">ISO</span></div><div class="stat-label">9001 · 45001</div></div>
         </div>
     </div>
 </section>
 
-
-<!-- ══ CAPABILITIES ══════════════════════════════════════════════ -->
 <section id="capabilities">
     <div class="container">
         <div class="section-header fade-in">
@@ -483,17 +460,10 @@
             <h2 class="section-title">Electrical Solutions<br>Built for Industry</h2>
             <p class="section-desc">Full-spectrum electrical contracting across industrial, commercial, and compliance domains. Trusted by Central West businesses since 1986.</p>
         </div>
-
         <div class="capabilities-grid stagger">
-
-            <!-- MODULE 01 -->
             <div class="capability-card">
                 <div class="card-number">MODULE-01</div>
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                </div>
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
                 <h3 class="card-title">Industrial Electrical</h3>
                 <p class="card-desc">High-voltage installations, machinery wiring, and automation systems for industrial operations. Full maintenance programs and emergency breakdown coverage whenever you need it.</p>
                 <ul class="card-specs">
@@ -505,16 +475,9 @@
                     <li>24/7 emergency breakdown response</li>
                 </ul>
             </div>
-
-            <!-- MODULE 02 -->
             <div class="capability-card">
                 <div class="card-number">MODULE-02</div>
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18"/>
-                        <path d="M3 9h18M9 21V9"/>
-                    </svg>
-                </div>
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M9 21V9"/></svg></div>
                 <h3 class="card-title">Commercial Electrical</h3>
                 <p class="card-desc">Complete electrical solutions for commercial premises. From new builds to ongoing facility maintenance, data infrastructure, and security systems integration.</p>
                 <ul class="card-specs">
@@ -526,15 +489,9 @@
                     <li>Complex cabling solutions</li>
                 </ul>
             </div>
-
-            <!-- MODULE 03 -->
             <div class="capability-card">
                 <div class="card-number">MODULE-03</div>
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                    </svg>
-                </div>
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
                 <h3 class="card-title">Compliance Services</h3>
                 <p class="card-desc">Comprehensive electrical compliance testing, auditing, and certification. Keep your operations legally compliant and your people protected on every site.</p>
                 <ul class="card-specs">
@@ -546,64 +503,30 @@
                     <li>Safety compliance reporting</li>
                 </ul>
             </div>
-
         </div>
     </div>
 </section>
 
-
-<!-- ══ ABOUT ═════════════════════════════════════════════════════ -->
 <section id="about">
     <div class="container">
         <div class="about-grid">
-
-            <!-- LEFT -->
             <div>
                 <div class="section-tag fade-in">SYS-02 / Mission Profile</div>
-
                 <div class="about-year-block fade-in">
                     <div class="about-year">19<span>86</span></div>
                     <div class="about-year-label">[ Year Established ]</div>
                 </div>
-
                 <div class="about-body fade-in">
                     <p>Weiley Electrical has been the trusted electrical contractor for Dubbo and the Central West since 1986. We combine over 40 years of hands-on experience with a deep understanding of local business needs — including agriculture, manufacturing, and mining sectors.</p>
                     <p>Our approach is direct and effective: expert service with minimal disruption, safety above all else, and solutions engineered for long-term reliability in regional Australian conditions.</p>
                 </div>
-
                 <div class="principles fade-in">
-                    <div class="principle">
-                        <span class="principle-num">01</span>
-                        <div>
-                            <h4>Expert Delivery</h4>
-                            <p>Decades of technical expertise across industrial, commercial, and compliance domains — applied to every job, regardless of scale.</p>
-                        </div>
-                    </div>
-                    <div class="principle">
-                        <span class="principle-num">02</span>
-                        <div>
-                            <h4>Safety First</h4>
-                            <p>ISO 45001:2018 certified. Rigorous safety protocols on every site, every time. No shortcuts.</p>
-                        </div>
-                    </div>
-                    <div class="principle">
-                        <span class="principle-num">03</span>
-                        <div>
-                            <h4>Rapid Response</h4>
-                            <p>24/7 emergency breakdown service for industrial clients. When your operation goes down, we move fast.</p>
-                        </div>
-                    </div>
-                    <div class="principle">
-                        <span class="principle-num">04</span>
-                        <div>
-                            <h4>Local Knowledge</h4>
-                            <p>Built in Dubbo. Serving the Central West. We understand the unique demands and conditions of regional Australian industry.</p>
-                        </div>
-                    </div>
+                    <div class="principle"><span class="principle-num">01</span><div><h4>Expert Delivery</h4><p>Decades of technical expertise across industrial, commercial, and compliance domains — applied to every job, regardless of scale.</p></div></div>
+                    <div class="principle"><span class="principle-num">02</span><div><h4>Safety First</h4><p>ISO 45001:2018 certified. Rigorous safety protocols on every site, every time. No shortcuts.</p></div></div>
+                    <div class="principle"><span class="principle-num">03</span><div><h4>Rapid Response</h4><p>24/7 emergency breakdown service for industrial clients. When your operation goes down, we move fast.</p></div></div>
+                    <div class="principle"><span class="principle-num">04</span><div><h4>Local Knowledge</h4><p>Built in Dubbo. Serving the Central West. We understand the unique demands and conditions of regional Australian industry.</p></div></div>
                 </div>
             </div>
-
-            <!-- RIGHT -->
             <div class="about-right fade-in">
                 <div class="sys-panel">
                     <div class="panel-head">
@@ -611,30 +534,25 @@
                         <span class="panel-status">ACTIVE</span>
                     </div>
                     <div class="panel-body">
-                        <div class="data-row"><span class="data-key">Entity</span>        <span class="data-val">Weiley Electrical</span></div>
-                        <div class="data-row"><span class="data-key">Type</span>          <span class="data-val">Electrical Contractor</span></div>
-                        <div class="data-row"><span class="data-key">Established</span>   <span class="data-val hi">1986</span></div>
-                        <div class="data-row"><span class="data-key">Location</span>      <span class="data-val">Dubbo, NSW 2830</span></div>
-                        <div class="data-row"><span class="data-key">Region</span>        <span class="data-val">Central West NSW</span></div>
-                        <div class="data-row"><span class="data-key">Experience</span>    <span class="data-val hi">40+ Years</span></div>
-                        <div class="data-row"><span class="data-key">Quality Cert</span> <span class="data-val active">ISO 9001:2018</span></div>
-                        <div class="data-row"><span class="data-key">Safety Cert</span>  <span class="data-val active">ISO 45001:2018</span></div>
-                        <div class="data-row"><span class="data-key">After-Hours</span>  <span class="data-val active">24/7 AVAILABLE</span></div>
-                        <div class="data-row"><span class="data-key">Quotes</span>       <span class="data-val active">FREE</span></div>
-                        <div class="data-row"><span class="data-key">Status</span>       <span class="data-val active">● OPERATIONAL</span></div>
+                        <div class="data-row"><span class="data-key">Entity</span><span class="data-val">Weiley Electrical</span></div>
+                        <div class="data-row"><span class="data-key">Type</span><span class="data-val">Electrical Contractor</span></div>
+                        <div class="data-row"><span class="data-key">Established</span><span class="data-val hi">1986</span></div>
+                        <div class="data-row"><span class="data-key">Location</span><span class="data-val">Dubbo, NSW 2830</span></div>
+                        <div class="data-row"><span class="data-key">Region</span><span class="data-val">Central West NSW</span></div>
+                        <div class="data-row"><span class="data-key">Experience</span><span class="data-val hi">40+ Years</span></div>
+                        <div class="data-row"><span class="data-key">Quality Cert</span><span class="data-val active">ISO 9001:2018</span></div>
+                        <div class="data-row"><span class="data-key">Safety Cert</span><span class="data-val active">ISO 45001:2018</span></div>
+                        <div class="data-row"><span class="data-key">After-Hours</span><span class="data-val active">24/7 AVAILABLE</span></div>
+                        <div class="data-row"><span class="data-key">Quotes</span><span class="data-val active">FREE</span></div>
+                        <div class="data-row"><span class="data-key">Status</span><span class="data-val active">● OPERATIONAL</span></div>
                     </div>
                 </div>
-                <div class="panel-address">
-                    <p>UNIT 9B / 55 WHEELERS LANE<br>DUBBO, NSW 2830<br>AUSTRALIA</p>
-                </div>
+                <div class="panel-address"><p>UNIT 9B / 55 WHEELERS LANE<br>DUBBO, NSW 2830<br>AUSTRALIA</p></div>
             </div>
-
         </div>
     </div>
 </section>
 
-
-<!-- ══ CERTIFICATIONS ════════════════════════════════════════════ -->
 <section id="certifications">
     <div class="container">
         <div class="section-header fade-in">
@@ -642,38 +560,15 @@
             <h2 class="section-title">Certified to the<br>Highest Standard</h2>
             <p class="section-desc">Our operations are governed by internationally recognised quality and safety management systems — because your business deserves nothing less.</p>
         </div>
-
         <div class="cert-grid stagger">
-            <div class="cert-card">
-                <span class="cert-badge">ISO 9001:2018</span>
-                <h3 class="cert-title">Quality Management</h3>
-                <p class="cert-desc">Certified quality management systems ensuring consistent, high-standard delivery across every project and every service interaction.</p>
-                <div class="cert-std">AS/NZS ISO 9001:2018</div>
-            </div>
-            <div class="cert-card">
-                <span class="cert-badge">ISO 45001:2018</span>
-                <h3 class="cert-title">Safety Management</h3>
-                <p class="cert-desc">International occupational health and safety management certification. Our people and your site are protected by rigorous, audited protocols.</p>
-                <div class="cert-std">AS/NZS ISO 45001:2018</div>
-            </div>
-            <div class="cert-card">
-                <span class="cert-badge">40+ Years</span>
-                <h3 class="cert-title">Proven Track Record</h3>
-                <p class="cert-desc">Since 1986 we have built an unbroken record of technical excellence and trusted service delivery across Central West NSW.</p>
-                <div class="cert-std">EST. 1986 / DUBBO, NSW</div>
-            </div>
-            <div class="cert-card">
-                <span class="cert-badge">FREE</span>
-                <h3 class="cert-title">No-Obligation Quotes</h3>
-                <p class="cert-desc">Every project starts with a free, detailed quote. No hidden fees, no obligations — just a clear picture of what your job requires.</p>
-                <div class="cert-std">ALL PROJECTS · ALL SIZES</div>
-            </div>
+            <div class="cert-card"><span class="cert-badge">ISO 9001:2018</span><h3 class="cert-title">Quality Management</h3><p class="cert-desc">Certified quality management systems ensuring consistent, high-standard delivery across every project and every service interaction.</p><div class="cert-std">AS/NZS ISO 9001:2018</div></div>
+            <div class="cert-card"><span class="cert-badge">ISO 45001:2018</span><h3 class="cert-title">Safety Management</h3><p class="cert-desc">International occupational health and safety management certification. Our people and your site are protected by rigorous, audited protocols.</p><div class="cert-std">AS/NZS ISO 45001:2018</div></div>
+            <div class="cert-card"><span class="cert-badge">40+ Years</span><h3 class="cert-title">Proven Track Record</h3><p class="cert-desc">Since 1986 we have built an unbroken record of technical excellence and trusted service delivery across Central West NSW.</p><div class="cert-std">EST. 1986 / DUBBO, NSW</div></div>
+            <div class="cert-card"><span class="cert-badge">FREE</span><h3 class="cert-title">No-Obligation Quotes</h3><p class="cert-desc">Every project starts with a free, detailed quote. No hidden fees, no obligations — just a clear picture of what your job requires.</p><div class="cert-std">ALL PROJECTS · ALL SIZES</div></div>
         </div>
     </div>
 </section>
 
-
-<!-- ══ CONTACT ═══════════════════════════════════════════════════ -->
 <section id="contact">
     <div class="container">
         <div class="section-header fade-in">
@@ -681,31 +576,16 @@
             <h2 class="section-title">Deploy Us to<br>Your Project</h2>
             <p class="section-desc">Ready to discuss your electrical requirements? Contact our team for a free consultation and quote.</p>
         </div>
-
         <div class="contact-grid">
-
-            <!-- FORM -->
             <div class="fade-in">
                 <form id="contact-form" action="mailto:service@wyelec.com.au" method="POST" enctype="text/plain">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="name">Full Name</label>
-                            <input class="form-input" type="text" id="name" name="name" placeholder="Your name" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="company">Company</label>
-                            <input class="form-input" type="text" id="company" name="company" placeholder="Business name">
-                        </div>
+                        <div class="form-group"><label class="form-label" for="name">Full Name</label><input class="form-input" type="text" id="name" name="name" placeholder="Your name" required></div>
+                        <div class="form-group"><label class="form-label" for="company">Company</label><input class="form-input" type="text" id="company" name="company" placeholder="Business name"></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="phone">Phone</label>
-                            <input class="form-input" type="tel" id="phone" name="phone" placeholder="02 xxxx xxxx">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="email">Email</label>
-                            <input class="form-input" type="email" id="email" name="email" placeholder="you@company.com.au">
-                        </div>
+                        <div class="form-group"><label class="form-label" for="phone">Phone</label><input class="form-input" type="tel" id="phone" name="phone" placeholder="02 xxxx xxxx"></div>
+                        <div class="form-group"><label class="form-label" for="email">Email</label><input class="form-input" type="email" id="email" name="email" placeholder="you@company.com.au"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="service">Service Type</label>
@@ -718,54 +598,30 @@
                             <option value="other">Other / Not Sure</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="message">Project Details</label>
-                        <textarea class="form-textarea" id="message" name="message" placeholder="Describe your project or requirements..."></textarea>
-                    </div>
-                    <button type="submit" id="submit-btn" class="btn-primary" style="width:100%;justify-content:center;padding:0.9rem;">
-                        Send Enquiry →
-                    </button>
+                    <div class="form-group"><label class="form-label" for="message">Project Details</label><textarea class="form-textarea" id="message" name="message" placeholder="Describe your project or requirements..."></textarea></div>
+                    <button type="submit" class="btn-primary" style="width:100%;justify-content:center;padding:0.9rem;">Send Enquiry →</button>
                 </form>
             </div>
-
-            <!-- CONTACT DETAILS -->
             <div class="contact-details fade-in">
-                <div class="info-row">
-                    <div class="info-label">Phone</div>
-                    <div class="info-val"><a href="tel:0268849292">02 6884 9292</a></div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Email</div>
-                    <div class="info-val"><a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a></div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Address</div>
-                    <div class="info-val">Unit 9B, 55 Wheelers Lane<br>Dubbo, NSW 2830</div>
-                </div>
+                <div class="info-row"><div class="info-label">Phone</div><div class="info-val"><a href="tel:0268849292">02 6884 9292</a></div></div>
+                <div class="info-row"><div class="info-label">Email</div><div class="info-val"><a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a></div></div>
+                <div class="info-row"><div class="info-label">Address</div><div class="info-val">Unit 9B, 55 Wheelers Lane<br>Dubbo, NSW 2830</div></div>
                 <div class="info-row">
                     <div class="info-label">Operating Hours</div>
                     <div class="info-val">
                         <div class="hours-table">
-                            <span class="h-day">Monday – Friday</span>
-                            <span class="h-time">7:30am – 4:00pm</span>
-                            <span class="h-day">Saturday – Sunday</span>
-                            <span class="h-time">Closed</span>
+                            <span class="h-day">Monday – Friday</span><span class="h-time">7:30am – 4:00pm</span>
+                            <span class="h-day">Saturday – Sunday</span><span class="h-time">Closed</span>
                         </div>
                         <div class="emergency-flag">▸ 24/7 BREAKDOWN — INDUSTRIAL CLIENTS</div>
                     </div>
                 </div>
-                <div class="info-row">
-                    <div class="info-label">Social</div>
-                    <div class="info-val"><a href="https://facebook.com/weileyelec/" target="_blank" rel="noopener noreferrer">Facebook / @weileyelec</a></div>
-                </div>
+                <div class="info-row"><div class="info-label">Social</div><div class="info-val"><a href="https://facebook.com/weileyelec/" target="_blank" rel="noopener noreferrer">Facebook / @weileyelec</a></div></div>
             </div>
-
         </div>
     </div>
 </section>
 
-
-<!-- ══ FOOTER ════════════════════════════════════════════════════ -->
 <footer>
     <div class="container footer-inner">
         <div class="footer-copy-block">
@@ -782,37 +638,24 @@
     </div>
 </footer>
 
-
 <script>
-    // Scroll-triggered fade-in / stagger animations
     const io = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-
     document.querySelectorAll('.fade-in, .stagger').forEach(el => io.observe(el));
-
-    // Hero stats are above fold — make them visible immediately
     const heroStats = document.querySelector('.hero-stats');
     if (heroStats) heroStats.classList.add('visible');
-
-    // Active nav link highlight on scroll
-    const sections  = document.querySelectorAll('section[id]');
-    const navLinks  = document.querySelectorAll('.nav-links a');
-
     const navIO = new IntersectionObserver((entries) => {
         entries.forEach(e => {
             if (e.isIntersecting) {
                 const id = e.target.id;
-                navLinks.forEach(a => {
+                document.querySelectorAll('.nav-links a').forEach(a => {
                     a.style.color = a.getAttribute('href') === '#' + id ? 'var(--accent)' : '';
                 });
             }
         });
     }, { threshold: 0.45 });
-
-    sections.forEach(s => navIO.observe(s));
-
-    // Subtle parallax on hero grid
+    document.querySelectorAll('section[id]').forEach(s => navIO.observe(s));
     let ticking = false;
     window.addEventListener('scroll', () => {
         if (!ticking) {
