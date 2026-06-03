@@ -1,0 +1,97 @@
+# =============================================================================
+# Earlyrise Bakery — Site-Wide MES / Reporting configuration
+# -----------------------------------------------------------------------------
+# This file is the single place you edit to add or change production lines.
+# To add a new line later: copy a block under `lines:` and adjust the values.
+# Nothing else in the code needs to change — the system is fully config-driven.
+# =============================================================================
+
+site:
+  name: Earlyrise Bakery
+  timezone: Australia/Sydney
+  # How often (seconds) the collector polls every PLC.
+  poll_interval_seconds: 2
+  # If true (or env MES_SIMULATE=1), every line uses the simulator driver
+  # regardless of its configured driver. Handy for demos / off-site dev.
+  simulate: false
+
+# Shift windows are used to bucket production reporting. Times are local (site tz).
+# A window whose end is earlier than its start (e.g. Night) wraps past midnight.
+shifts:
+  - name: Day
+    start: "06:00"
+    end:   "14:00"
+  - name: Afternoon
+    start: "14:00"
+    end:   "22:00"
+  - name: Night
+    start: "22:00"
+    end:   "06:00"
+
+# -----------------------------------------------------------------------------
+# Production lines. Each entry is one Allen Bradley PLC.
+#
+#   key      : stable machine identifier (used in URLs / DB). Don't change later.
+#   name     : human label shown on the dashboard.
+#   area     : grouping for reporting (e.g. Production, Packaging).
+#   enabled  : set false to temporarily drop a line without deleting config.
+#   driver   : "logix"  -> real ControlLogix/CompactLogix via pycomm3
+#              "simulator" -> generated data (no hardware needed)
+#   plc.host : PLC IP address on the local network.
+#   plc.slot : CPU slot (0 for CompactLogix, often 0 for ControlLogix too).
+#   tags     : maps the logical fields the MES understands to the actual PLC
+#              tag names. operator/recipe/count are required; the rest optional.
+#   ideal_rate_per_hour : the line's target throughput, used for OEE performance
+#              when the PLC doesn't publish a live rate tag.
+# -----------------------------------------------------------------------------
+lines:
+  - key: bread_line
+    name: Bread Line
+    area: Production
+    enabled: true
+    driver: logix
+    plc:
+      host: 192.168.1.10
+      slot: 0
+    tags:
+      operator: "Operator_Name"      # STRING
+      recipe:   "Current_Recipe"     # STRING
+      count:    "Product_Count"      # DINT (running total of good product)
+      running:  "Line_Running"       # BOOL  (optional)
+      fault:    "Line_Fault"         # BOOL  (optional)
+      reject:   "Reject_Count"       # DINT  (optional, for quality)
+      rate:     "Line_Rate"          # REAL  (optional, units/hr live from PLC)
+    ideal_rate_per_hour: 1200
+
+  - key: wp_dough_line
+    name: WP Dough Line
+    area: Production
+    enabled: true
+    driver: logix
+    plc:
+      host: 192.168.1.11
+      slot: 0
+    tags:
+      operator: "Operator_Name"
+      recipe:   "Current_Recipe"
+      count:    "Product_Count"
+      running:  "Line_Running"
+      fault:    "Line_Fault"
+      reject:   "Reject_Count"
+    ideal_rate_per_hour: 900
+
+  - key: cheersonic_line
+    name: Cheersonic Line
+    area: Production
+    enabled: true
+    driver: logix
+    plc:
+      host: 192.168.1.12
+      slot: 0
+    tags:
+      operator: "Operator_Name"
+      recipe:   "Current_Recipe"
+      count:    "Product_Count"
+      running:  "Line_Running"
+      fault:    "Line_Fault"
+    ideal_rate_per_hour: 600

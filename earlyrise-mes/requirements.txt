@@ -1,0 +1,14 @@
+# Core MES runtime
+fastapi>=0.110
+uvicorn[standard]>=0.27
+SQLAlchemy>=2.0
+PyYAML>=6.0
+
+# SQL Server (on-site). Requires the Microsoft ODBC Driver 17/18 installed.
+# pyodbc>=5.0
+
+# Allen Bradley ControlLogix / CompactLogix comms (install on the collector PC).
+# pycomm3>=1.2
+
+# Dev / test
+pytest>=8.0
