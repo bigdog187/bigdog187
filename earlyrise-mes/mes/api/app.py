@@ -28,6 +28,7 @@ from ..models import Line
 from ..plc import build_driver
 from ..config import LineConfig
 from .. import analytics
+from .. import insights as insights_mod
 
 WEB_DIR = PACKAGE_ROOT / "web"
 
@@ -94,6 +95,23 @@ def health() -> dict:
 def summary() -> dict:
     with new_session() as s:
         return analytics.site_summary(s)
+
+
+@app.get("/api/insights")
+def site_insights(hours: float = Query(24.0, gt=0)) -> dict:
+    """AI-style insights for the whole site's day."""
+    with new_session() as s:
+        return insights_mod.site_insights(s, hours)
+
+
+@app.get("/api/lines/{key}/insights")
+def line_insights(key: str, hours: float = Query(24.0, gt=0)) -> dict:
+    """AI-style insights for one production line's day."""
+    with new_session() as s:
+        try:
+            return insights_mod.line_insights(s, key, hours)
+        except KeyError:
+            raise HTTPException(404, f"Unknown line: {key}")
 
 
 @app.get("/api/lines")
@@ -248,6 +266,17 @@ def line_production(
     with new_session() as s:
         try:
             return analytics.production_totals(s, key, start, end, group_by)
+        except KeyError:
+            raise HTTPException(404, f"Unknown line: {key}")
+
+
+@app.get("/api/lines/{key}/rate")
+def line_rate(key: str, hours: float | None = Query(None),
+              frm: str | None = Query(None, alias="from"), to: str | None = None) -> dict:
+    start, end = _parse_window(hours, frm, to)
+    with new_session() as s:
+        try:
+            return analytics.rate_stats(s, key, start, end)
         except KeyError:
             raise HTTPException(404, f"Unknown line: {key}")
 

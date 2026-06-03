@@ -1,12 +1,14 @@
 /* Earlyrise Bakery MES — dashboard logic.
- * Vanilla JS, no external libs (it runs on the local bakery network).
- * Polls the REST API and renders live line cards + a detail drawer. */
+ * Vanilla JS, no external libs (runs on the local bakery network).
+ * Overview + per-line tabs + settings, with AI insights and a colourful
+ * actual-vs-target rate hero. */
 
 const POLL_MS = 3000;
 const $ = (sel, el = document) => el.querySelector(sel);
 const fmt = (n) => (n == null ? "–" : Number(n).toLocaleString());
 
-let selected = null;        // currently opened line key
+let view = "overview";      // "overview" | "line:<key>" | "settings"
+let lines = [];             // [{key,name,area,...}]
 let breakdownGroup = "recipe";
 
 async function api(path) {
@@ -15,7 +17,23 @@ async function api(path) {
   return res.json();
 }
 
-/* ----------------------------------------------------------------- header */
+/* ----------------------------------------------------------- colour helpers */
+function attainClass(pct) {
+  if (pct >= 98) return "good";
+  if (pct >= 85) return "info";
+  if (pct >= 70) return "warn";
+  return "bad";
+}
+
+/* --------------------------------------------------------------- theming */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#theme-icon").textContent = t === "dark" ? "◐" : "◑";
+  localStorage.setItem("mes-theme", t);
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+}
 function setConn(ok) {
   $("#conn-dot").className = "dot " + (ok ? "live" : "down");
   $("#conn-label").textContent = ok ? "LIVE" : "NO SIGNAL";
@@ -24,108 +42,150 @@ function tickClock() {
   $("#clock").textContent = new Date().toLocaleTimeString("en-AU", { hour12: false });
 }
 
-/* ------------------------------------------------------------- line cards */
-function statusClass(s) {
-  return { running: "s-running", idle: "s-idle", fault: "s-fault", offline: "s-offline" }[s] || "s-idle";
+/* ------------------------------------------------------------------ tabs */
+async function loadTabs() {
+  try { lines = (await api("/api/lines")).lines; } catch (_) { lines = []; }
+  const tabs = [`<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`]
+    .concat(lines.map((l) => `<a href="#" class="nav-link" data-view="line:${l.key}">${l.name.toUpperCase()}</a>`))
+    .concat([`<a href="#" class="nav-link" data-view="settings">SETTINGS</a>`]);
+  $("#nav-tabs").innerHTML = tabs.join("");
+  markActiveTab();
+}
+function markActiveTab() {
+  document.querySelectorAll(".nav-link").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
 }
 
-function lineCard(line) {
-  const run = line.run || {};
-  return `
-    <div class="line-card ${selected === line.key ? "sel" : ""}" data-key="${line.key}">
-      <div class="line-card-top">
-        <div>
-          <div class="line-name">${line.name}</div>
-          <div class="line-area">${line.area || ""}</div>
-        </div>
-        <div class="status-chip ${statusClass(line.status)}"><span class="dot"></span>${line.status}</div>
+/* ------------------------------------------------------------ view router */
+function showView(v) {
+  view = v;
+  $("#view-overview").hidden = v !== "overview";
+  $("#view-line").hidden = !v.startsWith("line:");
+  $("#view-settings").hidden = v !== "settings";
+  markActiveTab();
+  window.scrollTo({ top: 0 });
+  if (v === "overview") renderOverview();
+  else if (v.startsWith("line:")) renderLine(v.slice(5));
+  else if (v === "settings") loadSettings();
+}
+
+/* --------------------------------------------------------------- insights */
+function insightCard(i) {
+  return `<div class="insight ${i.severity}">
+      <div class="insight-title">${i.title}</div>
+      <div class="insight-text">${i.text}</div>
+    </div>`;
+}
+async function renderInsights(elId, path) {
+  try {
+    const data = await api(path);
+    const tag = `<div class="insights-tag"><span class="ai-dot"></span>AI INSIGHTS · ${data.generated_by.toUpperCase()} · TODAY</div>`;
+    $(elId).innerHTML = tag + data.insights.map(insightCard).join("");
+  } catch (_) { $(elId).innerHTML = ""; }
+}
+
+/* --------------------------------------------------------------- overview */
+function rateBar(actual, target, attain) {
+  const cls = attainClass(attain * 100);
+  const fill = Math.min(attain * 75, 100).toFixed(0);   // target sits at 75% of track
+  return `<div class="card-rate">
+      <div class="card-rate-vals">
+        <span class="card-rate-actual">${Math.round(actual)}<small style="font-size:.6rem;color:var(--text-secondary)"> /hr</small></span>
+        <span class="card-attain c-${cls}">${(attain * 100).toFixed(0)}% of target</span>
       </div>
-      <div class="line-count">${fmt(line.count)}</div>
-      <div class="line-count-label">Product Count · ${run.recipe || "—"}</div>
-      <div class="line-meta">
-        <div><div class="meta-k">Operator</div><div class="meta-v">${line.operator || "—"}</div></div>
-        <div><div class="meta-k">Rate</div><div class="meta-v">${line.rate != null ? Math.round(line.rate) + " /hr" : "—"}</div></div>
-        <div><div class="meta-k">Recipe</div><div class="meta-v">${line.recipe || "—"}</div></div>
-        <div><div class="meta-k">Run Total</div><div class="meta-v">${fmt(run.total_produced)}</div></div>
+      <div class="card-rate-track">
+        <i class="${cls}" style="width:${fill}%"></i>
+        <span class="rate-target-mark" style="left:75%"></span>
       </div>
-      <svg class="spark" data-spark="${line.key}" preserveAspectRatio="none"></svg>
     </div>`;
 }
 
-async function refreshSummary() {
+function lineCard(l) {
+  const t = l.today || { actual_rate: 0, attainment: 0 };
+  const target = l.target_rate || l.ideal_rate_per_hour || 0;
+  return `<div class="line-card" data-key="${l.key}">
+      <div class="line-card-top">
+        <div>
+          <div class="line-name">${l.name}</div>
+          <div class="line-area">${l.area || ""}</div>
+        </div>
+        <div class="status-chip ${l.status}"><span class="dot"></span>${l.status}</div>
+      </div>
+      <div class="line-count">${fmt(l.count)}</div>
+      <div class="line-count-label">Product Count · ${l.recipe || "—"}</div>
+      ${rateBar(t.actual_rate, target, t.attainment)}
+      <div class="line-meta">
+        <div><div class="meta-k">Operator</div><div class="meta-v">${l.operator || "—"}</div></div>
+        <div><div class="meta-k">Target</div><div class="meta-v">${target ? Math.round(target) + " /hr" : "—"}</div></div>
+      </div>
+    </div>`;
+}
+
+async function renderOverview() {
+  renderInsights("#site-insights", "/api/insights");
   try {
-    const data = await api("/api/summary");
+    const d = await api("/api/summary");
     setConn(true);
-    $("#kpi-running").textContent = data.lines_running;
-    $("#kpi-fault").textContent = data.lines_fault;
-    $("#kpi-offline").textContent = data.lines_offline;
-    $("#kpi-produced").textContent = fmt(data.produced_today);
-    $("#line-grid").innerHTML = data.lines.map(lineCard).join("");
-    data.lines.forEach((l) => drawSpark(l.key));
-    if (selected) refreshDetail(selected, false);
-  } catch (e) {
-    setConn(false);
-  }
+    const attainPct = (d.site_attainment * 100) || 0;
+    const av = $("#kpi-attain");
+    av.textContent = attainPct.toFixed(0) + "%";
+    av.className = "kpi-val c-" + attainClass(attainPct);
+    $("#kpi-produced").textContent = fmt(d.produced_today);
+    $("#kpi-running").textContent = `${d.lines_running}/${d.lines_total}`;
+    const ff = $("#kpi-fault");
+    ff.textContent = d.lines_fault;
+    ff.className = "kpi-val" + (d.lines_fault ? " c-bad" : "");
+    $("#line-grid").innerHTML = d.lines.map(lineCard).join("");
+  } catch (_) { setConn(false); }
 }
 
-/* ------------------------------------------------------------ mini sparks */
-async function drawSpark(key) {
-  const svg = document.querySelector(`[data-spark="${key}"]`);
-  if (!svg) return;
+/* ------------------------------------------------------------- line view */
+async function renderLine(key) {
+  const l = lines.find((x) => x.key === key);
+  $("#line-title").textContent = l ? l.name : key;
+  $("#line-tag").textContent = `PRODUCTION LINE · ${(l ? l.name : key).toUpperCase()}`;
+  renderInsights("#line-insights", `/api/lines/${key}/insights`);
   try {
-    const ts = await api(`/api/lines/${key}/timeseries?hours=0.5`);
-    const pts = ts.points.filter((p) => p.rate != null);
-    svg.innerHTML = sparkPath(pts.map((p) => p.rate), 360, 34);
-  } catch (_) {}
-}
-
-function sparkPath(values, w, h) {
-  if (!values.length) return "";
-  const max = Math.max(...values, 1), min = Math.min(...values, 0);
-  const span = max - min || 1;
-  const step = w / Math.max(values.length - 1, 1);
-  const pts = values.map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - min) / span) * (h - 4) - 2).toFixed(1)}`);
-  return `<polyline class="spark-line" stroke-width="1" points="${pts.join(" ")}"/>`;
-}
-
-/* --------------------------------------------------------------- detail */
-async function openDetail(key) {
-  selected = key;
-  $("#detail").hidden = false;
-  document.querySelectorAll(".line-card").forEach((c) => c.classList.toggle("sel", c.dataset.key === key));
-  await refreshDetail(key, true);
-  $("#detail").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function closeDetail() {
-  selected = null;
-  $("#detail").hidden = true;
-  document.querySelectorAll(".line-card").forEach((c) => c.classList.remove("sel"));
-}
-
-async function refreshDetail(key, full) {
-  try {
-    const [status, oee, runs, events] = await Promise.all([
+    const [status, rate, oee] = await Promise.all([
       api(`/api/lines/${key}/status`),
+      api(`/api/lines/${key}/rate?hours=24`),
       api(`/api/lines/${key}/oee?hours=24`),
-      api(`/api/lines/${key}/runs?limit=12`),
-      api(`/api/lines/${key}/events?limit=40`),
     ]);
-    $("#detail-name").textContent = status.name;
-    $("#detail-tag").textContent = `LINE DETAIL · ${status.status.toUpperCase()}`;
+    setConn(true);
+    const chip = $("#line-status");
+    chip.className = "status-chip " + status.status;
+    chip.innerHTML = `<span class="dot"></span><span>${status.status.toUpperCase()}</span>`;
+    renderRateHero(rate, status);
     renderOEE(oee);
-    renderRuns(runs.runs);
-    renderEvents(events.events);
-    renderRateChart(key);
+    renderRateChart(key, rate.target_rate);
     renderBreakdown(key);
-  } catch (e) { /* line may not exist yet */ }
+    renderRuns(key);
+    renderEvents(key);
+  } catch (_) { setConn(false); }
+}
+
+function renderRateHero(rate, status) {
+  const attain = rate.attainment || 0;
+  const cls = attainClass(attain * 100);
+  const fill = Math.min(attain * 75, 100).toFixed(0);
+  $("#rate-hero").innerHTML = `
+    <div class="rate-hero-top">
+      <div>
+        <div class="rate-actual">${Math.round(rate.actual_rate)}<small>units/hr actual</small></div>
+        <div class="rate-sub">today · ${fmt(rate.produced)} units over ${rate.running_hours.toFixed(1)} running hrs · live ${Math.round(status.actual_rate || 0)}/hr</div>
+      </div>
+      <div class="rate-attain">
+        <div class="rate-attain-val c-${cls}">${(attain * 100).toFixed(0)}%</div>
+        <div class="rate-sub">of ${Math.round(rate.target_rate)}/hr target</div>
+      </div>
+    </div>
+    <div class="rate-track">
+      <i class="${cls}" style="width:${fill}%"></i>
+      <span class="rate-target-mark" data-v="${Math.round(rate.target_rate)}" style="left:75%"></span>
+    </div>`;
 }
 
 function renderOEE(o) {
-  const cells = [
-    ["OEE", o.oee], ["Availability", o.availability],
-    ["Performance", o.performance], ["Quality", o.quality],
-  ];
+  const cells = [["OEE", o.oee], ["Availability", o.availability], ["Performance", o.performance], ["Quality", o.quality]];
   $("#oee-row").innerHTML = cells.map(([k, v]) => `
     <div class="oee-cell">
       <div class="meta-k">${k}</div>
@@ -134,51 +194,50 @@ function renderOEE(o) {
     </div>`).join("");
 }
 
-function renderRuns(runs) {
+async function renderRuns(key) {
   const body = $("#runs-table tbody");
-  body.innerHTML = runs.map((r) => `
-    <tr>
-      <td>${r.recipe || "—"}</td><td>${r.operator || "—"}</td><td>${r.shift || "—"}</td>
-      <td>${r.started_at ? new Date(r.started_at).toLocaleTimeString("en-AU", { hour12: false }) : "—"}</td>
-      <td class="num">${r.duration_s != null ? mmss(r.duration_s) : "—"}</td>
-      <td class="num">${fmt(r.total_produced)}</td>
-      <td class="num">${fmt(r.total_reject)}</td>
-    </tr>`).join("") || `<tr><td colspan="7" style="color:var(--text-muted)">No runs yet.</td></tr>`;
+  try {
+    const runs = (await api(`/api/lines/${key}/runs?limit=12`)).runs;
+    body.innerHTML = runs.map((r) => `
+      <tr>
+        <td>${r.recipe || "—"}</td><td>${r.operator || "—"}</td><td>${r.shift || "—"}</td>
+        <td>${r.started_at ? new Date(r.started_at).toLocaleTimeString("en-AU", { hour12: false }) : "—"}</td>
+        <td class="num">${r.duration_s != null ? mmss(r.duration_s) : "—"}</td>
+        <td class="num">${fmt(r.total_produced)}</td>
+        <td class="num">${fmt(r.total_reject)}</td>
+      </tr>`).join("") || `<tr><td colspan="7" style="color:var(--text-muted)">No runs yet.</td></tr>`;
+  } catch (_) {}
 }
 
-function renderEvents(events) {
-  $("#events-log").innerHTML = events.map((e) => `
-    <div class="event">
-      <time>${new Date(e.ts).toLocaleTimeString("en-AU", { hour12: false })}</time>
-      <span class="kind">${e.kind.replace(/_/g, " ")}</span>
-      <span class="ev-detail">${e.detail || ""}</span>
-    </div>`).join("") || `<div style="color:var(--text-muted);font-size:.75rem">No events yet.</div>`;
+async function renderEvents(key) {
+  try {
+    const events = (await api(`/api/lines/${key}/events?limit=40`)).events;
+    $("#events-log").innerHTML = events.map((e) => `
+      <div class="event">
+        <time>${new Date(e.ts).toLocaleTimeString("en-AU", { hour12: false })}</time>
+        <span class="kind">${e.kind.replace(/_/g, " ")}</span>
+        <span class="ev-detail">${e.detail || ""}</span>
+      </div>`).join("") || `<div style="color:var(--text-muted);font-size:.75rem">No events yet.</div>`;
+  } catch (_) {}
 }
 
-async function renderRateChart(key) {
+async function renderRateChart(key, target) {
   try {
     const ts = await api(`/api/lines/${key}/timeseries?hours=0.5`);
     const vals = ts.points.map((p) => p.rate || 0);
     const w = 520, h = 160;
-    $("#chart-rate").innerHTML = vals.length
-      ? `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
-           ${gridLines(w, h)}
-           ${areaPath(vals, w, h)}
-         </svg>`
-      : `<div style="color:var(--text-muted);font-size:.75rem">Collecting data…</div>`;
+    if (!vals.length) { $("#chart-rate").innerHTML = `<div style="color:var(--text-muted);font-size:.75rem">Collecting data…</div>`; return; }
+    const max = Math.max(...vals, target || 1) * 1.1;
+    const step = w / Math.max(vals.length - 1, 1);
+    const pts = vals.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * (h - 8) - 4).toFixed(1)}`);
+    const ty = (h - ((target || 0) / max) * (h - 8) - 4).toFixed(1);
+    $("#chart-rate").innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
+        ${[0.25, 0.5, 0.75].map((f) => `<line class="grid-line" x1="0" y1="${(h * f).toFixed(0)}" x2="${w}" y2="${(h * f).toFixed(0)}" stroke-width="1"/>`).join("")}
+        <polygon class="plot-actual-fill" points="0,${h} ${pts.join(" ")} ${w},${h}"/>
+        <polyline class="plot-actual" stroke-width="1.5" points="${pts.join(" ")}"/>
+        <line class="plot-target" x1="0" y1="${ty}" x2="${w}" y2="${ty}" stroke-width="1.5"/>
+      </svg>`;
   } catch (_) {}
-}
-
-function gridLines(w, h) {
-  return [0.25, 0.5, 0.75].map((f) =>
-    `<line class="grid-line" x1="0" y1="${(h * f).toFixed(0)}" x2="${w}" y2="${(h * f).toFixed(0)}" stroke-width="1"/>`).join("");
-}
-function areaPath(values, w, h) {
-  const max = Math.max(...values, 1);
-  const step = w / Math.max(values.length - 1, 1);
-  const line = values.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * (h - 8) - 4).toFixed(1)}`);
-  return `<polyline class="plot-line" stroke-width="1.5" points="${line.join(" ")}"/>` +
-    `<polygon class="plot-area" points="0,${h} ${line.join(" ")} ${w},${h}"/>`;
 }
 
 async function renderBreakdown(key) {
@@ -196,30 +255,10 @@ async function renderBreakdown(key) {
   } catch (_) {}
 }
 
-/* ----------------------------------------------------------------- utils */
 function mmss(s) {
   const m = Math.floor(s / 60), sec = Math.floor(s % 60);
   if (m >= 60) { const h = Math.floor(m / 60); return `${h}h ${m % 60}m`; }
   return `${m}m ${sec.toString().padStart(2, "0")}s`;
-}
-
-/* --------------------------------------------------------------- theming */
-function applyTheme(t) {
-  document.documentElement.dataset.theme = t;
-  $("#theme-icon").textContent = t === "dark" ? "◐" : "◑";
-  localStorage.setItem("mes-theme", t);
-}
-function toggleTheme() {
-  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
-}
-
-/* --------------------------------------------------------- view switching */
-function showView(view) {
-  $("#view-dashboard").hidden = view !== "dashboard";
-  $("#view-settings").hidden = view !== "settings";
-  document.querySelectorAll(".nav-link").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
-  if (view === "settings") loadSettings();
-  window.scrollTo({ top: 0 });
 }
 
 /* ============================== SETTINGS ============================== */
@@ -248,7 +287,6 @@ function buildLineCard(line) {
   node.querySelector('[data-f="enabled"]').checked = line.enabled !== false;
   const tags = line.tags || {};
   TAG_FIELDS.forEach((t) => { const el = node.querySelector(`[data-t="${t}"]`); if (el) el.value = tags[t] || ""; });
-  // existing keys are locked (used as the DB id); new lines can set one
   if (line.key && !line.__new) node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
   node.addEventListener("input", () => node.classList.add("dirty"));
   return node;
@@ -294,6 +332,7 @@ async function saveCard(node) {
     node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
     node.classList.remove("dirty");
     msg(node, `Saved · ${saved.key} · live within one poll cycle`, "ok");
+    loadTabs();
   } catch (e) { msg(node, "Save failed: " + e.message, "err"); }
 }
 
@@ -308,9 +347,7 @@ async function testCard(node) {
     if (r.ok) {
       const s = r.sample || {};
       msg(node, `✓ Connected · operator=${s.operator ?? "—"} recipe=${s.recipe ?? "—"} count=${s.count ?? "—"}`, "ok");
-    } else {
-      msg(node, "✕ " + (r.error || "no response"), "err");
-    }
+    } else { msg(node, "✕ " + (r.error || "no response"), "err"); }
   } catch (e) { msg(node, "✕ " + e.message, "err"); }
 }
 
@@ -321,6 +358,7 @@ async function deleteCard(node) {
     await fetch(`/api/config/lines/${node.dataset.key}`, { method: "DELETE" });
     node.querySelector('[data-f="enabled"]').checked = false;
     msg(node, "Disabled · history retained", "ok");
+    loadTabs();
   } catch (e) { msg(node, "Failed: " + e.message, "err"); }
 }
 
@@ -339,13 +377,13 @@ document.addEventListener("click", (e) => {
   if (e.target.closest("#add-line-btn")) return addBlankLine();
 
   const card = e.target.closest(".line-card");
-  if (card) openDetail(card.dataset.key);
-  if (e.target.id === "detail-close") closeDetail();
+  if (card) return showView("line:" + card.dataset.key);
+
   const seg = e.target.closest("#breakdown-toggle button");
   if (seg) {
     breakdownGroup = seg.dataset.g;
     document.querySelectorAll("#breakdown-toggle button").forEach((b) => b.classList.toggle("active", b === seg));
-    if (selected) renderBreakdown(selected);
+    if (view.startsWith("line:")) renderBreakdown(view.slice(5));
   }
   const cfg = e.target.closest(".cfg-card");
   if (cfg && e.target.dataset.act) {
@@ -363,7 +401,11 @@ async function boot() {
   } catch (_) {}
   tickClock();
   setInterval(tickClock, 1000);
-  await refreshSummary();
-  setInterval(() => { if (!$("#view-dashboard").hidden) refreshSummary(); }, POLL_MS);
+  await loadTabs();
+  showView("overview");
+  setInterval(() => {
+    if (view === "overview") renderOverview();
+    else if (view.startsWith("line:")) renderLine(view.slice(5));
+  }, POLL_MS);
 }
 boot();

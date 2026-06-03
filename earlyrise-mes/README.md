@@ -23,6 +23,35 @@ count**, and the system rolls those up into MES-style analytics: production
 totals by recipe / operator / shift, throughput, an event/audit trail, and
 **OEE** (Availability × Performance × Quality).
 
+The headline metric throughout is **actual rate/hr vs target rate/hr** (rate
+attainment) — shown per line and aggregated for the whole site, and colour-coded
+(green at/above target, amber below, red well below).
+
+## Dashboard pages
+
+- **Overview** — site-wide KPIs (rate-vs-target attainment, produced today,
+  lines running, faults), AI insights for the day, and a card per line showing
+  its live actual-vs-target rate. Click a card (or tab) to drill in.
+- **Per-line tabs** — one tab per line, each with its own AI insights, a large
+  actual-vs-target rate hero, OEE, an actual-vs-target rate chart, production
+  breakdowns, recent runs, and the event log.
+- **Settings** — configure PLC connections (see below).
+- **Light & dark mode** — nav toggle (◐), remembered per browser.
+
+## AI insights
+
+The Overview and each line page lead with **AI-generated insights** for the
+day's data. Two providers, selected by `MES_INSIGHTS_PROVIDER`:
+
+- **`local`** (default) — a deterministic insight engine that runs entirely
+  on-prem (no internet needed), turning rate attainment, downtime/faults,
+  quality, and top recipe/operator into plain-English findings.
+- **`claude`** — set `MES_INSIGHTS_PROVIDER=claude` with an `ANTHROPIC_API_KEY`
+  (and `pip install anthropic`) to have Claude phrase the same computed metrics
+  into richer prose. The numbers are always computed from the database first, so
+  insights stay grounded in real data; it falls back to `local` if the API is
+  unavailable.
+
 ---
 
 ## Quick start (demo — no PLCs, no SQL Server)
@@ -152,7 +181,10 @@ attributed to the right operator, recipe and shift.
 | Endpoint                                   | Description                              |
 |--------------------------------------------|------------------------------------------|
 | `GET /api/health`                          | Service status & DB backend.             |
-| `GET /api/summary`                         | Site-wide rollup + every line's status.  |
+| `GET /api/summary`                         | Site rollup + attainment + each line's status. |
+| `GET /api/insights`                        | AI insights for the whole site's day.    |
+| `GET /api/lines/{key}/insights`            | AI insights for one line's day.          |
+| `GET /api/lines/{key}/rate`                | Actual rate/hr vs target rate/hr.        |
 | `GET /api/lines`                           | Configured lines.                        |
 | `GET /api/lines/{key}/status`              | Live status for one line.                |
 | `GET /api/lines/{key}/production?group_by=`| Totals by `recipe`/`operator`/`shift`.   |

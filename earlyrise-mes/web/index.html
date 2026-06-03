@@ -13,7 +13,7 @@
 <body>
     <nav>
         <div class="container nav-inner">
-            <a class="nav-logo" href="#" data-view="dashboard">
+            <a class="nav-logo" href="#" data-view="overview">
                 <div class="nav-logo-mark"><span>EB</span></div>
                 <div class="nav-logo-text">
                     <span class="nav-logo-name">EARLYRISE BAKERY</span>
@@ -21,13 +21,8 @@
                 </div>
             </a>
             <div class="nav-right">
-                <div class="nav-links">
-                    <a href="#" class="nav-link active" data-view="dashboard">DASHBOARD</a>
-                    <a href="#" class="nav-link" data-view="settings">SETTINGS</a>
-                </div>
-                <button class="theme-btn" id="theme-btn" title="Toggle light / dark">
-                    <span class="theme-icon" id="theme-icon">◐</span>
-                </button>
+                <div class="nav-links" id="nav-tabs"><!-- tabs injected --></div>
+                <button class="theme-btn" id="theme-btn" title="Toggle light / dark"><span id="theme-icon">◐</span></button>
                 <div class="nav-status">
                     <span class="dot" id="conn-dot"></span>
                     <span id="conn-label" class="mono">CONNECTING</span>
@@ -37,60 +32,75 @@
         </div>
     </nav>
 
-    <!-- ============================ DASHBOARD ============================ -->
-    <main class="container" id="view-dashboard">
+    <!-- ============================== OVERVIEW ============================== -->
+    <main class="container view" id="view-overview">
+        <div class="section-tag">SITE OVERVIEW · TODAY</div>
+
+        <div class="insights" id="site-insights"><!-- insight cards --></div>
+
         <section class="kpis" id="kpis">
+            <div class="kpi accent"><div class="kpi-label">Rate vs Target</div><div class="kpi-val" id="kpi-attain">–</div><div class="kpi-sub" id="kpi-attain-sub">site attainment</div></div>
+            <div class="kpi"><div class="kpi-label">Produced Today</div><div class="kpi-val" id="kpi-produced">–</div></div>
             <div class="kpi"><div class="kpi-label">Lines Running</div><div class="kpi-val" id="kpi-running">–</div></div>
             <div class="kpi"><div class="kpi-label">Faults</div><div class="kpi-val" id="kpi-fault">–</div></div>
-            <div class="kpi"><div class="kpi-label">Offline</div><div class="kpi-val" id="kpi-offline">–</div></div>
-            <div class="kpi"><div class="kpi-label">Produced Today</div><div class="kpi-val" id="kpi-produced">–</div></div>
         </section>
 
         <div class="section-tag">PRODUCTION LINES</div>
         <section class="line-grid" id="line-grid"></section>
-
-        <section class="detail" id="detail" hidden>
-            <div class="detail-head">
-                <div>
-                    <div class="section-tag" id="detail-tag">LINE DETAIL</div>
-                    <h2 id="detail-name" class="detail-name">—</h2>
-                </div>
-                <button class="close-btn" id="detail-close">CLOSE ✕</button>
-            </div>
-            <div class="oee-row" id="oee-row"></div>
-            <div class="detail-cols">
-                <div class="panel">
-                    <div class="panel-title">RATE — LAST 30 MIN</div>
-                    <div id="chart-rate" class="chart"></div>
-                </div>
-                <div class="panel">
-                    <div class="panel-title" id="breakdown-title">PRODUCTION BY RECIPE — 24H</div>
-                    <div class="seg-toggle" id="breakdown-toggle">
-                        <button data-g="recipe" class="active">RECIPE</button>
-                        <button data-g="operator">OPERATOR</button>
-                        <button data-g="shift">SHIFT</button>
-                    </div>
-                    <div id="breakdown" class="bars"></div>
-                </div>
-            </div>
-            <div class="detail-cols">
-                <div class="panel">
-                    <div class="panel-title">RECENT PRODUCTION RUNS</div>
-                    <div class="table-wrap"><table id="runs-table"><thead><tr>
-                        <th>RECIPE</th><th>OPERATOR</th><th>SHIFT</th><th>START</th>
-                        <th class="num">DURATION</th><th class="num">PRODUCED</th><th class="num">REJECT</th>
-                    </tr></thead><tbody></tbody></table></div>
-                </div>
-                <div class="panel">
-                    <div class="panel-title">EVENT LOG</div>
-                    <div class="events" id="events-log"></div>
-                </div>
-            </div>
-        </section>
     </main>
 
-    <!-- ============================ SETTINGS ============================ -->
-    <main class="container" id="view-settings" hidden>
+    <!-- ============================== LINE ============================== -->
+    <main class="container view" id="view-line" hidden>
+        <div class="section-tag" id="line-tag">PRODUCTION LINE</div>
+        <div class="line-head">
+            <h2 class="line-title" id="line-title">—</h2>
+            <div class="status-chip" id="line-status"><span class="dot"></span><span>—</span></div>
+        </div>
+
+        <div class="insights" id="line-insights"></div>
+
+        <!-- Actual vs Target rate hero -->
+        <section class="rate-hero" id="rate-hero"></section>
+
+        <div class="oee-row" id="oee-row"></div>
+
+        <div class="detail-cols">
+            <div class="panel">
+                <div class="panel-title">ACTUAL RATE vs TARGET — LAST 30 MIN</div>
+                <div id="chart-rate" class="chart"></div>
+                <div class="chart-legend">
+                    <span><i class="sw-actual"></i> Actual /hr</span>
+                    <span><i class="sw-target"></i> Target /hr</span>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title" id="breakdown-title">PRODUCTION BY RECIPE — 24H</div>
+                <div class="seg-toggle" id="breakdown-toggle">
+                    <button data-g="recipe" class="active">RECIPE</button>
+                    <button data-g="operator">OPERATOR</button>
+                    <button data-g="shift">SHIFT</button>
+                </div>
+                <div id="breakdown" class="bars"></div>
+            </div>
+        </div>
+
+        <div class="detail-cols">
+            <div class="panel">
+                <div class="panel-title">RECENT PRODUCTION RUNS</div>
+                <div class="table-wrap"><table id="runs-table"><thead><tr>
+                    <th>RECIPE</th><th>OPERATOR</th><th>SHIFT</th><th>START</th>
+                    <th class="num">DURATION</th><th class="num">PRODUCED</th><th class="num">REJECT</th>
+                </tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">EVENT LOG</div>
+                <div class="events" id="events-log"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================== SETTINGS ============================== -->
+    <main class="container view" id="view-settings" hidden>
         <div class="settings-head">
             <div>
                 <div class="section-tag">SYSTEM SETTINGS · PLC CONNECTIONS</div>
@@ -103,7 +113,6 @@
         <section id="settings-lines" class="settings-lines"></section>
     </main>
 
-    <!-- Line editor template -->
     <template id="line-card-tpl">
         <div class="cfg-card">
             <div class="cfg-card-head">
@@ -121,7 +130,7 @@
                 </label>
                 <label>PLC IP ADDRESS <input data-f="host" placeholder="192.168.1.10" class="mono"></label>
                 <label>SLOT <input data-f="slot" type="number" value="0" class="mono"></label>
-                <label>IDEAL RATE /HR <input data-f="ideal_rate_per_hour" type="number" value="0" class="mono"></label>
+                <label>TARGET RATE /HR <input data-f="ideal_rate_per_hour" type="number" value="0" class="mono"></label>
             </div>
             <div class="cfg-tags-title">PLC TAG MAPPING</div>
             <div class="cfg-grid cfg-tags">

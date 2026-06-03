@@ -10,5 +10,8 @@ PyYAML>=6.0
 # Allen Bradley ControlLogix / CompactLogix comms (install on the collector PC).
 # pycomm3>=1.2
 
+# Optional: Claude-backed AI insights (set MES_INSIGHTS_PROVIDER=claude).
+# anthropic>=0.40
+
 # Dev / test
 pytest>=8.0

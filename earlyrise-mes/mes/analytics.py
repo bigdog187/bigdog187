@@ -55,6 +55,10 @@ def live_status(s: Session, key: str, stale_after_s: float = 15.0) -> dict:
     if online:
         status = "fault" if (last and last.fault) else ("running" if (last and last.running) else "idle")
 
+    target = line.ideal_rate_per_hour or 0.0
+    actual = (last.rate if last and last.rate is not None else 0.0) if online else 0.0
+    attainment = (actual / target) if target else 0.0
+
     return {
         "key": line.key,
         "name": line.name,
@@ -69,7 +73,11 @@ def live_status(s: Session, key: str, stale_after_s: float = 15.0) -> dict:
         "fault": bool(last.fault) if last else False,
         "last_seen": last.ts.replace(tzinfo=timezone.utc).isoformat() if last else None,
         "run": _run_dict(run) if run else None,
-        "ideal_rate_per_hour": line.ideal_rate_per_hour,
+        "ideal_rate_per_hour": target,
+        # --- headline metric: actual rate/hr vs target rate/hr ---
+        "target_rate": target,
+        "actual_rate": round(actual, 1),
+        "attainment": round(attainment, 4),
     }
 
 
@@ -78,19 +86,53 @@ def site_summary(s: Session) -> dict:
     lines = s.scalars(select(Line).where(Line.enabled == True)).all()  # noqa: E712
     statuses = [live_status(s, l.key) for l in lines]
     today_from = _start_of_local_day()
-    produced_today = sum(
-        production_totals(s, l.key, today_from, _now()).get("total_produced", 0)
-        for l in lines
-    )
+    now = _now()
+
+    produced_today = 0
+    theoretical_today = 0.0
+    for l in lines:
+        rs = rate_stats(s, l.key, today_from, now)
+        produced_today += rs["produced"]
+        theoretical_today += rs["target_rate"] * rs["running_hours"]
+        # attach today's actual-vs-target to each line for the overview cards
+        for st in statuses:
+            if st["key"] == l.key:
+                st["today"] = rs
+
+    site_attainment = (produced_today / theoretical_today) if theoretical_today else 0.0
+
     return {
         "site": "Earlyrise Bakery",
-        "generated_at": _now().isoformat(),
+        "generated_at": now.isoformat(),
         "lines_total": len(statuses),
         "lines_running": sum(1 for x in statuses if x["status"] == "running"),
         "lines_fault": sum(1 for x in statuses if x["status"] == "fault"),
         "lines_offline": sum(1 for x in statuses if x["status"] == "offline"),
         "produced_today": produced_today,
+        "site_attainment": round(site_attainment, 4),
         "lines": statuses,
+    }
+
+
+def rate_stats(s: Session, key: str, start: datetime, end: datetime) -> dict:
+    """Actual rate/hr vs target rate/hr for a line over a window — the system's
+    headline metric. Actual rate is produced units per *running* hour, so
+    planned downtime (changeovers) doesn't distort the achieved rate."""
+    line = _line(s, key)
+    runs = _runs_in_window(s, line.id, start, end)
+    produced = sum(r.total_produced for r in runs)
+    running_seconds = sum(r.running_seconds or 0.0 for r in runs)
+    running_hours = running_seconds / 3600.0
+    target = line.ideal_rate_per_hour or 0.0
+    actual = (produced / running_hours) if running_hours > 0 else 0.0
+    attainment = (actual / target) if target else 0.0
+    return {
+        "key": line.key,
+        "target_rate": target,
+        "actual_rate": round(actual, 1),
+        "attainment": round(attainment, 4),
+        "produced": produced,
+        "running_hours": round(running_hours, 3),
     }
 
 
