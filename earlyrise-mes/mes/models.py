@@ -15,6 +15,7 @@ The schema is portable across SQLite (dev/demo) and SQL Server (on-site).
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -49,11 +50,37 @@ class Line(Base):
     area: Mapped[str] = mapped_column(String(64), default="Production")
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     ideal_rate_per_hour: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Connection config — editable at runtime from the settings page. This makes
+    # the DB the source of truth for lines (seeded once from config/lines.yaml),
+    # so lines can be added / re-pointed on the fly without redeploying.
+    driver: Mapped[str] = mapped_column(String(32), default="logix")
+    host: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    slot: Mapped[int] = mapped_column(Integer, default=0)
+    tags_json: Mapped[str] = mapped_column(Text, default="{}")
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     samples: Mapped[list["Sample"]] = relationship(back_populates="line")
     runs: Mapped[list["ProductionRun"]] = relationship(back_populates="line")
     events: Mapped[list["LineEvent"]] = relationship(back_populates="line")
+
+    @property
+    def tags(self) -> dict:
+        try:
+            return json.loads(self.tags_json or "{}")
+        except (TypeError, ValueError):
+            return {}
+
+    @tags.setter
+    def tags(self, value: dict) -> None:
+        self.tags_json = json.dumps(value or {})
+
+    def config_signature(self) -> tuple:
+        """Identity of the connection config — used to detect changes that
+        require rebuilding the line's PLC driver."""
+        return (self.driver, self.host, self.slot, self.tags_json, self.enabled)
 
 
 class Sample(Base):

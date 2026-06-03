@@ -102,12 +102,32 @@ boot. For a single-box install you can instead run just `run_web.py` with
 
 ---
 
-## Adding a new line later
+## Adding / configuring lines
 
-Append a block under `lines:` in `config/lines.yaml` and restart. That's it —
-the collector starts polling it, the database registers it, and it appears on
-the dashboard automatically. To support a different controller family, add a
-driver class in `mes/plc/` implementing `PLCDriver`; nothing else changes.
+There are two ways to add a line, and **no restart is needed** either way — the
+collector reconciles its drivers against the database every poll cycle, so a new
+or re-pointed line starts being polled within a couple of seconds.
+
+**1. From the Settings page (recommended)** — open the dashboard, click
+**SETTINGS**, and either edit an existing line or hit **+ ADD LINE**. You can set
+the PLC **IP address**, slot, driver, ideal rate, and the full tag mapping, then
+**TEST CONNECTION** to confirm the PLC answers before you **SAVE**. Disabling a
+line stops polling but keeps all its history.
+
+**2. From `config/lines.yaml`** — used to *seed* the database on first run. After
+that the database is the source of truth (so settings-page edits aren't
+overwritten). Delete the data / line rows to re-seed from YAML.
+
+`config/lines.yaml` remains handy for version-controlling a known-good baseline
+and for bulk/initial provisioning.
+
+To support a different controller family, add a driver class in `mes/plc/`
+implementing `PLCDriver`; nothing else changes.
+
+## Light & dark mode
+
+The dashboard has a theme toggle (◐ in the nav). Your choice is remembered in
+the browser (`localStorage`), so each operator/station can pick light or dark.
 
 ---
 
@@ -140,6 +160,11 @@ attributed to the right operator, recipe and shift.
 | `GET /api/lines/{key}/runs`                | Recent production runs.                  |
 | `GET /api/lines/{key}/events`              | Recent line events.                      |
 | `GET /api/lines/{key}/timeseries`          | Count/rate samples over a window.        |
+| `GET /api/config/lines`                    | Full editable line config (settings page).|
+| `POST /api/config/lines`                   | Add a line on the fly.                   |
+| `PUT /api/config/lines/{key}`              | Update a line's connection / tags.       |
+| `DELETE /api/config/lines/{key}`           | Disable a line (history retained).       |
+| `POST /api/config/test`                    | Test a PLC connection without saving.    |
 
 Windows accept either `?hours=N` or `?from=<ISO>&to=<ISO>`.
 

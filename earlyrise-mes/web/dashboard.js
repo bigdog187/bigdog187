@@ -85,7 +85,7 @@ function sparkPath(values, w, h) {
   const span = max - min || 1;
   const step = w / Math.max(values.length - 1, 1);
   const pts = values.map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - min) / span) * (h - 4) - 2).toFixed(1)}`);
-  return `<polyline fill="none" stroke="#fff" stroke-width="1" opacity="0.55" points="${pts.join(" ")}"/>`;
+  return `<polyline class="spark-line" stroke-width="1" points="${pts.join(" ")}"/>`;
 }
 
 /* --------------------------------------------------------------- detail */
@@ -151,7 +151,7 @@ function renderEvents(events) {
     <div class="event">
       <time>${new Date(e.ts).toLocaleTimeString("en-AU", { hour12: false })}</time>
       <span class="kind">${e.kind.replace(/_/g, " ")}</span>
-      <span class="detail">${e.detail || ""}</span>
+      <span class="ev-detail">${e.detail || ""}</span>
     </div>`).join("") || `<div style="color:var(--text-muted);font-size:.75rem">No events yet.</div>`;
 }
 
@@ -171,14 +171,14 @@ async function renderRateChart(key) {
 
 function gridLines(w, h) {
   return [0.25, 0.5, 0.75].map((f) =>
-    `<line x1="0" y1="${(h * f).toFixed(0)}" x2="${w}" y2="${(h * f).toFixed(0)}" stroke="#1c1c1c" stroke-width="1"/>`).join("");
+    `<line class="grid-line" x1="0" y1="${(h * f).toFixed(0)}" x2="${w}" y2="${(h * f).toFixed(0)}" stroke-width="1"/>`).join("");
 }
 function areaPath(values, w, h) {
   const max = Math.max(...values, 1);
   const step = w / Math.max(values.length - 1, 1);
   const line = values.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * (h - 8) - 4).toFixed(1)}`);
-  return `<polyline fill="none" stroke="#fff" stroke-width="1.5" points="${line.join(" ")}"/>` +
-    `<polygon fill="rgba(255,255,255,0.05)" points="0,${h} ${line.join(" ")} ${w},${h}"/>`;
+  return `<polyline class="plot-line" stroke-width="1.5" points="${line.join(" ")}"/>` +
+    `<polygon class="plot-area" points="0,${h} ${line.join(" ")} ${w},${h}"/>`;
 }
 
 async function renderBreakdown(key) {
@@ -203,8 +203,141 @@ function mmss(s) {
   return `${m}m ${sec.toString().padStart(2, "0")}s`;
 }
 
+/* --------------------------------------------------------------- theming */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#theme-icon").textContent = t === "dark" ? "◐" : "◑";
+  localStorage.setItem("mes-theme", t);
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+}
+
+/* --------------------------------------------------------- view switching */
+function showView(view) {
+  $("#view-dashboard").hidden = view !== "dashboard";
+  $("#view-settings").hidden = view !== "settings";
+  document.querySelectorAll(".nav-link").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
+  if (view === "settings") loadSettings();
+  window.scrollTo({ top: 0 });
+}
+
+/* ============================== SETTINGS ============================== */
+const TAG_FIELDS = ["operator", "recipe", "count", "running", "fault", "reject", "rate"];
+
+async function loadSettings() {
+  let data;
+  try { data = await api("/api/config/lines"); } catch (_) { return; }
+  const host = $("#settings-lines");
+  host.innerHTML = "";
+  data.lines.forEach((line) => host.appendChild(buildLineCard(line)));
+}
+
+function buildLineCard(line) {
+  const node = $("#line-card-tpl").content.firstElementChild.cloneNode(true);
+  node.dataset.key = line.key || "";
+  node.dataset.isNew = line.__new ? "1" : "";
+  const set = (sel, val) => { const el = node.querySelector(sel); if (el) el.value = val ?? ""; };
+  set('[data-f="name"]', line.name);
+  set('[data-f="key"]', line.key);
+  set('[data-f="area"]', line.area || "Production");
+  set('[data-f="driver"]', line.driver || "logix");
+  set('[data-f="host"]', line.host);
+  set('[data-f="slot"]', line.slot ?? 0);
+  set('[data-f="ideal_rate_per_hour"]', line.ideal_rate_per_hour ?? 0);
+  node.querySelector('[data-f="enabled"]').checked = line.enabled !== false;
+  const tags = line.tags || {};
+  TAG_FIELDS.forEach((t) => { const el = node.querySelector(`[data-t="${t}"]`); if (el) el.value = tags[t] || ""; });
+  // existing keys are locked (used as the DB id); new lines can set one
+  if (line.key && !line.__new) node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
+  node.addEventListener("input", () => node.classList.add("dirty"));
+  return node;
+}
+
+function readCard(node) {
+  const get = (sel) => node.querySelector(sel)?.value.trim() || "";
+  const tags = {};
+  TAG_FIELDS.forEach((t) => { const v = node.querySelector(`[data-t="${t}"]`).value.trim(); if (v) tags[t] = v; });
+  return {
+    key: get('[data-f="key"]') || null,
+    name: get('[data-f="name"]'),
+    area: get('[data-f="area"]') || "Production",
+    driver: get('[data-f="driver"]'),
+    host: get('[data-f="host"]') || null,
+    slot: parseInt(get('[data-f="slot"]') || "0", 10),
+    ideal_rate_per_hour: parseFloat(get('[data-f="ideal_rate_per_hour"]') || "0"),
+    enabled: node.querySelector('[data-f="enabled"]').checked,
+    tags,
+  };
+}
+
+function msg(node, text, cls) {
+  const m = node.querySelector(".cfg-msg");
+  m.textContent = text;
+  m.className = "cfg-msg" + (cls ? " " + cls : "");
+}
+
+async function saveCard(node) {
+  const payload = readCard(node);
+  if (!payload.name) return msg(node, "Name is required.", "err");
+  const isNew = node.dataset.isNew === "1";
+  msg(node, "Saving…");
+  try {
+    const res = await fetch(isNew ? "/api/config/lines" : `/api/config/lines/${node.dataset.key}`, {
+      method: isNew ? "POST" : "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || res.status); }
+    const saved = await res.json();
+    node.dataset.key = saved.key; node.dataset.isNew = "";
+    node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
+    node.classList.remove("dirty");
+    msg(node, `Saved · ${saved.key} · live within one poll cycle`, "ok");
+  } catch (e) { msg(node, "Save failed: " + e.message, "err"); }
+}
+
+async function testCard(node) {
+  msg(node, "Testing connection…");
+  try {
+    const res = await fetch("/api/config/test", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(readCard(node)),
+    });
+    const r = await res.json();
+    if (r.ok) {
+      const s = r.sample || {};
+      msg(node, `✓ Connected · operator=${s.operator ?? "—"} recipe=${s.recipe ?? "—"} count=${s.count ?? "—"}`, "ok");
+    } else {
+      msg(node, "✕ " + (r.error || "no response"), "err");
+    }
+  } catch (e) { msg(node, "✕ " + e.message, "err"); }
+}
+
+async function deleteCard(node) {
+  if (node.dataset.isNew === "1") { node.remove(); return; }
+  if (!confirm(`Disable line "${node.dataset.key}"? History is kept; it stops polling.`)) return;
+  try {
+    await fetch(`/api/config/lines/${node.dataset.key}`, { method: "DELETE" });
+    node.querySelector('[data-f="enabled"]').checked = false;
+    msg(node, "Disabled · history retained", "ok");
+  } catch (e) { msg(node, "Failed: " + e.message, "err"); }
+}
+
+function addBlankLine() {
+  const node = buildLineCard({ __new: true, driver: "logix", enabled: true, area: "Production", slot: 0,
+    tags: { operator: "Operator_Name", recipe: "Current_Recipe", count: "Product_Count" } });
+  $("#settings-lines").prepend(node);
+  node.querySelector('[data-f="name"]').focus();
+}
+
 /* ------------------------------------------------------------------ init */
 document.addEventListener("click", (e) => {
+  const nav = e.target.closest("[data-view]");
+  if (nav) { e.preventDefault(); showView(nav.dataset.view); return; }
+  if (e.target.closest("#theme-btn")) return toggleTheme();
+  if (e.target.closest("#add-line-btn")) return addBlankLine();
+
   const card = e.target.closest(".line-card");
   if (card) openDetail(card.dataset.key);
   if (e.target.id === "detail-close") closeDetail();
@@ -214,9 +347,16 @@ document.addEventListener("click", (e) => {
     document.querySelectorAll("#breakdown-toggle button").forEach((b) => b.classList.toggle("active", b === seg));
     if (selected) renderBreakdown(selected);
   }
+  const cfg = e.target.closest(".cfg-card");
+  if (cfg && e.target.dataset.act) {
+    if (e.target.dataset.act === "save") saveCard(cfg);
+    if (e.target.dataset.act === "test") testCard(cfg);
+    if (e.target.dataset.act === "delete") deleteCard(cfg);
+  }
 });
 
 async function boot() {
+  applyTheme(localStorage.getItem("mes-theme") || "dark");
   try {
     const h = await api("/api/health");
     $("#footer-meta").textContent = `v${h.version} · ${h.database.toUpperCase()}`;
@@ -224,6 +364,6 @@ async function boot() {
   tickClock();
   setInterval(tickClock, 1000);
   await refreshSummary();
-  setInterval(refreshSummary, POLL_MS);
+  setInterval(() => { if (!$("#view-dashboard").hidden) refreshSummary(); }, POLL_MS);
 }
 boot();

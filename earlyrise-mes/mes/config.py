@@ -104,7 +104,10 @@ def load_config(path: str | os.PathLike | None = None) -> SiteConfig:
     lines: list[LineConfig] = []
     for entry in raw.get("lines") or []:
         plc = entry.get("plc", {}) or {}
-        driver = "simulator" if force_sim else entry.get("driver", "logix")
+        # The simulate flag is a runtime overlay applied when drivers are built,
+        # not baked into the stored driver — so the real driver/IP stays visible
+        # in the settings page even when running the simulator.
+        driver = entry.get("driver", "logix")
         known = {"key", "name", "area", "enabled", "driver", "plc", "tags", "ideal_rate_per_hour"}
         lines.append(
             LineConfig(

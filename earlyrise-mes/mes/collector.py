@@ -24,9 +24,9 @@ from datetime import datetime, timezone
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
-from .config import SiteConfig, load_config
+from .config import LineConfig, SiteConfig, load_config
 from .database import init_db, new_session
 from .models import Line, LineEvent, ProductionRun, Sample, utcnow
 from .plc import LineReading, PLCDriver, build_driver
@@ -56,43 +56,97 @@ class Collector:
         self.tz = ZoneInfo(self.config.timezone) if self.config.timezone else timezone.utc
         self.drivers: dict[str, PLCDriver] = {}
         self.states: dict[str, LineState] = {}
+        self._signatures: dict[str, tuple] = {}
         self._stop = threading.Event()
 
     # -- lifecycle -----------------------------------------------------------
 
     def setup(self) -> None:
-        """Create tables, sync lines from config to DB, build drivers, recover
-        any runs left open from a previous process."""
+        """Create tables, seed lines from YAML on first run, then build drivers
+        from the database (the runtime source of truth)."""
         init_db()
+        self._seed_from_yaml()
         with new_session() as s:
-            for cfg in self.config.enabled_lines:
-                line = s.scalar(select(Line).where(Line.key == cfg.key))
-                if line is None:
-                    line = Line(key=cfg.key)
-                    s.add(line)
-                line.name = cfg.name
-                line.area = cfg.area
-                line.enabled = cfg.enabled
-                line.ideal_rate_per_hour = cfg.ideal_rate_per_hour
-                s.flush()
+            self._reconcile(s)
+        log.info("Collector ready: %d line(s), mode=%s",
+                 len(self.drivers), self.config.simulate and "SIMULATOR" or "live")
 
-                state = LineState(line_id=line.id, ideal_rate=cfg.ideal_rate_per_hour)
-                # Recover an open run so we don't double-count across restarts.
-                open_run = s.scalar(
-                    select(ProductionRun)
-                    .where(ProductionRun.line_id == line.id, ProductionRun.status == "open")
-                    .order_by(ProductionRun.started_at.desc())
+    def _seed_from_yaml(self) -> None:
+        """Populate the DB line registry from config/lines.yaml — but only when
+        it's empty. After that the settings page / API own the line definitions."""
+        with new_session() as s:
+            count = s.scalar(select(func.count(Line.id))) or 0
+            if count:
+                return
+            for cfg in self.config.lines:
+                line = Line(
+                    key=cfg.key, name=cfg.name, area=cfg.area, enabled=cfg.enabled,
+                    ideal_rate_per_hour=cfg.ideal_rate_per_hour,
+                    driver=cfg.driver, host=cfg.host, slot=cfg.slot,
                 )
-                if open_run is not None:
-                    state.run_id = open_run.id
-                    state.last_operator = open_run.operator
-                    state.last_recipe = open_run.recipe
-                    state.last_count = open_run.end_count
-                self.states[cfg.key] = state
-                self.drivers[cfg.key] = build_driver(cfg)
+                line.tags = cfg.tags
+                s.add(line)
             s.commit()
-        log.info("Collector ready: %d line(s), backend=%s",
-                 len(self.drivers), self.config.simulate and "SIMULATOR" or "configured")
+            log.info("Seeded %d line(s) from %s", len(self.config.lines), "config/lines.yaml")
+
+    def _line_to_config(self, line: Line) -> LineConfig:
+        # Apply the simulate overlay here so stored driver/IP stay intact.
+        driver = "simulator" if self.config.simulate else line.driver
+        return LineConfig(
+            key=line.key, name=line.name, area=line.area, enabled=line.enabled,
+            driver=driver, host=line.host, slot=line.slot, tags=line.tags,
+            ideal_rate_per_hour=line.ideal_rate_per_hour,
+        )
+
+    def _reconcile(self, s) -> None:
+        """Bring running drivers in line with the DB: add new/enabled lines,
+        drop removed/disabled ones, rebuild any whose config changed. Called
+        every poll, so settings-page edits take effect within one cycle."""
+        rows = {l.key: l for l in s.scalars(select(Line).where(Line.enabled == True)).all()}  # noqa: E712
+
+        for key in list(self.drivers):
+            if key not in rows:
+                self._teardown_line(key)
+
+        for key, line in rows.items():
+            sig = line.config_signature()
+            if key not in self.drivers:
+                self._spinup_line(s, line, sig)
+            elif self._signatures.get(key) != sig:
+                log.info("Line '%s' config changed — rebuilding driver", key)
+                self._teardown_line(key)
+                self._spinup_line(s, line, sig)
+
+    def _spinup_line(self, s, line: Line, sig: tuple) -> None:
+        state = LineState(line_id=line.id, ideal_rate=line.ideal_rate_per_hour)
+        open_run = s.scalar(
+            select(ProductionRun)
+            .where(ProductionRun.line_id == line.id, ProductionRun.status == "open")
+            .order_by(ProductionRun.started_at.desc())
+        )
+        if open_run is not None:
+            state.run_id = open_run.id
+            state.last_operator = open_run.operator
+            state.last_recipe = open_run.recipe
+            state.last_count = open_run.end_count
+        try:
+            self.drivers[line.key] = build_driver(self._line_to_config(line))
+            self.states[line.key] = state
+            self._signatures[line.key] = sig
+            log.info("Line '%s' online (%s)", line.key, line.driver)
+        except Exception:  # noqa: BLE001
+            log.exception("Failed to start line '%s'", line.key)
+
+    def _teardown_line(self, key: str) -> None:
+        driver = self.drivers.pop(key, None)
+        self.states.pop(key, None)
+        self._signatures.pop(key, None)
+        if driver is not None:
+            try:
+                driver.close()
+            except Exception:  # noqa: BLE001
+                pass
+        log.info("Line '%s' removed from polling", key)
 
     def close(self) -> None:
         for d in self.drivers.values():
@@ -106,7 +160,8 @@ class Collector:
     def poll_once(self) -> None:
         """Poll every line exactly once. Used by run_forever and by tests."""
         with new_session() as s:
-            for key, driver in self.drivers.items():
+            self._reconcile(s)
+            for key, driver in list(self.drivers.items()):
                 try:
                     reading = driver.read()
                 except Exception as exc:  # noqa: BLE001 - drivers shouldn't raise, but be safe
