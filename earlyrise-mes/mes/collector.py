@@ -85,6 +85,7 @@ class Collector:
                     driver=cfg.driver, host=cfg.host, slot=cfg.slot,
                 )
                 line.tags = cfg.tags
+                line.metrics = cfg.metrics
                 s.add(line)
             s.commit()
             log.info("Seeded %d line(s) from %s", len(self.config.lines), "config/lines.yaml")
@@ -95,7 +96,7 @@ class Collector:
         return LineConfig(
             key=line.key, name=line.name, area=line.area, enabled=line.enabled,
             driver=driver, host=line.host, slot=line.slot, tags=line.tags,
-            ideal_rate_per_hour=line.ideal_rate_per_hour,
+            metrics=line.metrics, ideal_rate_per_hour=line.ideal_rate_per_hour,
         )
 
     def _reconcile(self, s) -> None:
@@ -238,12 +239,16 @@ class Collector:
             self._event(s, st, "fault_clear", None)
 
         # --- persist the telemetry sample ------------------------------------
-        s.add(Sample(
+        sample = Sample(
             line_id=st.line_id, ts=now, online=True, produced=produced,
             operator=reading.operator, recipe=reading.recipe, count=reading.count,
             reject=reading.reject, rate=reading.rate,
             running=reading.running, fault=reading.fault,
-        ))
+        )
+        if reading.extra:
+            import json as _json
+            sample.extra_json = _json.dumps(reading.extra)
+        s.add(sample)
 
         # --- production-run state machine ------------------------------------
         run = self._current_run(s, st)

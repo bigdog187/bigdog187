@@ -61,6 +61,11 @@ lines:
       fault:    "Line_Fault"         # BOOL  (optional)
       reject:   "Reject_Count"       # DINT  (optional, for quality)
       rate:     "Line_Rate"          # REAL  (optional, units/hr live from PLC)
+    # Ad-hoc custom metrics: map any extra PLC tag to a named metric. You can
+    # also add/edit these from the web Settings page (with tag scanning).
+    metrics:
+      - { key: recipe_number, label: "Recipe No.", tag: "Recipe_Number", type: int }
+      - { key: oven_temp,     label: "Oven Temp",  tag: "Oven_Temp_PV",  type: number, unit: "°C" }
     ideal_rate_per_hour: 1200
 
   - key: wp_dough_line

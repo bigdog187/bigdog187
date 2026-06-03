@@ -44,6 +44,7 @@ class LineConfig:
     host: Optional[str] = None
     slot: int = 0
     tags: dict = field(default_factory=dict)
+    metrics: list = field(default_factory=list)
     ideal_rate_per_hour: float = 0.0
     extra: dict = field(default_factory=dict)
 
@@ -108,7 +109,7 @@ def load_config(path: str | os.PathLike | None = None) -> SiteConfig:
         # not baked into the stored driver — so the real driver/IP stays visible
         # in the settings page even when running the simulator.
         driver = entry.get("driver", "logix")
-        known = {"key", "name", "area", "enabled", "driver", "plc", "tags", "ideal_rate_per_hour"}
+        known = {"key", "name", "area", "enabled", "driver", "plc", "tags", "metrics", "ideal_rate_per_hour"}
         lines.append(
             LineConfig(
                 key=entry["key"],
@@ -119,6 +120,7 @@ def load_config(path: str | os.PathLike | None = None) -> SiteConfig:
                 host=plc.get("host"),
                 slot=int(plc.get("slot", 0)),
                 tags=dict(entry.get("tags", {}) or {}),
+                metrics=list(entry.get("metrics", []) or []),
                 ideal_rate_per_hour=float(entry.get("ideal_rate_per_hour", 0) or 0),
                 extra={k: v for k, v in entry.items() if k not in known},
             )

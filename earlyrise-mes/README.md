@@ -175,6 +175,22 @@ and for bulk/initial provisioning.
 To support a different controller family, add a driver class in `mes/plc/`
 implementing `PLCDriver`; nothing else changes.
 
+### Mapping PLC tags (with tag scanning)
+
+On the Settings page, each line has a **Scan PLC Tags** button. It connects to
+the controller (pycomm3 `get_tag_list()` for Logix) and loads every tag into a
+dropdown on each mapping field — so you pick the operator / recipe / count tags
+from a list instead of typing them. You can still type a name directly.
+
+### Ad-hoc custom metrics
+
+Beyond the built-in fields, the **Custom Metrics** section lets you map *any*
+extra PLC tag to a named metric on the fly — e.g. recipe number, oven temp,
+batch number, line speed. Each metric has a label, the PLC tag, a type
+(number / integer / boolean / text) and an optional unit. The collector reads
+them every poll and they appear live on that line's page. Metrics can also be
+declared in `config/lines.yaml` under a line's `metrics:` list.
+
 ## Light & dark mode
 
 The dashboard has a theme toggle (◐ in the nav). Your choice is remembered in
@@ -219,6 +235,7 @@ attributed to the right operator, recipe and shift.
 | `PUT /api/config/lines/{key}`              | Update a line's connection / tags.       |
 | `DELETE /api/config/lines/{key}`           | Disable a line (history retained).       |
 | `POST /api/config/test`                    | Test a PLC connection without saving.    |
+| `POST /api/config/scan`                    | Scan a PLC and return its tag list.      |
 
 Windows accept either `?hours=N` or `?from=<ISO>&to=<ISO>`.
 

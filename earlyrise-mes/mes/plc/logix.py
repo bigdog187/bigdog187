@@ -62,9 +62,11 @@ class LogixDriver(PLCDriver):
         except Exception as exc:  # noqa: BLE001 - never let comms kill the loop
             return LineReading.offline(f"connect failed: {exc}")
 
-        # Read every configured tag in one batched request for efficiency.
+        # Read every configured tag (built-in fields + ad-hoc metrics) in one
+        # batched request for efficiency.
         wanted = {field: tag for field, tag in self.tags.items() if tag}
-        tag_names = list(wanted.values())
+        metric_tags = {m["key"]: m["tag"] for m in self.metrics if m.get("tag")}
+        tag_names = list(dict.fromkeys(list(wanted.values()) + list(metric_tags.values())))
         try:
             results = self._plc.read(*tag_names)
         except Exception as exc:  # noqa: BLE001
@@ -84,6 +86,14 @@ class LogixDriver(PLCDriver):
                 raw[tag] = res.value
                 values[field] = res.value
 
+        # Coerce each ad-hoc metric to its declared type.
+        extra: dict[str, Any] = {}
+        coerce = {"number": _as_float, "int": _as_int, "bool": _as_bool, "string": _as_str}
+        for m in self.metrics:
+            res = by_tag.get(m.get("tag"))
+            if res is not None and res.error is None:
+                extra[m["key"]] = coerce.get(m.get("type", "number"), _as_str)(res.value)
+
         return LineReading(
             operator=_as_str(values.get("operator")),
             recipe=_as_str(values.get("recipe")),
@@ -93,8 +103,25 @@ class LogixDriver(PLCDriver):
             reject=_as_int(values.get("reject")),
             rate=_as_float(values.get("rate")),
             online=True,
+            extra=extra,
             raw=raw,
         )
+
+    def list_tags(self) -> list[dict[str, Any]]:
+        """Enumerate controller tags via pycomm3's ``get_tag_list()``."""
+        try:
+            if self._plc is None or not getattr(self._plc, "connected", False):
+                self.connect()
+            tag_list = self._plc.get_tag_list()
+        except Exception:  # noqa: BLE001
+            return []
+        out: list[dict[str, Any]] = []
+        for t in tag_list or []:
+            name = t.get("tag_name") if isinstance(t, dict) else getattr(t, "tag_name", None)
+            dtype = t.get("data_type_name") if isinstance(t, dict) else getattr(t, "data_type", None)
+            if name:
+                out.append({"name": name, "type": str(dtype) if dtype else ""})
+        return sorted(out, key=lambda x: x["name"].lower())
 
 
 def _as_str(v: Any) -> str | None:

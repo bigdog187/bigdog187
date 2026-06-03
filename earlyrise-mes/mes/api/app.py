@@ -137,6 +137,14 @@ class LinePayload(BaseModel):
     slot: int = 0
     ideal_rate_per_hour: float = 0.0
     tags: dict[str, str] = Field(default_factory=dict)
+    # Ad-hoc custom metrics: [{key,label,tag,type,unit}]
+    metrics: list[dict] = Field(default_factory=list)
+
+
+class ScanRequest(BaseModel):
+    driver: str = "logix"
+    host: str | None = None
+    slot: int = 0
 
 
 def _slugify(name: str) -> str:
@@ -151,8 +159,43 @@ def _line_dict(l: Line) -> dict:
         "key": l.key, "name": l.name, "area": l.area, "enabled": l.enabled,
         "driver": l.driver, "host": l.host, "slot": l.slot,
         "ideal_rate_per_hour": l.ideal_rate_per_hour, "tags": l.tags,
+        "metrics": l.metrics,
         "updated_at": l.updated_at.isoformat() if l.updated_at else None,
     }
+
+
+def _effective_driver(driver: str) -> str:
+    """Apply the global simulate overlay (matches the collector) so scan/test
+    work in demo mode and really talk to the PLC on-site."""
+    if os.getenv("MES_SIMULATE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return "simulator"
+    return driver
+
+
+def _slug_metric(name: str) -> str:
+    out = "".join(c.lower() if c.isalnum() else "_" for c in (name or "")).strip("_")
+    while "__" in out:
+        out = out.replace("__", "_")
+    return out or "metric"
+
+
+def _clean_metrics(metrics: list[dict]) -> list[dict]:
+    """Normalise incoming metric defs: require a tag, derive a key from the
+    label/key, default the type, keep only known fields."""
+    cleaned = []
+    for m in metrics or []:
+        tag = (m.get("tag") or "").strip()
+        if not tag:
+            continue
+        key = _slug_metric(m.get("key") or m.get("label") or tag)
+        cleaned.append({
+            "key": key,
+            "label": (m.get("label") or key).strip(),
+            "tag": tag,
+            "type": m.get("type") if m.get("type") in {"number", "int", "bool", "string"} else "number",
+            "unit": (m.get("unit") or "").strip(),
+        })
+    return cleaned
 
 
 @app.get("/api/config/lines")
@@ -175,6 +218,7 @@ def create_line(payload: LinePayload) -> dict:
             ideal_rate_per_hour=payload.ideal_rate_per_hour,
         )
         line.tags = payload.tags
+        line.metrics = _clean_metrics(payload.metrics)
         s.add(line)
         s.commit()
         s.refresh(line)
@@ -195,6 +239,7 @@ def update_line(key: str, payload: LinePayload) -> dict:
         line.slot = payload.slot
         line.ideal_rate_per_hour = payload.ideal_rate_per_hour
         line.tags = payload.tags
+        line.metrics = _clean_metrics(payload.metrics)
         s.commit()
         s.refresh(line)
         return _line_dict(line)
@@ -212,13 +257,37 @@ def delete_line(key: str) -> dict:
         return {"key": key, "enabled": False, "note": "Line disabled; history retained."}
 
 
+@app.post("/api/config/scan")
+def scan_tags(req: ScanRequest) -> dict:
+    """Connect to a PLC and return its tag list for the tag browser.
+    Works against a real Logix controller (pycomm3 get_tag_list) or the
+    simulator. Used by the Settings page to populate tag dropdowns."""
+    cfg = LineConfig(key="scan", name="scan", driver=_effective_driver(req.driver), host=req.host, slot=req.slot)
+    try:
+        driver = build_driver(cfg)
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc), "tags": []}
+    try:
+        driver.connect()
+        tags = driver.list_tags()
+        return {"ok": True, "count": len(tags), "tags": tags}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc), "tags": []}
+    finally:
+        try:
+            driver.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+
 @app.post("/api/config/test")
 def test_connection(payload: LinePayload) -> dict:
     """Try a single read against the given PLC config and report the result.
     Lets operators verify an IP / tag map from the settings page before saving."""
     cfg = LineConfig(
-        key=payload.key or "test", name=payload.name, driver=payload.driver,
+        key=payload.key or "test", name=payload.name, driver=_effective_driver(payload.driver),
         host=payload.host, slot=payload.slot, tags=payload.tags,
+        metrics=_clean_metrics(payload.metrics),
         ideal_rate_per_hour=payload.ideal_rate_per_hour,
     )
     try:

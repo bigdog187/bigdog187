@@ -62,6 +62,9 @@
         <!-- Actual vs Target rate hero -->
         <section class="rate-hero" id="rate-hero"></section>
 
+        <!-- Live ad-hoc metrics (configured in Settings) -->
+        <section class="metrics-strip" id="metrics-strip" hidden></section>
+
         <div class="oee-row" id="oee-row"></div>
 
         <div class="detail-cols">
@@ -132,7 +135,11 @@
                 <label>SLOT <input data-f="slot" type="number" value="0" class="mono"></label>
                 <label>TARGET RATE /HR <input data-f="ideal_rate_per_hour" type="number" value="0" class="mono"></label>
             </div>
-            <div class="cfg-tags-title">PLC TAG MAPPING</div>
+            <div class="cfg-tags-title">
+                PLC TAG MAPPING
+                <button type="button" class="mini-btn" data-act="scan">⌕ SCAN PLC TAGS</button>
+                <span class="scan-info"></span>
+            </div>
             <div class="cfg-grid cfg-tags">
                 <label>OPERATOR <input data-t="operator" placeholder="Operator_Name" class="mono"></label>
                 <label>RECIPE <input data-t="recipe" placeholder="Current_Recipe" class="mono"></label>
@@ -142,12 +149,35 @@
                 <label>REJECT <input data-t="reject" placeholder="Reject_Count" class="mono"></label>
                 <label>RATE <input data-t="rate" placeholder="Line_Rate" class="mono"></label>
             </div>
+
+            <div class="cfg-tags-title">CUSTOM METRICS · AD-HOC <span class="hint">map any extra tag — e.g. recipe number, oven temp, batch no.</span></div>
+            <div class="metrics-head">
+                <span>LABEL</span><span>PLC TAG</span><span>TYPE</span><span>UNIT</span><span></span>
+            </div>
+            <div class="metrics-list"></div>
+            <button type="button" class="ghost-btn sm" data-act="add-metric">+ ADD METRIC</button>
+
             <div class="cfg-actions">
                 <span class="cfg-msg"></span>
                 <button class="ghost-btn" data-act="test">TEST CONNECTION</button>
                 <button class="ghost-btn danger" data-act="delete">DISABLE</button>
                 <button class="primary-btn" data-act="save">SAVE</button>
             </div>
+        </div>
+    </template>
+
+    <template id="metric-row-tpl">
+        <div class="metric-row">
+            <input data-m="label" placeholder="Oven Temp">
+            <input data-m="tag" class="mono" placeholder="Oven_Temp_PV">
+            <select data-m="type">
+                <option value="number">number</option>
+                <option value="int">integer</option>
+                <option value="bool">boolean</option>
+                <option value="string">text</option>
+            </select>
+            <input data-m="unit" placeholder="°C" class="unit mono">
+            <button type="button" class="mini-btn danger" data-act="del-metric" title="Remove">✕</button>
         </div>
     </template>
 

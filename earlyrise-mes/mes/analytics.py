@@ -59,6 +59,19 @@ def live_status(s: Session, key: str, stale_after_s: float = 15.0) -> dict:
     actual = (last.rate if last and last.rate is not None else 0.0) if online else 0.0
     attainment = (actual / target) if target else 0.0
 
+    # Join custom-metric definitions with their latest values.
+    values = last.extra if last else {}
+    metrics = [
+        {
+            "key": m.get("key"),
+            "label": m.get("label") or m.get("key"),
+            "unit": m.get("unit", ""),
+            "type": m.get("type", "number"),
+            "value": values.get(m.get("key")),
+        }
+        for m in line.metrics
+    ]
+
     return {
         "key": line.key,
         "name": line.name,
@@ -78,6 +91,7 @@ def live_status(s: Session, key: str, stale_after_s: float = 15.0) -> dict:
         "target_rate": target,
         "actual_rate": round(actual, 1),
         "attainment": round(attainment, 4),
+        "metrics": metrics,
     }
 
 

@@ -30,6 +30,18 @@ _OPERATORS = [
     "Aisha Khan", "Dave Roberts", "Mia Lombardi", "Jack Nguyen",
 ]
 
+# A plausible Logix-style controller tag list, returned by the tag browser so
+# the "Scan tags" feature is demoable without real hardware. (name, data type)
+_SIM_TAG_CATALOG = [
+    ("Operator_Name", "STRING"), ("Current_Recipe", "STRING"), ("Recipe_Number", "DINT"),
+    ("Product_Count", "DINT"), ("Reject_Count", "DINT"), ("Line_Running", "BOOL"),
+    ("Line_Fault", "BOOL"), ("Line_Rate", "REAL"), ("Oven_Temp_PV", "REAL"),
+    ("Oven_Temp_SP", "REAL"), ("Line_Speed", "REAL"), ("Batch_Number", "DINT"),
+    ("Dough_Weight", "REAL"), ("Humidity_Pct", "REAL"), ("Downtime_Reason", "STRING"),
+    ("Shift_Number", "DINT"), ("Conveyor_Amps", "REAL"), ("EStop_OK", "BOOL"),
+    ("Proof_Time_Min", "REAL"), ("Waste_Kg", "REAL"),
+]
+
 
 class SimulatorDriver(PLCDriver):
     def __init__(self, key: str, name: str, tags: dict[str, str],
@@ -108,5 +120,24 @@ class SimulatorDriver(PLCDriver):
             reject=self._reject,
             rate=round(live_rate, 1),
             online=True,
+            extra=self._sim_metrics(),
             raw={"sim": True},
         )
+
+    def _sim_metrics(self) -> dict:
+        """Generate plausible values for any configured ad-hoc metrics."""
+        out: dict = {}
+        for m in self.metrics:
+            t = m.get("type", "number")
+            if t == "bool":
+                out[m["key"]] = self._rng.random() > 0.1
+            elif t == "string":
+                out[m["key"]] = self._rng.choice(["OK", "Changeover", "Cleaning", "Run"])
+            elif t == "int":
+                out[m["key"]] = self._rng.randint(1, 999)
+            else:  # number
+                out[m["key"]] = round(self._rng.uniform(20, 220), 1)
+        return out
+
+    def list_tags(self):
+        return [{"name": n, "type": t} for n, t in _SIM_TAG_CATALOG]

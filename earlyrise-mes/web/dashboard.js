@@ -10,6 +10,7 @@ const fmt = (n) => (n == null ? "–" : Number(n).toLocaleString());
 let view = "overview";      // "overview" | "line:<key>" | "settings"
 let lines = [];             // [{key,name,area,...}]
 let breakdownGroup = "recipe";
+let dlSeq = 0;              // unique id counter for per-card tag <datalist>s
 
 async function api(path) {
   const res = await fetch(path, { cache: "no-store" });
@@ -155,6 +156,7 @@ async function renderLine(key) {
     chip.className = "status-chip " + status.status;
     chip.innerHTML = `<span class="dot"></span><span>${status.status.toUpperCase()}</span>`;
     renderRateHero(rate, status);
+    renderMetrics(status.metrics || []);
     renderOEE(oee);
     renderRateChart(key, rate.target_rate);
     renderBreakdown(key);
@@ -182,6 +184,22 @@ function renderRateHero(rate, status) {
       <i class="${cls}" style="width:${fill}%"></i>
       <span class="rate-target-mark" data-v="${Math.round(rate.target_rate)}" style="left:75%"></span>
     </div>`;
+}
+
+function renderMetrics(metrics) {
+  const el = $("#metrics-strip");
+  if (!metrics.length) { el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = metrics.map((m) => {
+    let v = m.value;
+    if (v == null) v = "—";
+    else if (m.type === "bool") v = v ? "ON" : "OFF";
+    else if (m.type === "number" && typeof v === "number") v = v.toLocaleString();
+    return `<div class="metric-tile">
+        <div class="meta-k">${m.label}</div>
+        <div class="metric-val">${v}${m.unit ? `<small>${m.unit}</small>` : ""}</div>
+      </div>`;
+  }).join("");
 }
 
 function renderOEE(o) {
@@ -286,16 +304,61 @@ function buildLineCard(line) {
   set('[data-f="ideal_rate_per_hour"]', line.ideal_rate_per_hour ?? 0);
   node.querySelector('[data-f="enabled"]').checked = line.enabled !== false;
   const tags = line.tags || {};
-  TAG_FIELDS.forEach((t) => { const el = node.querySelector(`[data-t="${t}"]`); if (el) el.value = tags[t] || ""; });
+  // one shared <datalist> of scanned tags per card, wired to every tag input
+  const dl = document.createElement("datalist");
+  dl.id = "tags-" + (++dlSeq);
+  node.appendChild(dl);
+  node.dataset.dl = dl.id;
+  TAG_FIELDS.forEach((t) => {
+    const el = node.querySelector(`[data-t="${t}"]`);
+    if (el) { el.value = tags[t] || ""; el.setAttribute("list", dl.id); }
+  });
+  (line.metrics || []).forEach((m) => addMetricRow(node, m));
   if (line.key && !line.__new) node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
   node.addEventListener("input", () => node.classList.add("dirty"));
   return node;
+}
+
+function addMetricRow(card, m = {}) {
+  const row = $("#metric-row-tpl").content.firstElementChild.cloneNode(true);
+  row.querySelector('[data-m="label"]').value = m.label || "";
+  const tagEl = row.querySelector('[data-m="tag"]');
+  tagEl.value = m.tag || "";
+  tagEl.setAttribute("list", card.dataset.dl);          // same scanned-tag dropdown
+  row.querySelector('[data-m="type"]').value = m.type || "number";
+  row.querySelector('[data-m="unit"]').value = m.unit || "";
+  card.querySelector(".metrics-list").appendChild(row);
+  card.classList.add("dirty");
+}
+
+async function scanCard(card) {
+  const info = card.querySelector(".scan-info");
+  info.textContent = "Scanning…"; info.className = "scan-info";
+  const cfg = readCard(card);
+  try {
+    const res = await fetch("/api/config/scan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ driver: cfg.driver, host: cfg.host, slot: cfg.slot }),
+    });
+    const r = await res.json();
+    if (!r.ok) { info.textContent = "✕ " + (r.error || "scan failed"); info.className = "scan-info err"; return; }
+    const dl = document.getElementById(card.dataset.dl);
+    dl.innerHTML = r.tags.map((t) => `<option value="${t.name}">${t.type}</option>`).join("");
+    info.textContent = `✓ ${r.count} tags — pick from any field's dropdown`;
+    info.className = "scan-info ok";
+  } catch (e) { info.textContent = "✕ " + e.message; info.className = "scan-info err"; }
 }
 
 function readCard(node) {
   const get = (sel) => node.querySelector(sel)?.value.trim() || "";
   const tags = {};
   TAG_FIELDS.forEach((t) => { const v = node.querySelector(`[data-t="${t}"]`).value.trim(); if (v) tags[t] = v; });
+  const metrics = Array.from(node.querySelectorAll(".metric-row")).map((r) => ({
+    label: r.querySelector('[data-m="label"]').value.trim(),
+    tag: r.querySelector('[data-m="tag"]').value.trim(),
+    type: r.querySelector('[data-m="type"]').value,
+    unit: r.querySelector('[data-m="unit"]').value.trim(),
+  })).filter((m) => m.tag);
   return {
     key: get('[data-f="key"]') || null,
     name: get('[data-f="name"]'),
@@ -306,6 +369,7 @@ function readCard(node) {
     ideal_rate_per_hour: parseFloat(get('[data-f="ideal_rate_per_hour"]') || "0"),
     enabled: node.querySelector('[data-f="enabled"]').checked,
     tags,
+    metrics,
   };
 }
 
@@ -386,10 +450,14 @@ document.addEventListener("click", (e) => {
     if (view.startsWith("line:")) renderBreakdown(view.slice(5));
   }
   const cfg = e.target.closest(".cfg-card");
-  if (cfg && e.target.dataset.act) {
-    if (e.target.dataset.act === "save") saveCard(cfg);
-    if (e.target.dataset.act === "test") testCard(cfg);
-    if (e.target.dataset.act === "delete") deleteCard(cfg);
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (cfg && act) {
+    if (act === "save") saveCard(cfg);
+    else if (act === "test") testCard(cfg);
+    else if (act === "delete") deleteCard(cfg);
+    else if (act === "scan") scanCard(cfg);
+    else if (act === "add-metric") addMetricRow(cfg);
+    else if (act === "del-metric") { e.target.closest(".metric-row").remove(); cfg.classList.add("dirty"); }
   }
 });
 

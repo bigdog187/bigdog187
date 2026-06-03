@@ -58,6 +58,10 @@ class Line(Base):
     host: Mapped[str | None] = mapped_column(String(128), nullable=True)
     slot: Mapped[int] = mapped_column(Integer, default=0)
     tags_json: Mapped[str] = mapped_column(Text, default="{}")
+    # Ad-hoc custom metrics: list of {key,label,tag,type,unit}. Lets operators
+    # map any extra PLC tag to a named metric from the web UI, beyond the
+    # built-in operator/recipe/count fields.
+    metrics_json: Mapped[str] = mapped_column(Text, default="[]")
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -77,10 +81,21 @@ class Line(Base):
     def tags(self, value: dict) -> None:
         self.tags_json = json.dumps(value or {})
 
+    @property
+    def metrics(self) -> list:
+        try:
+            return json.loads(self.metrics_json or "[]")
+        except (TypeError, ValueError):
+            return []
+
+    @metrics.setter
+    def metrics(self, value: list) -> None:
+        self.metrics_json = json.dumps(value or [])
+
     def config_signature(self) -> tuple:
         """Identity of the connection config — used to detect changes that
         require rebuilding the line's PLC driver."""
-        return (self.driver, self.host, self.slot, self.tags_json, self.enabled)
+        return (self.driver, self.host, self.slot, self.tags_json, self.metrics_json, self.enabled)
 
 
 class Sample(Base):
@@ -101,10 +116,19 @@ class Sample(Base):
     fault: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # Was the PLC reachable for this poll?
     online: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Values of any ad-hoc custom metrics this poll: {metric_key: value}.
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
 
     line: Mapped["Line"] = relationship(back_populates="samples")
 
     __table_args__ = (Index("ix_samples_line_ts", "line_id", "ts"),)
+
+    @property
+    def extra(self) -> dict:
+        try:
+            return json.loads(self.extra_json or "{}")
+        except (TypeError, ValueError):
+            return {}
 
 
 class ProductionRun(Base):
