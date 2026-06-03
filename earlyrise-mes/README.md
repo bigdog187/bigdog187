@@ -76,6 +76,28 @@ Run the test suite:
 PYTHONPATH=. python -m pytest tests/ -q
 ```
 
+## Live development (no redeploy)
+
+For an edit-and-see-it-live loop, use the dev launcher — simulated PLCs, the
+collector in-process, and **backend auto-reload**:
+
+```bash
+./scripts/dev.sh         # macOS / Linux
+scripts\dev.bat          # Windows (or double-click it)
+```
+
+Leave it running and open http://localhost:8000. Then:
+
+- **Frontend** (`web/*.html`, `*.css`, `*.js`) — there is no build step. Save the
+  file and **refresh the browser** (Ctrl/Cmd-Shift-R for a hard refresh). Done.
+- **Backend** (`mes/**/*.py`) — the server **auto-restarts** on save; just
+  refresh. Live data keeps flowing from the simulator into SQLite.
+
+So the loop with an AI editor (e.g. Antigravity) is: keep `dev.sh` running in one
+terminal, prompt the agent to change a file, then refresh the browser. Nothing
+to rebuild or redeploy. (Equivalent manual command:
+`MES_SIMULATE=1 MES_RUN_COLLECTOR=1 MES_RELOAD=1 python scripts/run_web.py`.)
+
 ---
 
 ## On-site deployment
