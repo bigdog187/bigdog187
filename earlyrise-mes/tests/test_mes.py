@@ -161,6 +161,33 @@ def test_schema_migration_adds_missing_columns():
         s.query(Sample).all()
 
 
+def test_operator_performance_ranks_best_to_worst(collector):
+    # Alice out-produces Bob in comparable time -> higher rate -> ranks #1.
+    collector.drivers["l1"] = ScriptedDriver("l1", [
+        _read(operator="Alice", recipe="R", count=0),
+        _read(operator="Alice", recipe="R", count=120),
+        _read(operator="Alice", recipe="R", count=200),
+        _read(operator="Bob", recipe="R", count=205),   # operator change -> new run
+        _read(operator="Bob", recipe="R", count=215),
+    ])
+    for _ in range(5):
+        collector.poll_once()
+
+    with new_session() as s:
+        perf = analytics.operator_performance(s, "l1", _dt(2000), _dt(2999))
+        ops = perf["operators"]
+        names = [o["operator"] for o in ops]
+        assert set(names) == {"Alice", "Bob"}
+        assert [o["rank"] for o in ops] == [1, 2]          # ranked, no gaps
+        assert ops[0]["operator"] == "Alice"               # best first
+        assert ops[0]["attainment"] >= ops[1]["attainment"]
+        assert ops[0]["produced"] == 200 and ops[1]["produced"] == 15
+
+        # the site-wide endpoint shape includes this line
+        all_perf = analytics.operator_performance_all(s, _dt(2000), _dt(2999))
+        assert any(l["key"] == "l1" for l in all_perf["lines"])
+
+
 def test_oee_components(collector):
     collector.drivers["l1"] = ScriptedDriver("l1", [
         _read(count=0, running=True, reject=0),

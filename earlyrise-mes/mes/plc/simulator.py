@@ -29,6 +29,11 @@ _OPERATORS = [
     "Sarah Chen", "Mark Taylor", "Priya Nair", "Tom Walsh",
     "Aisha Khan", "Dave Roberts", "Mia Lombardi", "Jack Nguyen",
 ]
+# Per-operator skill multiplier on throughput (demo flavour).
+_OPERATOR_SKILL = {
+    "Aisha Khan": 1.07, "Sarah Chen": 1.04, "Priya Nair": 1.01, "Mia Lombardi": 0.99,
+    "Mark Taylor": 0.97, "Dave Roberts": 0.95, "Tom Walsh": 0.92, "Jack Nguyen": 0.89,
+}
 
 # A plausible Logix-style controller tag list, returned by the tag browser so
 # the "Scan tags" feature is demoable without real hardware. (name, data type)
@@ -100,16 +105,21 @@ class SimulatorDriver(PLCDriver):
             self._operator = self._rng.choice(_OPERATORS)
             self._next_operator_change = now + self._rng.uniform(300, 700)
 
+        # Each operator has a consistent skill factor, so some run their line
+        # faster than others — this gives the operator-performance rankings
+        # something meaningful to sort on.
+        skill = _OPERATOR_SKILL.get(self._operator, 1.0)
+
         # Advance the product counter while running.
         if self._running:
             per_sec = self.ideal_rate / 3600.0
-            produced = per_sec * dt * self._rng.uniform(0.85, 1.05)
+            produced = per_sec * dt * self._rng.uniform(0.85, 1.05) * skill
             whole = int(produced) + (1 if self._rng.random() < (produced % 1) else 0)
             self._count += whole
             if whole and self._rng.random() < 0.03:
                 self._reject += 1
 
-        live_rate = self.ideal_rate * (self._rng.uniform(0.85, 1.05) if self._running else 0.0)
+        live_rate = self.ideal_rate * skill * (self._rng.uniform(0.85, 1.05) if self._running else 0.0)
 
         return LineReading(
             operator=self._operator,

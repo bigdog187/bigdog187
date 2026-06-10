@@ -153,6 +153,61 @@ def rate_stats(s: Session, key: str, start: datetime, end: datetime) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# Operator performance
+# --------------------------------------------------------------------------- #
+
+def operator_performance(s: Session, key: str, start: datetime, end: datetime) -> dict:
+    """Rank operators on a line, best to worst, over a window.
+
+    Performance is rate attainment — units produced per *running* hour vs the
+    line's target rate — the system's headline metric. Also reports each
+    operator's produced total, quality and run count.
+    """
+    line = _line(s, key)
+    target = line.ideal_rate_per_hour or 0.0
+    agg: dict[str, dict] = {}
+    for r in _runs_in_window(s, line.id, start, end):
+        op = r.operator or "(unassigned)"
+        a = agg.setdefault(op, {"produced": 0, "reject": 0, "running_seconds": 0.0, "runs": 0})
+        a["produced"] += r.total_produced
+        a["reject"] += r.total_reject
+        a["running_seconds"] += r.running_seconds or 0.0
+        a["runs"] += 1
+
+    ops = []
+    for op, a in agg.items():
+        rh = a["running_seconds"] / 3600.0
+        actual = (a["produced"] / rh) if rh > 0 else 0.0
+        good = max(0, a["produced"] - a["reject"])
+        ops.append({
+            "operator": op,
+            "produced": a["produced"],
+            "reject": a["reject"],
+            "running_hours": round(rh, 3),
+            "actual_rate": round(actual, 1),
+            "attainment": round((actual / target) if target else 0.0, 4),
+            "quality": round((good / a["produced"]) if a["produced"] else 1.0, 4),
+            "runs": a["runs"],
+        })
+    # Best to worst by rate attainment, then by volume as a tie-breaker.
+    ops.sort(key=lambda o: (o["attainment"], o["produced"]), reverse=True)
+    for i, o in enumerate(ops, 1):
+        o["rank"] = i
+    return {"key": line.key, "name": line.name, "target_rate": target, "operators": ops}
+
+
+def operator_performance_all(s: Session, start: datetime, end: datetime) -> dict:
+    """Operator rankings for every enabled line (powers the Operators tab)."""
+    lines = s.scalars(select(Line).where(Line.enabled == True).order_by(Line.id)).all()  # noqa: E712
+    return {
+        "generated_at": _now().isoformat(),
+        "from": start.isoformat(),
+        "to": end.isoformat(),
+        "lines": [operator_performance(s, l.key, start, end) for l in lines],
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Production totals
 # --------------------------------------------------------------------------- #
 

@@ -32,6 +32,9 @@ attainment) — shown per line and aggregated for the whole site, and colour-cod
 - **Overview** — site-wide KPIs (rate-vs-target attainment, produced today,
   lines running, faults), AI insights for the day, and a card per line showing
   its live actual-vs-target rate. Click a card (or tab) to drill in.
+- **Operators** — operator performance ranked best to worst on each line by
+  rate attainment (units per running hour vs target), with actual rate,
+  produced, quality and run count.
 - **Per-line tabs** — one tab per line, each with its own AI insights, a large
   actual-vs-target rate hero, OEE, an actual-vs-target rate chart, production
   breakdowns, recent runs, and the event log.
@@ -223,6 +226,7 @@ attributed to the right operator, recipe and shift.
 | `GET /api/insights`                        | AI insights for the whole site's day.    |
 | `GET /api/lines/{key}/insights`            | AI insights for one line's day.          |
 | `GET /api/lines/{key}/rate`                | Actual rate/hr vs target rate/hr.        |
+| `GET /api/operators`                       | Operator rankings (best→worst) per line. |
 | `GET /api/lines`                           | Configured lines.                        |
 | `GET /api/lines/{key}/status`              | Live status for one line.                |
 | `GET /api/lines/{key}/production?group_by=`| Totals by `recipe`/`operator`/`shift`.   |

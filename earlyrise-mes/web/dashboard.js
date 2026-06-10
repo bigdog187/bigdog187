@@ -46,7 +46,10 @@ function tickClock() {
 /* ------------------------------------------------------------------ tabs */
 async function loadTabs() {
   try { lines = (await api("/api/lines")).lines; } catch (_) { lines = []; }
-  const tabs = [`<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`]
+  const tabs = [
+    `<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`,
+    `<a href="#" class="nav-link" data-view="operators">OPERATORS</a>`,
+  ]
     .concat(lines.map((l) => `<a href="#" class="nav-link" data-view="line:${l.key}">${l.name.toUpperCase()}</a>`))
     .concat([`<a href="#" class="nav-link" data-view="settings">SETTINGS</a>`]);
   $("#nav-tabs").innerHTML = tabs.join("");
@@ -60,11 +63,13 @@ function markActiveTab() {
 function showView(v) {
   view = v;
   $("#view-overview").hidden = v !== "overview";
+  $("#view-operators").hidden = v !== "operators";
   $("#view-line").hidden = !v.startsWith("line:");
   $("#view-settings").hidden = v !== "settings";
   markActiveTab();
   window.scrollTo({ top: 0 });
   if (v === "overview") renderOverview();
+  else if (v === "operators") renderOperators();
   else if (v.startsWith("line:")) renderLine(v.slice(5));
   else if (v === "settings") loadSettings();
 }
@@ -137,6 +142,45 @@ async function renderOverview() {
     ff.className = "kpi-val" + (d.lines_fault ? " c-bad" : "");
     $("#line-grid").innerHTML = d.lines.map(lineCard).join("");
   } catch (_) { setConn(false); }
+}
+
+/* ----------------------------------------------------------- operators */
+async function renderOperators() {
+  let data;
+  try { data = await api("/api/operators?hours=24"); setConn(true); } catch (_) { setConn(false); return; }
+  $("#operators-wrap").innerHTML = data.lines.map(operatorPanel).join("") ||
+    `<div class="panel" style="color:var(--text-muted)">No operator data yet.</div>`;
+}
+
+function operatorPanel(line) {
+  const rows = (line.operators || []).map((o) => {
+    const pct = o.attainment * 100, cls = attainClass(pct);
+    const fill = Math.min(o.attainment * 75, 100).toFixed(0);   // target sits at 75% of track
+    return `<tr>
+        <td class="op-rank">${o.rank}</td>
+        <td class="op-name">${o.operator}</td>
+        <td class="op-attain">
+          <div class="op-attain-row">
+            <span class="c-${cls}">${pct.toFixed(0)}%</span>
+            <div class="op-bar"><i class="${cls}" style="width:${fill}%"></i><span class="rate-target-mark" style="left:75%"></span></div>
+          </div>
+        </td>
+        <td class="num">${Math.round(o.actual_rate)}</td>
+        <td class="num">${fmt(o.produced)}</td>
+        <td class="num">${(o.quality * 100).toFixed(1)}%</td>
+        <td class="num">${o.runs}</td>
+      </tr>`;
+  }).join("") || `<tr><td colspan="7" style="color:var(--text-muted)">No operators on this line yet.</td></tr>`;
+  return `<div class="panel op-panel">
+      <div class="op-panel-head">
+        <div class="panel-title" style="margin:0">${line.name}</div>
+        <div class="op-target mono">TARGET ${Math.round(line.target_rate)} /hr</div>
+      </div>
+      <div class="table-wrap"><table class="op-table"><thead><tr>
+        <th>#</th><th>OPERATOR</th><th>RATE ATTAINMENT</th>
+        <th class="num">ACTUAL /HR</th><th class="num">PRODUCED</th><th class="num">QUALITY</th><th class="num">RUNS</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
 }
 
 /* ------------------------------------------------------------- line view */
@@ -473,6 +517,7 @@ async function boot() {
   showView("overview");
   setInterval(() => {
     if (view === "overview") renderOverview();
+    else if (view === "operators") renderOperators();
     else if (view.startsWith("line:")) renderLine(view.slice(5));
   }, POLL_MS);
 }

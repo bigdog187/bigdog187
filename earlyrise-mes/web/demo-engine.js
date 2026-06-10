@@ -12,6 +12,8 @@
   };
   const OPERATORS = ["Sarah Chen", "Mark Taylor", "Priya Nair", "Tom Walsh",
     "Aisha Khan", "Dave Roberts", "Mia Lombardi", "Jack Nguyen"];
+  const SKILL = { "Aisha Khan": 1.07, "Sarah Chen": 1.04, "Priya Nair": 1.01, "Mia Lombardi": 0.99,
+    "Mark Taylor": 0.97, "Dave Roberts": 0.95, "Tom Walsh": 0.92, "Jack Nguyen": 0.89 };
   const CATALOG = [
     ["Operator_Name", "STRING"], ["Current_Recipe", "STRING"], ["Recipe_Number", "DINT"],
     ["Product_Count", "DINT"], ["Reject_Count", "DINT"], ["Line_Running", "BOOL"],
@@ -89,14 +91,15 @@
     if (L.tOperator <= 0) { const old = L.operator; L.operator = pick(OPERATORS); addEvent(L, "operator_change", old + " -> " + L.operator); L.tOperator = rnd(300, 700); }
     if (!L.curRun || L.curRun.operator !== L.operator || L.curRun.recipe !== L.recipe) openRun(L);
 
+    const skill = SKILL[L.operator] || 1.0;
     let produced = 0;
     if (L.running) {
-      const per = (L.target / 3600) * dt * rnd(0.85, 1.05);
+      const per = (L.target / 3600) * dt * rnd(0.85, 1.05) * skill;
       produced = Math.floor(per) + (Math.random() < (per % 1) ? 1 : 0);
       L.count += produced; L.producedToday += produced; L.runningSec += dt;
       if (produced && Math.random() < 0.03) { L.reject++; L.rejectToday++; }
     }
-    L.rate = L.running ? Math.round(L.target * rnd(0.85, 1.05) * 10) / 10 : 0;
+    L.rate = L.running ? Math.round(L.target * skill * rnd(0.85, 1.05) * 10) / 10 : 0;
     L.curRun.total_produced += produced; L.curRun.end_count = L.count;
     L.curRun.total_reject = Math.max(L.curRun.total_reject, L.reject);
     L.curRun.ended_at = new Date(SIM_NOW);
@@ -151,6 +154,16 @@
     }
     return out;
   }
+  function operatorPerf(L) {
+    const agg = {};
+    L.runs.forEach((r) => { const op = r.operator || "(unassigned)"; const a = (agg[op] = agg[op] || { produced: 0, reject: 0, rs: 0, runs: 0 }); a.produced += r.total_produced; a.reject += r.total_reject; a.rs += r.running_seconds; a.runs++; });
+    const ops = Object.entries(agg).map(([op, a]) => { const rh = a.rs / 3600, actual = rh > 0 ? a.produced / rh : 0, good = Math.max(0, a.produced - a.reject); return { operator: op, produced: a.produced, reject: a.reject, running_hours: round3(rh), actual_rate: Math.round(actual * 10) / 10, attainment: round4(L.target ? actual / L.target : 0), quality: round4(a.produced ? good / a.produced : 1), runs: a.runs }; });
+    ops.sort((x, y) => (y.attainment - x.attainment) || (y.produced - x.produced));
+    ops.forEach((o, i) => o.rank = i + 1);
+    return { key: L.key, name: L.name, target_rate: L.target, operators: ops };
+  }
+  function operatorsAll() { return { generated_at: SIM_NOW.toISOString(), lines: LINES.filter((l) => l.enabled).map(operatorPerf) }; }
+
   function summary() {
     const sts = LINES.filter((l) => l.enabled).map((L) => { const s = lineStatus(L); s.today = rateStats(L); return s; });
     let prod = 0, theo = 0; LINES.filter((l) => l.enabled).forEach((L) => { const a = attain(L); prod += L.producedToday; theo += L.target * a.running_hours; });
@@ -202,6 +215,7 @@
     if (p === "/api/health") return { status: "ok", version: "demo", database: "in-browser", collector_running: true };
     if (p === "/api/lines") return { lines: LINES.filter((l) => l.enabled).map((l) => ({ key: l.key, name: l.name, area: l.area, driver: l.driver, ideal_rate_per_hour: l.target })) };
     if (p === "/api/summary") return summary();
+    if (p === "/api/operators") return operatorsAll();
     if (p === "/api/insights") return siteInsights();
     if (p === "/api/config/lines") return m === "POST" ? createLine(body) : { lines: LINES.map(cfgDict) };
     if (p === "/api/config/scan") return { ok: true, count: CATALOG.length, tags: CATALOG.map(([n, t]) => ({ name: n, type: t })) };

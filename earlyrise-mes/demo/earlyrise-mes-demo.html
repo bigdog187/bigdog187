@@ -274,6 +274,24 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
 .metric-tile .metric-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 500; margin-top: 0.3rem; }
 .metric-tile .metric-val small { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.2rem; }
 
+/* OPERATOR PERFORMANCE */
+.op-panel { margin-bottom: 1rem; }
+.op-panel-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
+.op-target { font-size: 0.56rem; letter-spacing: 0.16em; color: var(--text-muted); }
+.op-table { width: 100%; }
+.op-table td { vertical-align: middle; }
+.op-rank { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; color: var(--text-secondary); width: 36px; }
+.op-table tbody tr:first-child .op-rank { color: var(--accent); }
+.op-name { font-weight: 500; }
+.op-attain { width: 38%; }
+.op-attain-row { display: flex; align-items: center; gap: 0.7rem; }
+.op-attain-row > span { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 500; width: 38px; }
+.op-bar { position: relative; flex: 1; height: 8px; background: var(--bg-input); border: 1px solid var(--border); }
+.op-bar > i { display: block; height: 100%; }
+.op-bar > i.good { background: var(--good); } .op-bar > i.info { background: var(--info); }
+.op-bar > i.warn { background: var(--warn); } .op-bar > i.bad { background: var(--bad); }
+.op-bar .rate-target-mark { top: -3px; bottom: -3px; }
+
 /* toggle switch */
 .switch { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; flex-direction: row !important; }
 .switch input { display: none; }
@@ -407,6 +425,14 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
 
         <div class="section-tag">PRODUCTION LINES</div>
         <section class="line-grid" id="line-grid"></section>
+    </main>
+
+    <!-- ============================== OPERATORS ============================== -->
+    <main class="container view" id="view-operators" hidden>
+        <div class="section-tag">OPERATOR PERFORMANCE · TODAY</div>
+        <p class="settings-intro" style="margin-bottom:1.5rem">Operators ranked best to worst on each line by
+            rate attainment — units produced per running hour vs the line's target rate.</p>
+        <section id="operators-wrap"></section>
     </main>
 
     <!-- ============================== LINE ============================== -->
@@ -564,6 +590,8 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
   };
   const OPERATORS = ["Sarah Chen", "Mark Taylor", "Priya Nair", "Tom Walsh",
     "Aisha Khan", "Dave Roberts", "Mia Lombardi", "Jack Nguyen"];
+  const SKILL = { "Aisha Khan": 1.07, "Sarah Chen": 1.04, "Priya Nair": 1.01, "Mia Lombardi": 0.99,
+    "Mark Taylor": 0.97, "Dave Roberts": 0.95, "Tom Walsh": 0.92, "Jack Nguyen": 0.89 };
   const CATALOG = [
     ["Operator_Name", "STRING"], ["Current_Recipe", "STRING"], ["Recipe_Number", "DINT"],
     ["Product_Count", "DINT"], ["Reject_Count", "DINT"], ["Line_Running", "BOOL"],
@@ -641,14 +669,15 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
     if (L.tOperator <= 0) { const old = L.operator; L.operator = pick(OPERATORS); addEvent(L, "operator_change", old + " -> " + L.operator); L.tOperator = rnd(300, 700); }
     if (!L.curRun || L.curRun.operator !== L.operator || L.curRun.recipe !== L.recipe) openRun(L);
 
+    const skill = SKILL[L.operator] || 1.0;
     let produced = 0;
     if (L.running) {
-      const per = (L.target / 3600) * dt * rnd(0.85, 1.05);
+      const per = (L.target / 3600) * dt * rnd(0.85, 1.05) * skill;
       produced = Math.floor(per) + (Math.random() < (per % 1) ? 1 : 0);
       L.count += produced; L.producedToday += produced; L.runningSec += dt;
       if (produced && Math.random() < 0.03) { L.reject++; L.rejectToday++; }
     }
-    L.rate = L.running ? Math.round(L.target * rnd(0.85, 1.05) * 10) / 10 : 0;
+    L.rate = L.running ? Math.round(L.target * skill * rnd(0.85, 1.05) * 10) / 10 : 0;
     L.curRun.total_produced += produced; L.curRun.end_count = L.count;
     L.curRun.total_reject = Math.max(L.curRun.total_reject, L.reject);
     L.curRun.ended_at = new Date(SIM_NOW);
@@ -703,6 +732,16 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
     }
     return out;
   }
+  function operatorPerf(L) {
+    const agg = {};
+    L.runs.forEach((r) => { const op = r.operator || "(unassigned)"; const a = (agg[op] = agg[op] || { produced: 0, reject: 0, rs: 0, runs: 0 }); a.produced += r.total_produced; a.reject += r.total_reject; a.rs += r.running_seconds; a.runs++; });
+    const ops = Object.entries(agg).map(([op, a]) => { const rh = a.rs / 3600, actual = rh > 0 ? a.produced / rh : 0, good = Math.max(0, a.produced - a.reject); return { operator: op, produced: a.produced, reject: a.reject, running_hours: round3(rh), actual_rate: Math.round(actual * 10) / 10, attainment: round4(L.target ? actual / L.target : 0), quality: round4(a.produced ? good / a.produced : 1), runs: a.runs }; });
+    ops.sort((x, y) => (y.attainment - x.attainment) || (y.produced - x.produced));
+    ops.forEach((o, i) => o.rank = i + 1);
+    return { key: L.key, name: L.name, target_rate: L.target, operators: ops };
+  }
+  function operatorsAll() { return { generated_at: SIM_NOW.toISOString(), lines: LINES.filter((l) => l.enabled).map(operatorPerf) }; }
+
   function summary() {
     const sts = LINES.filter((l) => l.enabled).map((L) => { const s = lineStatus(L); s.today = rateStats(L); return s; });
     let prod = 0, theo = 0; LINES.filter((l) => l.enabled).forEach((L) => { const a = attain(L); prod += L.producedToday; theo += L.target * a.running_hours; });
@@ -754,6 +793,7 @@ footer { display: flex; justify-content: space-between; padding: 2rem; margin-to
     if (p === "/api/health") return { status: "ok", version: "demo", database: "in-browser", collector_running: true };
     if (p === "/api/lines") return { lines: LINES.filter((l) => l.enabled).map((l) => ({ key: l.key, name: l.name, area: l.area, driver: l.driver, ideal_rate_per_hour: l.target })) };
     if (p === "/api/summary") return summary();
+    if (p === "/api/operators") return operatorsAll();
     if (p === "/api/insights") return siteInsights();
     if (p === "/api/config/lines") return m === "POST" ? createLine(body) : { lines: LINES.map(cfgDict) };
     if (p === "/api/config/scan") return { ok: true, count: CATALOG.length, tags: CATALOG.map(([n, t]) => ({ name: n, type: t })) };
@@ -833,7 +873,10 @@ function tickClock() {
 /* ------------------------------------------------------------------ tabs */
 async function loadTabs() {
   try { lines = (await api("/api/lines")).lines; } catch (_) { lines = []; }
-  const tabs = [`<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`]
+  const tabs = [
+    `<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`,
+    `<a href="#" class="nav-link" data-view="operators">OPERATORS</a>`,
+  ]
     .concat(lines.map((l) => `<a href="#" class="nav-link" data-view="line:${l.key}">${l.name.toUpperCase()}</a>`))
     .concat([`<a href="#" class="nav-link" data-view="settings">SETTINGS</a>`]);
   $("#nav-tabs").innerHTML = tabs.join("");
@@ -847,11 +890,13 @@ function markActiveTab() {
 function showView(v) {
   view = v;
   $("#view-overview").hidden = v !== "overview";
+  $("#view-operators").hidden = v !== "operators";
   $("#view-line").hidden = !v.startsWith("line:");
   $("#view-settings").hidden = v !== "settings";
   markActiveTab();
   window.scrollTo({ top: 0 });
   if (v === "overview") renderOverview();
+  else if (v === "operators") renderOperators();
   else if (v.startsWith("line:")) renderLine(v.slice(5));
   else if (v === "settings") loadSettings();
 }
@@ -924,6 +969,45 @@ async function renderOverview() {
     ff.className = "kpi-val" + (d.lines_fault ? " c-bad" : "");
     $("#line-grid").innerHTML = d.lines.map(lineCard).join("");
   } catch (_) { setConn(false); }
+}
+
+/* ----------------------------------------------------------- operators */
+async function renderOperators() {
+  let data;
+  try { data = await api("/api/operators?hours=24"); setConn(true); } catch (_) { setConn(false); return; }
+  $("#operators-wrap").innerHTML = data.lines.map(operatorPanel).join("") ||
+    `<div class="panel" style="color:var(--text-muted)">No operator data yet.</div>`;
+}
+
+function operatorPanel(line) {
+  const rows = (line.operators || []).map((o) => {
+    const pct = o.attainment * 100, cls = attainClass(pct);
+    const fill = Math.min(o.attainment * 75, 100).toFixed(0);   // target sits at 75% of track
+    return `<tr>
+        <td class="op-rank">${o.rank}</td>
+        <td class="op-name">${o.operator}</td>
+        <td class="op-attain">
+          <div class="op-attain-row">
+            <span class="c-${cls}">${pct.toFixed(0)}%</span>
+            <div class="op-bar"><i class="${cls}" style="width:${fill}%"></i><span class="rate-target-mark" style="left:75%"></span></div>
+          </div>
+        </td>
+        <td class="num">${Math.round(o.actual_rate)}</td>
+        <td class="num">${fmt(o.produced)}</td>
+        <td class="num">${(o.quality * 100).toFixed(1)}%</td>
+        <td class="num">${o.runs}</td>
+      </tr>`;
+  }).join("") || `<tr><td colspan="7" style="color:var(--text-muted)">No operators on this line yet.</td></tr>`;
+  return `<div class="panel op-panel">
+      <div class="op-panel-head">
+        <div class="panel-title" style="margin:0">${line.name}</div>
+        <div class="op-target mono">TARGET ${Math.round(line.target_rate)} /hr</div>
+      </div>
+      <div class="table-wrap"><table class="op-table"><thead><tr>
+        <th>#</th><th>OPERATOR</th><th>RATE ATTAINMENT</th>
+        <th class="num">ACTUAL /HR</th><th class="num">PRODUCED</th><th class="num">QUALITY</th><th class="num">RUNS</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
 }
 
 /* ------------------------------------------------------------- line view */
@@ -1260,6 +1344,7 @@ async function boot() {
   showView("overview");
   setInterval(() => {
     if (view === "overview") renderOverview();
+    else if (view === "operators") renderOperators();
     else if (view.startsWith("line:")) renderLine(view.slice(5));
   }, POLL_MS);
 }

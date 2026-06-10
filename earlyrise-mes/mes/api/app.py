@@ -102,6 +102,15 @@ def summary() -> dict:
         return analytics.site_summary(s)
 
 
+@app.get("/api/operators")
+def operators(hours: float | None = Query(None),
+              frm: str | None = Query(None, alias="from"), to: str | None = None) -> dict:
+    """Operator performance rankings (best to worst) for every line."""
+    start, end = _parse_window(hours, frm, to)
+    with new_session() as s:
+        return analytics.operator_performance_all(s, start, end)
+
+
 @app.get("/api/insights")
 def site_insights(hours: float = Query(24.0, gt=0)) -> dict:
     """AI-style insights for the whole site's day."""
