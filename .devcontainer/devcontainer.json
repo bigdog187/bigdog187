@@ -1,0 +1,13 @@
+{
+  "name": "Earlyrise Bakery MES",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install -r earlyrise-mes/requirements.txt",
+  "postStartCommand": "cd earlyrise-mes && MES_SIMULATE=1 MES_RUN_COLLECTOR=1 nohup python scripts/run_web.py > /tmp/mes.log 2>&1 & echo 'Earlyrise MES starting on port 8000'",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Earlyrise MES Dashboard",
+      "onAutoForward": "openPreview"
+    }
+  }
+}

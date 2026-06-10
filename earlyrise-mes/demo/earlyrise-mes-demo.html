@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Earlyrise Bakery — Production Reporting (Demo)</title>
+<meta name="description" content="Earlyrise Bakery MES — standalone interactive demo (runs entirely in your browser).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root, [data-theme="dark"] {
+    --bg-primary:    #000000;
+    --bg-secondary:  #080808;
+    --bg-card:       #0a0a0a;
+    --bg-input:      #050505;
+    --border:        #1c1c1c;
+    --border-bright: #2e2e2e;
+    --accent:        #ffffff;
+    --accent-fg:     #000000;
+    --text-primary:  #ffffff;
+    --text-secondary:#6b6b6b;
+    --text-muted:    #363636;
+    --plot:          #ffffff;
+    --plot-fill:     rgba(255,255,255,0.05);
+    --hair:          rgba(255,255,255,0.02);
+    --nav-bg:        rgba(0,0,0,0.95);
+    --glow:          0 0 8px rgba(255,255,255,0.8);
+    /* colour palette (dark) */
+    --good:          #34d399;
+    --good-dim:      rgba(52,211,153,0.14);
+    --warn:          #fbbf24;
+    --warn-dim:      rgba(251,191,36,0.14);
+    --bad:           #f87171;
+    --bad-dim:       rgba(248,113,113,0.14);
+    --info:          #60a5fa;
+    --info-dim:      rgba(96,165,250,0.14);
+    --brand:         #5eead4;
+    --target:        #94a3b8;
+    --font-display:  'Space Grotesk', sans-serif;
+    --font-mono:     'JetBrains Mono', monospace;
+    --font-body:     'Inter', sans-serif;
+}
+
+[data-theme="light"] {
+    --bg-primary:    #f4f4f2;
+    --bg-secondary:  #ffffff;
+    --bg-card:       #ffffff;
+    --bg-input:      #f7f7f5;
+    --border:        #e2e2dd;
+    --border-bright: #c9c9c2;
+    --accent:        #000000;
+    --accent-fg:     #ffffff;
+    --text-primary:  #0a0a0a;
+    --text-secondary:#6b6b6b;
+    --text-muted:    #a6a6a0;
+    --plot:          #0a0a0a;
+    --plot-fill:     rgba(0,0,0,0.05);
+    --hair:          rgba(0,0,0,0.025);
+    --nav-bg:        rgba(244,244,242,0.95);
+    --glow:          0 0 8px rgba(0,0,0,0.35);
+    /* colour palette (light) */
+    --good:          #059669;
+    --good-dim:      rgba(5,150,105,0.12);
+    --warn:          #b45309;
+    --warn-dim:      rgba(180,83,9,0.12);
+    --bad:           #dc2626;
+    --bad-dim:       rgba(220,38,38,0.10);
+    --info:          #2563eb;
+    --info-dim:      rgba(37,99,235,0.10);
+    --brand:         #0d9488;
+    --target:        #64748b;
+}
+
+html { scroll-behavior: smooth; }
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding-top: 60px;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+.mono { font-family: var(--font-mono); }
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); }
+
+.container { max-width: 1340px; margin: 0 auto; padding: 0 2rem; }
+
+.section-tag {
+    font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
+    letter-spacing: 0.25em; color: var(--text-secondary); text-transform: uppercase;
+    display: flex; align-items: center; gap: 0.75rem; margin: 2.5rem 0 1.25rem;
+}
+.section-tag::before { content: ''; width: 20px; height: 1px; background: var(--border-bright); }
+.section-tag::after  { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* NAV */
+nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000; height: 60px;
+    background: var(--nav-bg); backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border); display: flex; align-items: center;
+}
+.nav-right { display: flex; align-items: center; gap: 1.5rem; }
+.nav-links { display: flex; gap: 1.25rem; }
+.nav-link { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.18em; color: var(--text-secondary); text-decoration: none; padding: 0.3rem 0; border-bottom: 1px solid transparent; }
+.nav-link:hover { color: var(--text-primary); }
+.nav-link.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+.theme-btn { background: transparent; border: 1px solid var(--border-bright); color: var(--text-primary); width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; line-height: 1; }
+.theme-btn:hover { border-color: var(--accent); }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.nav-logo { display: flex; align-items: center; gap: 0.875rem; text-decoration: none; }
+.nav-logo-mark {
+    width: 34px; height: 34px; border: 1px solid var(--border-bright);
+    display: flex; align-items: center; justify-content: center;
+}
+.nav-logo-mark span { font-family: var(--font-mono); font-size: 0.68rem; font-weight: 700; color: var(--accent); }
+.nav-logo-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.nav-logo-name { font-family: var(--font-display); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.08em; }
+.nav-logo-sub  { font-family: var(--font-mono); font-size: 0.5rem; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+.nav-status { display: flex; align-items: center; gap: 0.85rem; font-size: 0.62rem; letter-spacing: 0.18em; color: var(--text-secondary); }
+.nav-clock { color: var(--text-primary); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+.dot.live { background: var(--plot); box-shadow: var(--glow); animation: pulse 2s infinite; }
+.dot.down { background: var(--text-muted); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 2.5rem; }
+.kpi { background: var(--bg-card); padding: 1.5rem 1.5rem; }
+.kpi-label { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-secondary); }
+.kpi-val { font-family: var(--font-display); font-size: 2.4rem; font-weight: 500; margin-top: 0.4rem; letter-spacing: -0.02em; }
+
+/* LINE GRID */
+.line-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1rem; }
+.line-card {
+    background: var(--bg-card); border: 1px solid var(--border); padding: 1.4rem 1.5rem;
+    cursor: pointer; transition: border-color 0.2s, transform 0.2s; position: relative; overflow: hidden;
+}
+.line-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+.line-card.sel { border-color: var(--accent); }
+.line-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.line-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; letter-spacing: 0.01em; }
+.line-area { font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; }
+.status-chip { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.18em; padding: 0.25rem 0.6rem; border: 1px solid var(--border-bright); text-transform: uppercase; display: flex; align-items: center; gap: 0.45rem; }
+.status-chip .dot { width: 6px; height: 6px; }
+.s-running .dot { background: var(--plot); box-shadow: var(--glow); animation: pulse 1.6s infinite; }
+.s-idle .dot { background: var(--text-secondary); }
+.s-fault { border-color: var(--accent); }
+.s-fault .dot { background: var(--plot); animation: blink 0.7s steps(2) infinite; }
+.s-offline { color: var(--text-muted); }
+.s-offline .dot { background: var(--border-bright); }
+@keyframes blink { 50% { opacity: 0.1; } }
+
+.line-count { font-family: var(--font-display); font-size: 3rem; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1; margin: 1rem 0 0.2rem; }
+.line-count-label { font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.2em; color: var(--text-secondary); text-transform: uppercase; }
+.line-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; margin-top: 1.2rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+.meta-k { font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.16em; color: var(--text-muted); text-transform: uppercase; }
+.meta-v { font-size: 0.82rem; color: var(--text-primary); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spark { margin-top: 1rem; height: 34px; width: 100%; }
+
+/* DETAIL */
+.detail { margin: 2rem 0 1rem; border: 1px solid var(--border-bright); background: var(--bg-secondary); padding: 1.5rem 1.75rem 2rem; }
+.detail-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.detail-name { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; }
+.close-btn { background: transparent; border: 1px solid var(--border-bright); color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.15em; padding: 0.5rem 0.9rem; cursor: pointer; }
+.close-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.oee-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 1.5rem 0; }
+.oee-cell { background: var(--bg-card); padding: 1.1rem 1.25rem; }
+.oee-cell .meta-k { margin-bottom: 0.35rem; }
+.oee-val { font-family: var(--font-display); font-size: 1.8rem; font-weight: 500; }
+.oee-bar { height: 3px; background: var(--border-bright); margin-top: 0.6rem; }
+.oee-bar > i { display: block; height: 100%; background: var(--plot); }
+
+.detail-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.panel { background: var(--bg-card); border: 1px solid var(--border); padding: 1.25rem 1.35rem; min-width: 0; }
+.panel-title { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.2em; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 1rem; }
+.chart { width: 100%; height: 160px; }
+
+.seg-toggle { display: flex; gap: 1px; margin-bottom: 1rem; background: var(--border); border: 1px solid var(--border); width: fit-content; }
+.seg-toggle button { background: var(--bg-card); border: none; color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.14em; padding: 0.4rem 0.8rem; cursor: pointer; }
+.seg-toggle button.active { background: var(--accent); color: var(--accent-fg); }
+
+.bars { display: flex; flex-direction: column; gap: 0.7rem; }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 70px; align-items: center; gap: 0.75rem; }
+.bar-label { font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { height: 8px; background: var(--bg-input); border: 1px solid var(--border); }
+.bar-track > i { display: block; height: 100%; background: var(--plot); }
+.bar-val { font-family: var(--font-mono); font-size: 0.72rem; text-align: right; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+th { font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); }
+td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+.num { text-align: right; font-family: var(--font-mono); }
+tr:hover td { background: var(--hair); }
+
+/* chart strokes — themed via CSS so SVG follows light/dark */
+.plot-line { stroke: var(--plot); fill: none; }
+.plot-area { fill: var(--plot-fill); }
+.grid-line { stroke: var(--border); }
+.spark-line { stroke: var(--plot); fill: none; opacity: 0.55; }
+
+.events { display: flex; flex-direction: column; gap: 0.1rem; max-height: 320px; overflow-y: auto; }
+.event { display: grid; grid-template-columns: 64px 130px 1fr; gap: 0.6rem; padding: 0.35rem 0; border-bottom: 1px solid var(--border); font-size: 0.74rem; align-items: baseline; }
+.event time { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-muted); }
+.event .kind { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.1em; color: var(--text-secondary); text-transform: uppercase; }
+.event .ev-detail { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+footer { display: flex; justify-content: space-between; padding: 2rem; margin-top: 3rem; border-top: 1px solid var(--border); font-size: 0.56rem; letter-spacing: 0.18em; color: var(--text-muted); text-transform: uppercase; }
+
+/* ---------------------------------------------------------------- SETTINGS */
+.settings-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem; margin-top: 2.5rem; }
+.settings-intro { font-size: 0.82rem; color: var(--text-secondary); max-width: 640px; margin-top: 0.5rem; }
+.settings-lines { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0 2rem; }
+
+.cfg-card { background: var(--bg-card); border: 1px solid var(--border); padding: 1.4rem 1.6rem; }
+.cfg-card.dirty { border-color: var(--border-bright); }
+.cfg-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; }
+.cfg-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-primary); padding: 0.2rem 0; flex: 1; }
+.cfg-name:focus { outline: none; border-bottom-color: var(--accent); }
+
+.cfg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem 1.1rem; }
+.cfg-grid.cfg-tags { grid-template-columns: repeat(4, 1fr); margin-top: 0.4rem; }
+.cfg-card label { display: flex; flex-direction: column; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em; color: var(--text-secondary); text-transform: uppercase; }
+.cfg-card input, .cfg-card select {
+    background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary);
+    font-family: var(--font-body); font-size: 0.82rem; padding: 0.5rem 0.6rem; width: 100%;
+}
+.cfg-card input.mono { font-family: var(--font-mono); }
+.cfg-card input:focus, .cfg-card select:focus { outline: none; border-color: var(--accent); }
+.cfg-tags-title { font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; margin: 1.4rem 0 0.2rem; }
+
+.cfg-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--border); }
+.cfg-msg { flex: 1; font-family: var(--font-mono); font-size: 0.66rem; color: var(--text-secondary); }
+.cfg-msg.ok { color: var(--text-primary); }
+.cfg-msg.err { color: var(--text-primary); font-weight: 600; }
+
+.primary-btn { background: var(--accent); color: var(--accent-fg); border: 1px solid var(--accent); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; padding: 0.6rem 1.1rem; cursor: pointer; }
+.primary-btn:hover { opacity: 0.85; }
+.ghost-btn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-bright); font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; padding: 0.6rem 1.1rem; cursor: pointer; }
+.ghost-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+.ghost-btn.danger:hover { border-color: var(--text-primary); }
+
+/* tag scan + custom metrics */
+.mini-btn { background: var(--info-dim); color: var(--info); border: 1px solid var(--info); font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.12em; padding: 0.25rem 0.55rem; cursor: pointer; margin-left: 0.6rem; }
+.mini-btn:hover { background: var(--info); color: var(--accent-fg); }
+.mini-btn.danger { background: transparent; color: var(--text-secondary); border-color: var(--border-bright); margin: 0; }
+.mini-btn.danger:hover { color: var(--bad); border-color: var(--bad); background: var(--bad-dim); }
+.scan-info { font-family: var(--font-mono); font-size: 0.58rem; color: var(--text-secondary); margin-left: 0.6rem; text-transform: none; letter-spacing: 0; }
+.scan-info.ok { color: var(--good); } .scan-info.err { color: var(--bad); }
+.cfg-tags-title .hint { font-family: var(--font-body); font-size: 0.62rem; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-left: 0.5rem; }
+.ghost-btn.sm { padding: 0.4rem 0.8rem; font-size: 0.54rem; margin-top: 0.6rem; }
+
+.metrics-head, .metric-row { display: grid; grid-template-columns: 1.3fr 1.6fr 0.9fr 0.7fr 32px; gap: 0.6rem; align-items: center; }
+.metrics-head { font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 0.14em; color: var(--text-muted); text-transform: uppercase; margin: 0.6rem 0 0.4rem; padding: 0 0.1rem; }
+.metrics-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.metric-row input, .metric-row select { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); font-family: var(--font-body); font-size: 0.8rem; padding: 0.45rem 0.55rem; width: 100%; }
+.metric-row input.mono { font-family: var(--font-mono); }
+.metric-row input:focus, .metric-row select:focus { outline: none; border-color: var(--accent); }
+.metric-row .mini-btn.danger { justify-self: center; }
+
+/* live metrics strip on the line page */
+.metrics-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 0 0 1rem; }
+.metric-tile { background: var(--bg-card); padding: 1rem 1.2rem; }
+.metric-tile .meta-k { color: var(--info); }
+.metric-tile .metric-val { font-family: var(--font-display); font-size: 1.6rem; font-weight: 500; margin-top: 0.3rem; }
+.metric-tile .metric-val small { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.2rem; }
+
+/* toggle switch */
+.switch { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; flex-direction: row !important; }
+.switch input { display: none; }
+.switch span { width: 34px; height: 18px; border: 1px solid var(--border-bright); background: var(--bg-input); position: relative; transition: 0.2s; flex-shrink: 0; }
+.switch span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--text-muted); transition: 0.2s; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { left: 18px; background: var(--accent-fg); }
+.switch em { font-style: normal; }
+
+/* ---------------------------------------------------------------- COLOUR */
+.kpi.accent { background: linear-gradient(180deg, var(--info-dim), var(--bg-card)); }
+.kpi-sub { font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.3rem; }
+.c-good { color: var(--good); } .c-warn { color: var(--warn); } .c-bad { color: var(--bad); } .c-info { color: var(--info); }
+
+/* nav tabs scroll on small screens */
+.nav-links { overflow-x: auto; max-width: 52vw; }
+.nav-links::-webkit-scrollbar { height: 0; }
+
+/* status chips — coloured */
+.status-chip.running { color: var(--good); border-color: var(--good); background: var(--good-dim); }
+.status-chip.running .dot { background: var(--good); box-shadow: 0 0 7px var(--good); animation: pulse 1.6s infinite; }
+.status-chip.idle { color: var(--text-secondary); }
+.status-chip.idle .dot { background: var(--text-secondary); }
+.status-chip.fault { color: var(--bad); border-color: var(--bad); background: var(--bad-dim); }
+.status-chip.fault .dot { background: var(--bad); animation: blink 0.7s steps(2) infinite; }
+.status-chip.offline { color: var(--text-muted); }
+.status-chip.offline .dot { background: var(--border-bright); }
+
+/* INSIGHTS */
+.insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.85rem; margin: 1.5rem 0; }
+.insight { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--info); padding: 1rem 1.2rem; }
+.insight.good { border-left-color: var(--good); } .insight.good .insight-title { color: var(--good); }
+.insight.warn { border-left-color: var(--warn); } .insight.warn .insight-title { color: var(--warn); }
+.insight.bad  { border-left-color: var(--bad);  } .insight.bad .insight-title  { color: var(--bad); }
+.insight.info .insight-title { color: var(--info); }
+.insight-title { font-family: var(--font-display); font-size: 0.92rem; font-weight: 600; margin-bottom: 0.3rem; }
+.insight-text { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+.insights-tag { grid-column: 1/-1; display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); }
+.insights-tag .ai-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--info); box-shadow: 0 0 6px var(--info); }
+
+/* LINE header */
+.line-head { display: flex; align-items: center; gap: 1rem; margin: 0.25rem 0 0.5rem; }
+.line-title { font-family: var(--font-display); font-size: 1.9rem; font-weight: 600; }
+
+/* RATE HERO */
+.rate-hero { background: var(--bg-card); border: 1px solid var(--border); padding: 1.6rem 1.8rem; margin: 1.4rem 0; }
+.rate-hero-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }
+.rate-actual { font-family: var(--font-display); font-weight: 600; font-size: 3.4rem; line-height: 1; letter-spacing: -0.02em; }
+.rate-actual small { font-family: var(--font-mono); font-size: 0.95rem; color: var(--text-secondary); margin-left: 0.45rem; font-weight: 400; }
+.rate-sub { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.5rem; }
+.rate-attain { text-align: right; }
+.rate-attain-val { font-family: var(--font-display); font-weight: 600; font-size: 2.6rem; line-height: 1; }
+.rate-track { position: relative; height: 16px; background: var(--bg-input); border: 1px solid var(--border); margin-top: 1.5rem; }
+.rate-track > i { display: block; height: 100%; transition: width 0.5s ease; }
+.rate-track > i.good { background: var(--good); } .rate-track > i.warn { background: var(--warn); }
+.rate-track > i.bad { background: var(--bad); } .rate-track > i.info { background: var(--info); }
+.rate-target-mark { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--target); }
+.rate-target-mark::after { content: 'TARGET ' attr(data-v); position: absolute; top: -16px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 0.12em; color: var(--text-secondary); }
+
+/* line card rate display */
+.card-rate { margin-top: 1.1rem; }
+.card-rate-vals { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-mono); font-size: 0.68rem; }
+.card-rate-actual { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; }
+.card-rate-track { position: relative; height: 8px; background: var(--bg-input); border: 1px solid var(--border); margin-top: 0.45rem; }
+.card-rate-track > i { display: block; height: 100%; }
+.card-rate-track > i.good { background: var(--good); } .card-rate-track > i.warn { background: var(--warn); }
+.card-rate-track > i.bad { background: var(--bad); } .card-rate-track > i.info { background: var(--info); }
+.card-rate-track .rate-target-mark { top: -3px; bottom: -3px; }
+.card-attain { font-weight: 600; }
+
+/* chart legend + coloured plot classes */
+.chart-legend { display: flex; gap: 1.5rem; margin-top: 0.8rem; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--text-secondary); }
+.chart-legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; margin-right: 0.4rem; vertical-align: middle; }
+.chart-legend .sw-actual { border-color: var(--info); }
+.chart-legend .sw-target { border-color: var(--target); border-top-style: dashed; }
+.plot-actual { stroke: var(--info); fill: none; }
+.plot-actual-fill { fill: var(--info-dim); }
+.plot-target { stroke: var(--target); fill: none; stroke-dasharray: 4 3; }
+
+/* bars get the brand colour */
+.bar-track > i { background: var(--info); }
+.oee-bar > i { background: var(--brand); }
+
+@media (max-width: 880px) {
+    .kpis, .oee-row { grid-template-columns: repeat(2, 1fr); }
+    .detail-cols { grid-template-columns: 1fr; }
+    .cfg-grid, .cfg-grid.cfg-tags { grid-template-columns: repeat(2, 1fr); }
+    .container { padding: 0 1.25rem; }
+    .nav-links { max-width: 38vw; }
+    .settings-head { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .rate-actual { font-size: 2.6rem; }
+}
+
+</style>
+</head>
+<body>
+
+    <nav>
+        <div class="container nav-inner">
+            <a class="nav-logo" href="#" data-view="overview">
+                <div class="nav-logo-mark"><span>EB</span></div>
+                <div class="nav-logo-text">
+                    <span class="nav-logo-name">EARLYRISE BAKERY</span>
+                    <span class="nav-logo-sub">Manufacturing Execution System</span>
+                </div>
+            </a>
+            <div class="nav-right">
+                <div class="nav-links" id="nav-tabs"><!-- tabs injected --></div>
+                <button class="theme-btn" id="theme-btn" title="Toggle light / dark"><span id="theme-icon">◐</span></button>
+                <div class="nav-status">
+                    <span class="dot" id="conn-dot"></span>
+                    <span id="conn-label" class="mono">CONNECTING</span>
+                    <span class="nav-clock mono" id="clock">--:--:--</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ============================== OVERVIEW ============================== -->
+    <main class="container view" id="view-overview">
+        <div class="section-tag">SITE OVERVIEW · TODAY</div>
+
+        <div class="insights" id="site-insights"><!-- insight cards --></div>
+
+        <section class="kpis" id="kpis">
+            <div class="kpi accent"><div class="kpi-label">Rate vs Target</div><div class="kpi-val" id="kpi-attain">–</div><div class="kpi-sub" id="kpi-attain-sub">site attainment</div></div>
+            <div class="kpi"><div class="kpi-label">Produced Today</div><div class="kpi-val" id="kpi-produced">–</div></div>
+            <div class="kpi"><div class="kpi-label">Lines Running</div><div class="kpi-val" id="kpi-running">–</div></div>
+            <div class="kpi"><div class="kpi-label">Faults</div><div class="kpi-val" id="kpi-fault">–</div></div>
+        </section>
+
+        <div class="section-tag">PRODUCTION LINES</div>
+        <section class="line-grid" id="line-grid"></section>
+    </main>
+
+    <!-- ============================== LINE ============================== -->
+    <main class="container view" id="view-line" hidden>
+        <div class="section-tag" id="line-tag">PRODUCTION LINE</div>
+        <div class="line-head">
+            <h2 class="line-title" id="line-title">—</h2>
+            <div class="status-chip" id="line-status"><span class="dot"></span><span>—</span></div>
+        </div>
+
+        <div class="insights" id="line-insights"></div>
+
+        <!-- Actual vs Target rate hero -->
+        <section class="rate-hero" id="rate-hero"></section>
+
+        <!-- Live ad-hoc metrics (configured in Settings) -->
+        <section class="metrics-strip" id="metrics-strip" hidden></section>
+
+        <div class="oee-row" id="oee-row"></div>
+
+        <div class="detail-cols">
+            <div class="panel">
+                <div class="panel-title">ACTUAL RATE vs TARGET — LAST 30 MIN</div>
+                <div id="chart-rate" class="chart"></div>
+                <div class="chart-legend">
+                    <span><i class="sw-actual"></i> Actual /hr</span>
+                    <span><i class="sw-target"></i> Target /hr</span>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-title" id="breakdown-title">PRODUCTION BY RECIPE — 24H</div>
+                <div class="seg-toggle" id="breakdown-toggle">
+                    <button data-g="recipe" class="active">RECIPE</button>
+                    <button data-g="operator">OPERATOR</button>
+                    <button data-g="shift">SHIFT</button>
+                </div>
+                <div id="breakdown" class="bars"></div>
+            </div>
+        </div>
+
+        <div class="detail-cols">
+            <div class="panel">
+                <div class="panel-title">RECENT PRODUCTION RUNS</div>
+                <div class="table-wrap"><table id="runs-table"><thead><tr>
+                    <th>RECIPE</th><th>OPERATOR</th><th>SHIFT</th><th>START</th>
+                    <th class="num">DURATION</th><th class="num">PRODUCED</th><th class="num">REJECT</th>
+                </tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">EVENT LOG</div>
+                <div class="events" id="events-log"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================== SETTINGS ============================== -->
+    <main class="container view" id="view-settings" hidden>
+        <div class="settings-head">
+            <div>
+                <div class="section-tag">SYSTEM SETTINGS · PLC CONNECTIONS</div>
+                <p class="settings-intro">Configure each production line's PLC connection. Changes are
+                    saved to the database and picked up by the collector within one poll cycle — add or
+                    re-point lines on the fly, no restart needed.</p>
+            </div>
+            <button class="primary-btn" id="add-line-btn">+ ADD LINE</button>
+        </div>
+        <section id="settings-lines" class="settings-lines"></section>
+    </main>
+
+    <template id="line-card-tpl">
+        <div class="cfg-card">
+            <div class="cfg-card-head">
+                <input class="cfg-name" data-f="name" placeholder="Line name" />
+                <label class="switch"><input type="checkbox" data-f="enabled"><span></span><em>ENABLED</em></label>
+            </div>
+            <div class="cfg-grid">
+                <label>KEY <input data-f="key" placeholder="auto" class="mono"></label>
+                <label>AREA <input data-f="area" value="Production"></label>
+                <label>DRIVER
+                    <select data-f="driver">
+                        <option value="logix">ControlLogix / CompactLogix</option>
+                        <option value="simulator">Simulator (no hardware)</option>
+                    </select>
+                </label>
+                <label>PLC IP ADDRESS <input data-f="host" placeholder="192.168.1.10" class="mono"></label>
+                <label>SLOT <input data-f="slot" type="number" value="0" class="mono"></label>
+                <label>TARGET RATE /HR <input data-f="ideal_rate_per_hour" type="number" value="0" class="mono"></label>
+            </div>
+            <div class="cfg-tags-title">
+                PLC TAG MAPPING
+                <button type="button" class="mini-btn" data-act="scan">⌕ SCAN PLC TAGS</button>
+                <span class="scan-info"></span>
+            </div>
+            <div class="cfg-grid cfg-tags">
+                <label>OPERATOR <input data-t="operator" placeholder="Operator_Name" class="mono"></label>
+                <label>RECIPE <input data-t="recipe" placeholder="Current_Recipe" class="mono"></label>
+                <label>COUNT <input data-t="count" placeholder="Product_Count" class="mono"></label>
+                <label>RUNNING <input data-t="running" placeholder="Line_Running" class="mono"></label>
+                <label>FAULT <input data-t="fault" placeholder="Line_Fault" class="mono"></label>
+                <label>REJECT <input data-t="reject" placeholder="Reject_Count" class="mono"></label>
+                <label>RATE <input data-t="rate" placeholder="Line_Rate" class="mono"></label>
+            </div>
+
+            <div class="cfg-tags-title">CUSTOM METRICS · AD-HOC <span class="hint">map any extra tag — e.g. recipe number, oven temp, batch no.</span></div>
+            <div class="metrics-head">
+                <span>LABEL</span><span>PLC TAG</span><span>TYPE</span><span>UNIT</span><span></span>
+            </div>
+            <div class="metrics-list"></div>
+            <button type="button" class="ghost-btn sm" data-act="add-metric">+ ADD METRIC</button>
+
+            <div class="cfg-actions">
+                <span class="cfg-msg"></span>
+                <button class="ghost-btn" data-act="test">TEST CONNECTION</button>
+                <button class="ghost-btn danger" data-act="delete">DISABLE</button>
+                <button class="primary-btn" data-act="save">SAVE</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="metric-row-tpl">
+        <div class="metric-row">
+            <input data-m="label" placeholder="Oven Temp">
+            <input data-m="tag" class="mono" placeholder="Oven_Temp_PV">
+            <select data-m="type">
+                <option value="number">number</option>
+                <option value="int">integer</option>
+                <option value="bool">boolean</option>
+                <option value="string">text</option>
+            </select>
+            <input data-m="unit" placeholder="°C" class="unit mono">
+            <button type="button" class="mini-btn danger" data-act="del-metric" title="Remove">✕</button>
+        </div>
+    </template>
+
+    <footer class="container">
+        <span class="mono">EARLYRISE BAKERY · SITE-WIDE MES</span>
+        <span class="mono" id="footer-meta">v— · —</span>
+    </footer>
+
+    
+
+<script>
+/* ---- in-browser simulator + mock API (no server needed) ---- */
+/* =====================================================================
+ * Earlyrise MES — standalone demo engine.
+ * Replaces the Python backend with an in-browser production simulator +
+ * analytics, and routes the dashboard's /api/* calls to it by overriding
+ * window.fetch. No server, no network needed.
+ * ===================================================================== */
+(function () {
+  const RECIPES = {
+    bread_line: ["White Tin 680g", "Wholemeal 750g", "Sourdough Batch", "Multigrain 700g"],
+    wp_dough_line: ["Pizza Base 12in", "Focaccia Sheet", "Ciabatta Dough", "Flatbread"],
+    cheersonic_line: ["Cheese Slice 200g", "Cheese Block 1kg", "Halloumi Pack"],
+  };
+  const OPERATORS = ["Sarah Chen", "Mark Taylor", "Priya Nair", "Tom Walsh",
+    "Aisha Khan", "Dave Roberts", "Mia Lombardi", "Jack Nguyen"];
+  const CATALOG = [
+    ["Operator_Name", "STRING"], ["Current_Recipe", "STRING"], ["Recipe_Number", "DINT"],
+    ["Product_Count", "DINT"], ["Reject_Count", "DINT"], ["Line_Running", "BOOL"],
+    ["Line_Fault", "BOOL"], ["Line_Rate", "REAL"], ["Oven_Temp_PV", "REAL"],
+    ["Oven_Temp_SP", "REAL"], ["Line_Speed", "REAL"], ["Batch_Number", "DINT"],
+    ["Dough_Weight", "REAL"], ["Humidity_Pct", "REAL"], ["Downtime_Reason", "STRING"],
+    ["Shift_Number", "DINT"], ["Conveyor_Amps", "REAL"], ["EStop_OK", "BOOL"],
+    ["Proof_Time_Min", "REAL"], ["Waste_Kg", "REAL"],
+  ];
+  const DEFAULT_TAGS = {
+    operator: "Operator_Name", recipe: "Current_Recipe", count: "Product_Count",
+    running: "Line_Running", fault: "Line_Fault", reject: "Reject_Count", rate: "Line_Rate",
+  };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const slug = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "line";
+
+  let SIM_NOW = new Date(Date.now() - 30 * 60000);   // virtual clock, starts ~30 min ago
+  let ELAPSED = 0;                                    // total simulated seconds
+
+  function mkLine(key, name, target, host, metrics) {
+    return {
+      key, name, area: "Production", enabled: true, driver: "logix", host, slot: 0,
+      target, tags: Object.assign({}, DEFAULT_TAGS), metrics: metrics || [],
+      recipes: RECIPES[key] || ["Recipe A", "Recipe B", "Recipe C"],
+      count: 0, reject: 0, operator: pick(OPERATORS), recipe: null,
+      running: true, fault: false, rate: 0, metricVals: {},
+      producedToday: 0, rejectToday: 0, runningSec: 0,
+      runs: [], curRun: null, events: [], hist: [],
+      tState: rnd(40, 120), tRecipe: rnd(120, 300), tOperator: rnd(300, 600),
+    };
+  }
+
+  let LINES = [
+    mkLine("bread_line", "Bread Line", 1200, "192.168.1.10", [
+      { key: "recipe_number", label: "Recipe No.", tag: "Recipe_Number", type: "int", unit: "" },
+      { key: "oven_temp", label: "Oven Temp", tag: "Oven_Temp_PV", type: "number", unit: "°C" },
+    ]),
+    mkLine("wp_dough_line", "WP Dough Line", 900, "192.168.1.11", [
+      { key: "dough_weight", label: "Dough Weight", tag: "Dough_Weight", type: "number", unit: "g" },
+    ]),
+    mkLine("cheersonic_line", "Cheersonic Line", 600, "192.168.1.12", []),
+  ];
+  LINES.forEach((L) => { L.recipe = pick(L.recipes); });
+
+  const byKey = (k) => LINES.find((l) => l.key === k);
+  const shiftOf = (d) => { const h = d.getHours(); return h >= 6 && h < 14 ? "Day" : h >= 14 && h < 22 ? "Afternoon" : "Night"; };
+  const addEvent = (L, kind, detail) => { L.events.push({ ts: new Date(SIM_NOW), kind, detail: detail || null }); if (L.events.length > 90) L.events.shift(); };
+
+  function openRun(L) {
+    if (L.curRun) { L.curRun.status = "closed"; L.curRun.ended_at = new Date(SIM_NOW); }
+    L.curRun = { id: L.runs.length + 1, operator: L.operator, recipe: L.recipe, shift: shiftOf(SIM_NOW),
+      started_at: new Date(SIM_NOW), ended_at: new Date(SIM_NOW), start_count: L.count, end_count: L.count,
+      total_produced: 0, total_reject: 0, running_seconds: 0, status: "open" };
+    L.runs.push(L.curRun);
+    if (L.runs.length > 40) L.runs.shift();
+  }
+
+  function tickLine(L, dt) {
+    if (!L.enabled) return;
+    L.tState -= dt; L.tRecipe -= dt; L.tOperator -= dt;
+    if (L.tState <= 0) {
+      const r = Math.random();
+      if (L.running && r < 0.5) { L.running = false; L.fault = r < 0.15; L.tState = rnd(15, 60); addEvent(L, "line_stop"); if (L.fault) addEvent(L, "fault"); }
+      else { if (L.fault) addEvent(L, "fault_clear"); if (!L.running) addEvent(L, "line_start"); L.running = true; L.fault = false; L.tState = rnd(60, 180); }
+    }
+    if (L.tRecipe <= 0) {
+      const old = L.recipe; L.recipe = pick(L.recipes);
+      addEvent(L, "recipe_change", old + " -> " + L.recipe);
+      addEvent(L, "counter_reset", L.count + " -> 0");
+      L.count = 0; L.reject = 0; L.running = false;
+      L.tRecipe = rnd(180, 420); L.tState = rnd(10, 30);
+      openRun(L);
+    }
+    if (L.tOperator <= 0) { const old = L.operator; L.operator = pick(OPERATORS); addEvent(L, "operator_change", old + " -> " + L.operator); L.tOperator = rnd(300, 700); }
+    if (!L.curRun || L.curRun.operator !== L.operator || L.curRun.recipe !== L.recipe) openRun(L);
+
+    let produced = 0;
+    if (L.running) {
+      const per = (L.target / 3600) * dt * rnd(0.85, 1.05);
+      produced = Math.floor(per) + (Math.random() < (per % 1) ? 1 : 0);
+      L.count += produced; L.producedToday += produced; L.runningSec += dt;
+      if (produced && Math.random() < 0.03) { L.reject++; L.rejectToday++; }
+    }
+    L.rate = L.running ? Math.round(L.target * rnd(0.85, 1.05) * 10) / 10 : 0;
+    L.curRun.total_produced += produced; L.curRun.end_count = L.count;
+    L.curRun.total_reject = Math.max(L.curRun.total_reject, L.reject);
+    L.curRun.ended_at = new Date(SIM_NOW);
+    if (L.running) L.curRun.running_seconds += dt;
+
+    L.metricVals = {};
+    L.metrics.forEach((m) => {
+      if (m.type === "bool") L.metricVals[m.key] = Math.random() > 0.1;
+      else if (m.type === "string") L.metricVals[m.key] = pick(["OK", "Run", "Changeover", "Cleaning"]);
+      else if (m.type === "int") L.metricVals[m.key] = Math.floor(rnd(1, 999));
+      else L.metricVals[m.key] = Math.round(rnd(20, 220) * 10) / 10;
+    });
+
+    L.hist.push({ ts: new Date(SIM_NOW), rate: L.rate, count: L.count, running: L.running });
+    if (L.hist.length > 240) L.hist.shift();
+  }
+
+  function tickAll(dt) { SIM_NOW = new Date(SIM_NOW.getTime() + dt * 1000); ELAPSED += dt; LINES.forEach((L) => tickLine(L, dt)); }
+
+  // -------- analytics (mirror the server's JSON shapes) --------
+  const attain = (L) => { const rh = L.runningSec / 3600; const a = rh > 0 ? L.producedToday / rh : 0; return { actual: a, attainment: L.target ? a / L.target : 0, running_hours: rh }; };
+
+  function lineStatus(L) {
+    const st = L.fault ? "fault" : L.running ? "running" : "idle";
+    return {
+      key: L.key, name: L.name, area: L.area, status: st, online: true,
+      operator: L.operator, recipe: L.recipe, count: L.count, rate: L.rate,
+      running: L.running, fault: L.fault, last_seen: SIM_NOW.toISOString(),
+      run: runDict(L.curRun), ideal_rate_per_hour: L.target, target_rate: L.target,
+      actual_rate: L.rate, attainment: L.target ? L.rate / L.target : 0,
+      metrics: L.metrics.map((m) => ({ key: m.key, label: m.label || m.key, unit: m.unit || "", type: m.type, value: L.metricVals[m.key] })),
+    };
+  }
+  function rateStats(L) { const a = attain(L); return { key: L.key, target_rate: L.target, actual_rate: Math.round(a.actual * 10) / 10, attainment: round4(a.attainment), produced: L.producedToday, running_hours: round3(a.running_hours) }; }
+  function oeeOf(L) {
+    const a = attain(L); const availability = ELAPSED > 0 ? Math.min(1, L.runningSec / ELAPSED) : 0;
+    const theo = L.target * a.running_hours; const perf = theo > 0 ? Math.min(1, L.producedToday / theo) : 0;
+    const good = Math.max(0, L.producedToday - L.rejectToday); const qual = L.producedToday ? good / L.producedToday : 1;
+    return { key: L.key, availability: round4(availability), performance: round4(perf), quality: round4(qual), oee: round4(availability * perf * qual), produced: L.producedToday, reject: L.rejectToday, running_hours: round3(a.running_hours), ideal_rate_per_hour: L.target };
+  }
+  function runDict(r) { if (!r) return null; const dur = (r.ended_at - r.started_at) / 1000; return { id: r.id, operator: r.operator, recipe: r.recipe, shift: r.shift, started_at: r.started_at.toISOString(), ended_at: r.status === "closed" ? r.ended_at.toISOString() : null, duration_s: Math.round(dur * 10) / 10, total_produced: r.total_produced, total_reject: r.total_reject, running_seconds: Math.round(r.running_seconds * 10) / 10, status: r.status }; }
+  function runsOf(L, n) { return L.runs.slice().reverse().slice(0, n).map(runDict); }
+  function eventsOf(L, n) { return L.events.slice().reverse().slice(0, n).map((e) => ({ ts: e.ts.toISOString(), kind: e.kind, detail: e.detail })); }
+  function timeseries(L) { const step = Math.max(1, Math.floor(L.hist.length / 200)); return { key: L.key, points: L.hist.filter((_, i) => i % step === 0).map((p) => ({ ts: p.ts.toISOString(), count: p.count, rate: p.rate, running: p.running })) }; }
+  function production(L, group) {
+    const valid = ["recipe", "operator", "shift"].includes(group);
+    const tp = L.runs.reduce((a, r) => a + r.total_produced, 0), tr = L.runs.reduce((a, r) => a + r.total_reject, 0);
+    const out = { key: L.key, total_produced: tp, total_reject: tr, runs: L.runs.length };
+    if (valid) {
+      const b = {}; L.runs.forEach((r) => { const k = r[group] || "(unspecified)"; (b[k] = b[k] || { produced: 0, reject: 0, runs: 0 }); b[k].produced += r.total_produced; b[k].reject += r.total_reject; b[k].runs++; });
+      out.group_by = group; out.groups = Object.entries(b).map(([k, v]) => Object.assign({ [group]: k }, v)).sort((x, y) => y.produced - x.produced);
+    }
+    return out;
+  }
+  function summary() {
+    const sts = LINES.filter((l) => l.enabled).map((L) => { const s = lineStatus(L); s.today = rateStats(L); return s; });
+    let prod = 0, theo = 0; LINES.filter((l) => l.enabled).forEach((L) => { const a = attain(L); prod += L.producedToday; theo += L.target * a.running_hours; });
+    return { site: "Earlyrise Bakery", generated_at: SIM_NOW.toISOString(), lines_total: sts.length,
+      lines_running: sts.filter((x) => x.status === "running").length, lines_fault: sts.filter((x) => x.status === "fault").length,
+      lines_offline: 0, produced_today: prod, site_attainment: round4(theo ? prod / theo : 0), lines: sts };
+  }
+
+  // -------- insights (local heuristics) --------
+  const sev = (p) => p >= 98 ? "good" : p >= 85 ? "info" : p >= 70 ? "warn" : "bad";
+  function lineFacts(L) { const r = rateStats(L), o = oeeOf(L); const ev = {}; L.events.forEach((e) => ev[e.kind] = (ev[e.kind] || 0) + 1); const pr = production(L, "recipe").groups || [], po = production(L, "operator").groups || []; return { line: L.name, attain: Math.round(r.attainment * 1000) / 10, actual: r.actual_rate, target: L.target, produced: r.produced, rh: r.running_hours, quality: Math.round(o.quality * 1000) / 10, reject: o.reject, avail: Math.round(o.availability * 1000) / 10, stops: ev.line_stop || 0, faults: ev.fault || 0, changeovers: ev.recipe_change || 0, topR: pr[0], topO: po[0] }; }
+  function lineInsights(L) {
+    const f = lineFacts(L), out = []; const s = sev(f.attain);
+    const verb = { good: "at or above", info: "tracking near", warn: "below", bad: "well below" }[s];
+    out.push({ severity: s, title: "Rate " + Math.round(f.attain) + "% of target", text: f.line + " is running " + verb + " target — " + Math.round(f.actual) + " vs " + Math.round(f.target) + " units/hr. " + f.produced.toLocaleString() + " units over " + f.rh.toFixed(1) + " running hrs today." });
+    if (f.faults || f.stops) out.push({ severity: f.faults >= 3 ? "bad" : "warn", title: f.stops + " stop(s), " + f.faults + " fault(s)", text: "Downtime today: " + f.stops + " stop(s) and " + f.faults + " fault(s)" + (f.avail < 90 ? ", pulling availability to " + Math.round(f.avail) + "%." : ".") });
+    if (f.quality < 99 && f.reject) out.push({ severity: f.quality >= 95 ? "warn" : "bad", title: "Quality " + f.quality.toFixed(1) + "%", text: f.reject.toLocaleString() + " unit(s) rejected today on " + f.line + "." });
+    if (f.topR) out.push({ severity: "info", title: "Top product: " + f.topR.recipe, text: f.topR.recipe + " leads output at " + f.topR.produced.toLocaleString() + " units" + (f.changeovers ? ", with " + f.changeovers + " changeover(s) today." : ".") });
+    if (f.topO && f.topO.operator) out.push({ severity: "good", title: "Most output: " + f.topO.operator, text: f.topO.operator + " produced the most today on " + f.line + " — " + f.topO.produced.toLocaleString() + " units." });
+    return { scope: L.key, generated_by: "demo", generated_at: SIM_NOW.toISOString(), insights: out };
+  }
+  function siteInsights() {
+    const s = summary(); const facts = LINES.filter((l) => l.enabled).map(lineFacts).filter((f) => f.rh > 0.01);
+    const best = facts.reduce((a, b) => (!a || b.attain > a.attain ? b : a), null);
+    const worst = facts.reduce((a, b) => (!a || b.attain < a.attain ? b : a), null);
+    const sa = Math.round(s.site_attainment * 1000) / 10, out = [];
+    out.push({ severity: sev(sa), title: "Site at " + Math.round(sa) + "% of target rate", text: s.produced_today.toLocaleString() + " units produced site-wide today across " + s.lines_running + "/" + s.lines_total + " running lines, averaging " + Math.round(sa) + "% of combined target rate." });
+    if (best) out.push({ severity: "good", title: "Top performer: " + best.line, text: best.line + " leads at " + Math.round(best.attain) + "% of target (" + Math.round(best.actual) + " units/hr)." });
+    if (worst && (!best || worst.line !== best.line)) out.push({ severity: sev(worst.attain), title: "Main constraint: " + worst.line, text: worst.line + " is slowest against target at " + Math.round(worst.attain) + "% (" + Math.round(worst.actual) + " vs " + Math.round(worst.target) + " units/hr)" + (worst.faults ? ", with " + worst.faults + " fault(s) today." : ".") });
+    const tf = facts.reduce((a, f) => a + f.faults, 0), tstp = facts.reduce((a, f) => a + f.stops, 0);
+    if (s.lines_fault || tf) out.push({ severity: s.lines_fault ? "bad" : "warn", title: tf + " fault event(s) today", text: s.lines_fault + " line(s) in fault now; " + tstp + " stop(s) and " + tf + " fault(s) logged across the site today." });
+    return { scope: "site", generated_by: "demo", generated_at: SIM_NOW.toISOString(), insights: out };
+  }
+
+  // -------- config (settings page) --------
+  const cfgDict = (L) => ({ key: L.key, name: L.name, area: L.area, enabled: L.enabled, driver: L.driver, host: L.host, slot: L.slot, ideal_rate_per_hour: L.target, tags: L.tags, metrics: L.metrics, updated_at: SIM_NOW.toISOString() });
+  function cleanMetrics(ms) { const out = [], seen = new Set(); (ms || []).forEach((m) => { const tag = (m.tag || "").trim(); if (!tag) return; let k = slug(m.key || m.label || tag), base = k, n = 2; while (seen.has(k)) k = base + "_" + (n++); seen.add(k); out.push({ key: k, label: (m.label || k).trim(), tag, type: ["number", "int", "bool", "string"].includes(m.type) ? m.type : "number", unit: (m.unit || "").trim() }); }); return out; }
+  function createLine(b) { const key = slug(b.key || b.name); const L = mkLine(key, b.name || key, b.ideal_rate_per_hour || 600, b.host || "", cleanMetrics(b.metrics)); L.area = b.area || "Production"; L.driver = b.driver || "logix"; L.slot = b.slot || 0; if (b.tags) L.tags = b.tags; L.recipe = pick(L.recipes); for (let i = 0; i < 30; i++) tickLine(L, 20); LINES.push(L); return cfgDict(L); }
+  function updateLine(key, b) { const L = byKey(key); if (!L) return { __404: true }; L.name = b.name; L.area = b.area; L.enabled = b.enabled; L.driver = b.driver; L.host = b.host; L.slot = b.slot; L.target = b.ideal_rate_per_hour; if (b.tags) L.tags = b.tags; L.metrics = cleanMetrics(b.metrics); return cfgDict(L); }
+  function deleteLine(key) { const L = byKey(key); if (L) L.enabled = false; return { key, enabled: false }; }
+
+  const round4 = (x) => Math.round(x * 1e4) / 1e4, round3 = (x) => Math.round(x * 1e3) / 1e3;
+
+  // -------- mock fetch router --------
+  function route(rawUrl, opts) {
+    const u = new URL(rawUrl, location.href), p = u.pathname.replace(/\/+$/, "") || "/";
+    const m = ((opts && opts.method) || "GET").toUpperCase();
+    const body = opts && opts.body ? JSON.parse(opts.body) : null;
+    if (p === "/api/health") return { status: "ok", version: "demo", database: "in-browser", collector_running: true };
+    if (p === "/api/lines") return { lines: LINES.filter((l) => l.enabled).map((l) => ({ key: l.key, name: l.name, area: l.area, driver: l.driver, ideal_rate_per_hour: l.target })) };
+    if (p === "/api/summary") return summary();
+    if (p === "/api/insights") return siteInsights();
+    if (p === "/api/config/lines") return m === "POST" ? createLine(body) : { lines: LINES.map(cfgDict) };
+    if (p === "/api/config/scan") return { ok: true, count: CATALOG.length, tags: CATALOG.map(([n, t]) => ({ name: n, type: t })) };
+    if (p === "/api/config/test") { const L = byKey(body && body.key); return { ok: true, error: null, sample: { operator: L ? L.operator : "Sarah Chen", recipe: L ? L.recipe : "White Tin 680g", count: L ? L.count : 0, running: true } }; }
+    let mm = p.match(/^\/api\/config\/lines\/([^/]+)$/);
+    if (mm) { if (m === "PUT") return updateLine(mm[1], body); if (m === "DELETE") return deleteLine(mm[1]); }
+    mm = p.match(/^\/api\/lines\/([^/]+)\/(\w+)$/);
+    if (mm) { const L = byKey(mm[1]); if (!L) return { __404: true }; const s = mm[2];
+      if (s === "status") return lineStatus(L);
+      if (s === "rate") return rateStats(L);
+      if (s === "oee") return oeeOf(L);
+      if (s === "insights") return lineInsights(L);
+      if (s === "runs") return { key: L.key, runs: runsOf(L, 12) };
+      if (s === "events") return { key: L.key, events: eventsOf(L, 40) };
+      if (s === "timeseries") return timeseries(L);
+      if (s === "production") return production(L, u.searchParams.get("group_by"));
+    }
+    return { __404: true };
+  }
+  window.fetch = function (url, opts) {
+    const data = route(typeof url === "string" ? url : url.url, opts);
+    const ok = !(data && data.__404);
+    return Promise.resolve({ ok, status: ok ? 200 : 404, json: () => Promise.resolve(data) });
+  };
+
+  // seed ~30 min of history, then advance the simulation in real time
+  for (let i = 0; i < 95; i++) tickAll(20);
+  setInterval(() => tickAll(8), 1000);
+})();
+
+/* ---- dashboard rendering (same code as the live app) ---- */
+/* Earlyrise Bakery MES — dashboard logic.
+ * Vanilla JS, no external libs (runs on the local bakery network).
+ * Overview + per-line tabs + settings, with AI insights and a colourful
+ * actual-vs-target rate hero. */
+
+const POLL_MS = 3000;
+const $ = (sel, el = document) => el.querySelector(sel);
+const fmt = (n) => (n == null ? "–" : Number(n).toLocaleString());
+
+let view = "overview";      // "overview" | "line:<key>" | "settings"
+let lines = [];             // [{key,name,area,...}]
+let breakdownGroup = "recipe";
+let dlSeq = 0;              // unique id counter for per-card tag <datalist>s
+
+async function api(path) {
+  const res = await fetch(path, { cache: "no-store" });
+  if (!res.ok) throw new Error(`${path} -> ${res.status}`);
+  return res.json();
+}
+
+/* ----------------------------------------------------------- colour helpers */
+function attainClass(pct) {
+  if (pct >= 98) return "good";
+  if (pct >= 85) return "info";
+  if (pct >= 70) return "warn";
+  return "bad";
+}
+
+/* --------------------------------------------------------------- theming */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#theme-icon").textContent = t === "dark" ? "◐" : "◑";
+  localStorage.setItem("mes-theme", t);
+}
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+}
+function setConn(ok) {
+  $("#conn-dot").className = "dot " + (ok ? "live" : "down");
+  $("#conn-label").textContent = ok ? "LIVE" : "NO SIGNAL";
+}
+function tickClock() {
+  $("#clock").textContent = new Date().toLocaleTimeString("en-AU", { hour12: false });
+}
+
+/* ------------------------------------------------------------------ tabs */
+async function loadTabs() {
+  try { lines = (await api("/api/lines")).lines; } catch (_) { lines = []; }
+  const tabs = [`<a href="#" class="nav-link" data-view="overview">OVERVIEW</a>`]
+    .concat(lines.map((l) => `<a href="#" class="nav-link" data-view="line:${l.key}">${l.name.toUpperCase()}</a>`))
+    .concat([`<a href="#" class="nav-link" data-view="settings">SETTINGS</a>`]);
+  $("#nav-tabs").innerHTML = tabs.join("");
+  markActiveTab();
+}
+function markActiveTab() {
+  document.querySelectorAll(".nav-link").forEach((a) => a.classList.toggle("active", a.dataset.view === view));
+}
+
+/* ------------------------------------------------------------ view router */
+function showView(v) {
+  view = v;
+  $("#view-overview").hidden = v !== "overview";
+  $("#view-line").hidden = !v.startsWith("line:");
+  $("#view-settings").hidden = v !== "settings";
+  markActiveTab();
+  window.scrollTo({ top: 0 });
+  if (v === "overview") renderOverview();
+  else if (v.startsWith("line:")) renderLine(v.slice(5));
+  else if (v === "settings") loadSettings();
+}
+
+/* --------------------------------------------------------------- insights */
+function insightCard(i) {
+  return `<div class="insight ${i.severity}">
+      <div class="insight-title">${i.title}</div>
+      <div class="insight-text">${i.text}</div>
+    </div>`;
+}
+async function renderInsights(elId, path) {
+  try {
+    const data = await api(path);
+    const tag = `<div class="insights-tag"><span class="ai-dot"></span>AI INSIGHTS · ${data.generated_by.toUpperCase()} · TODAY</div>`;
+    $(elId).innerHTML = tag + data.insights.map(insightCard).join("");
+  } catch (_) { $(elId).innerHTML = ""; }
+}
+
+/* --------------------------------------------------------------- overview */
+function rateBar(actual, target, attain) {
+  const cls = attainClass(attain * 100);
+  const fill = Math.min(attain * 75, 100).toFixed(0);   // target sits at 75% of track
+  return `<div class="card-rate">
+      <div class="card-rate-vals">
+        <span class="card-rate-actual">${Math.round(actual)}<small style="font-size:.6rem;color:var(--text-secondary)"> /hr</small></span>
+        <span class="card-attain c-${cls}">${(attain * 100).toFixed(0)}% of target</span>
+      </div>
+      <div class="card-rate-track">
+        <i class="${cls}" style="width:${fill}%"></i>
+        <span class="rate-target-mark" style="left:75%"></span>
+      </div>
+    </div>`;
+}
+
+function lineCard(l) {
+  const t = l.today || { actual_rate: 0, attainment: 0 };
+  const target = l.target_rate || l.ideal_rate_per_hour || 0;
+  return `<div class="line-card" data-key="${l.key}">
+      <div class="line-card-top">
+        <div>
+          <div class="line-name">${l.name}</div>
+          <div class="line-area">${l.area || ""}</div>
+        </div>
+        <div class="status-chip ${l.status}"><span class="dot"></span>${l.status}</div>
+      </div>
+      <div class="line-count">${fmt(l.count)}</div>
+      <div class="line-count-label">Product Count · ${l.recipe || "—"}</div>
+      ${rateBar(t.actual_rate, target, t.attainment)}
+      <div class="line-meta">
+        <div><div class="meta-k">Operator</div><div class="meta-v">${l.operator || "—"}</div></div>
+        <div><div class="meta-k">Target</div><div class="meta-v">${target ? Math.round(target) + " /hr" : "—"}</div></div>
+      </div>
+    </div>`;
+}
+
+async function renderOverview() {
+  renderInsights("#site-insights", "/api/insights");
+  try {
+    const d = await api("/api/summary");
+    setConn(true);
+    const attainPct = (d.site_attainment * 100) || 0;
+    const av = $("#kpi-attain");
+    av.textContent = attainPct.toFixed(0) + "%";
+    av.className = "kpi-val c-" + attainClass(attainPct);
+    $("#kpi-produced").textContent = fmt(d.produced_today);
+    $("#kpi-running").textContent = `${d.lines_running}/${d.lines_total}`;
+    const ff = $("#kpi-fault");
+    ff.textContent = d.lines_fault;
+    ff.className = "kpi-val" + (d.lines_fault ? " c-bad" : "");
+    $("#line-grid").innerHTML = d.lines.map(lineCard).join("");
+  } catch (_) { setConn(false); }
+}
+
+/* ------------------------------------------------------------- line view */
+async function renderLine(key) {
+  const l = lines.find((x) => x.key === key);
+  $("#line-title").textContent = l ? l.name : key;
+  $("#line-tag").textContent = `PRODUCTION LINE · ${(l ? l.name : key).toUpperCase()}`;
+  renderInsights("#line-insights", `/api/lines/${key}/insights`);
+  try {
+    const [status, rate, oee] = await Promise.all([
+      api(`/api/lines/${key}/status`),
+      api(`/api/lines/${key}/rate?hours=24`),
+      api(`/api/lines/${key}/oee?hours=24`),
+    ]);
+    setConn(true);
+    const chip = $("#line-status");
+    chip.className = "status-chip " + status.status;
+    chip.innerHTML = `<span class="dot"></span><span>${status.status.toUpperCase()}</span>`;
+    renderRateHero(rate, status);
+    renderMetrics(status.metrics || []);
+    renderOEE(oee);
+    renderRateChart(key, rate.target_rate);
+    renderBreakdown(key);
+    renderRuns(key);
+    renderEvents(key);
+  } catch (_) { setConn(false); }
+}
+
+function renderRateHero(rate, status) {
+  const attain = rate.attainment || 0;
+  const cls = attainClass(attain * 100);
+  const fill = Math.min(attain * 75, 100).toFixed(0);
+  $("#rate-hero").innerHTML = `
+    <div class="rate-hero-top">
+      <div>
+        <div class="rate-actual">${Math.round(rate.actual_rate)}<small>units/hr actual</small></div>
+        <div class="rate-sub">today · ${fmt(rate.produced)} units over ${rate.running_hours.toFixed(1)} running hrs · live ${Math.round(status.actual_rate || 0)}/hr</div>
+      </div>
+      <div class="rate-attain">
+        <div class="rate-attain-val c-${cls}">${(attain * 100).toFixed(0)}%</div>
+        <div class="rate-sub">of ${Math.round(rate.target_rate)}/hr target</div>
+      </div>
+    </div>
+    <div class="rate-track">
+      <i class="${cls}" style="width:${fill}%"></i>
+      <span class="rate-target-mark" data-v="${Math.round(rate.target_rate)}" style="left:75%"></span>
+    </div>`;
+}
+
+function renderMetrics(metrics) {
+  const el = $("#metrics-strip");
+  if (!metrics.length) { el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = metrics.map((m) => {
+    let v = m.value;
+    if (v == null) v = "—";
+    else if (m.type === "bool") v = v ? "ON" : "OFF";
+    else if (m.type === "number" && typeof v === "number") v = v.toLocaleString();
+    return `<div class="metric-tile">
+        <div class="meta-k">${m.label}</div>
+        <div class="metric-val">${v}${m.unit ? `<small>${m.unit}</small>` : ""}</div>
+      </div>`;
+  }).join("");
+}
+
+function renderOEE(o) {
+  const cells = [["OEE", o.oee], ["Availability", o.availability], ["Performance", o.performance], ["Quality", o.quality]];
+  $("#oee-row").innerHTML = cells.map(([k, v]) => `
+    <div class="oee-cell">
+      <div class="meta-k">${k}</div>
+      <div class="oee-val">${(v * 100).toFixed(1)}%</div>
+      <div class="oee-bar"><i style="width:${Math.min(100, v * 100).toFixed(0)}%"></i></div>
+    </div>`).join("");
+}
+
+async function renderRuns(key) {
+  const body = $("#runs-table tbody");
+  try {
+    const runs = (await api(`/api/lines/${key}/runs?limit=12`)).runs;
+    body.innerHTML = runs.map((r) => `
+      <tr>
+        <td>${r.recipe || "—"}</td><td>${r.operator || "—"}</td><td>${r.shift || "—"}</td>
+        <td>${r.started_at ? new Date(r.started_at).toLocaleTimeString("en-AU", { hour12: false }) : "—"}</td>
+        <td class="num">${r.duration_s != null ? mmss(r.duration_s) : "—"}</td>
+        <td class="num">${fmt(r.total_produced)}</td>
+        <td class="num">${fmt(r.total_reject)}</td>
+      </tr>`).join("") || `<tr><td colspan="7" style="color:var(--text-muted)">No runs yet.</td></tr>`;
+  } catch (_) {}
+}
+
+async function renderEvents(key) {
+  try {
+    const events = (await api(`/api/lines/${key}/events?limit=40`)).events;
+    $("#events-log").innerHTML = events.map((e) => `
+      <div class="event">
+        <time>${new Date(e.ts).toLocaleTimeString("en-AU", { hour12: false })}</time>
+        <span class="kind">${e.kind.replace(/_/g, " ")}</span>
+        <span class="ev-detail">${e.detail || ""}</span>
+      </div>`).join("") || `<div style="color:var(--text-muted);font-size:.75rem">No events yet.</div>`;
+  } catch (_) {}
+}
+
+async function renderRateChart(key, target) {
+  try {
+    const ts = await api(`/api/lines/${key}/timeseries?hours=0.5`);
+    const vals = ts.points.map((p) => p.rate || 0);
+    const w = 520, h = 160;
+    if (!vals.length) { $("#chart-rate").innerHTML = `<div style="color:var(--text-muted);font-size:.75rem">Collecting data…</div>`; return; }
+    const max = Math.max(...vals, target || 1) * 1.1;
+    const step = w / Math.max(vals.length - 1, 1);
+    const pts = vals.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * (h - 8) - 4).toFixed(1)}`);
+    const ty = (h - ((target || 0) / max) * (h - 8) - 4).toFixed(1);
+    $("#chart-rate").innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none">
+        ${[0.25, 0.5, 0.75].map((f) => `<line class="grid-line" x1="0" y1="${(h * f).toFixed(0)}" x2="${w}" y2="${(h * f).toFixed(0)}" stroke-width="1"/>`).join("")}
+        <polygon class="plot-actual-fill" points="0,${h} ${pts.join(" ")} ${w},${h}"/>
+        <polyline class="plot-actual" stroke-width="1.5" points="${pts.join(" ")}"/>
+        <line class="plot-target" x1="0" y1="${ty}" x2="${w}" y2="${ty}" stroke-width="1.5"/>
+      </svg>`;
+  } catch (_) {}
+}
+
+async function renderBreakdown(key) {
+  $("#breakdown-title").textContent = `PRODUCTION BY ${breakdownGroup.toUpperCase()} — 24H`;
+  try {
+    const data = await api(`/api/lines/${key}/production?hours=24&group_by=${breakdownGroup}`);
+    const groups = data.groups || [];
+    const max = Math.max(...groups.map((g) => g.produced), 1);
+    $("#breakdown").innerHTML = groups.map((g) => `
+      <div class="bar-row">
+        <div class="bar-label">${g[breakdownGroup]}</div>
+        <div class="bar-track"><i style="width:${((g.produced / max) * 100).toFixed(0)}%"></i></div>
+        <div class="bar-val">${fmt(g.produced)}</div>
+      </div>`).join("") || `<div style="color:var(--text-muted);font-size:.75rem">No production yet.</div>`;
+  } catch (_) {}
+}
+
+function mmss(s) {
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  if (m >= 60) { const h = Math.floor(m / 60); return `${h}h ${m % 60}m`; }
+  return `${m}m ${sec.toString().padStart(2, "0")}s`;
+}
+
+/* ============================== SETTINGS ============================== */
+const TAG_FIELDS = ["operator", "recipe", "count", "running", "fault", "reject", "rate"];
+
+async function loadSettings() {
+  let data;
+  try { data = await api("/api/config/lines"); } catch (_) { return; }
+  const host = $("#settings-lines");
+  host.innerHTML = "";
+  data.lines.forEach((line) => host.appendChild(buildLineCard(line)));
+}
+
+function buildLineCard(line) {
+  const node = $("#line-card-tpl").content.firstElementChild.cloneNode(true);
+  node.dataset.key = line.key || "";
+  node.dataset.isNew = line.__new ? "1" : "";
+  const set = (sel, val) => { const el = node.querySelector(sel); if (el) el.value = val ?? ""; };
+  set('[data-f="name"]', line.name);
+  set('[data-f="key"]', line.key);
+  set('[data-f="area"]', line.area || "Production");
+  set('[data-f="driver"]', line.driver || "logix");
+  set('[data-f="host"]', line.host);
+  set('[data-f="slot"]', line.slot ?? 0);
+  set('[data-f="ideal_rate_per_hour"]', line.ideal_rate_per_hour ?? 0);
+  node.querySelector('[data-f="enabled"]').checked = line.enabled !== false;
+  const tags = line.tags || {};
+  // one shared <datalist> of scanned tags per card, wired to every tag input
+  const dl = document.createElement("datalist");
+  dl.id = "tags-" + (++dlSeq);
+  node.appendChild(dl);
+  node.dataset.dl = dl.id;
+  TAG_FIELDS.forEach((t) => {
+    const el = node.querySelector(`[data-t="${t}"]`);
+    if (el) { el.value = tags[t] || ""; el.setAttribute("list", dl.id); }
+  });
+  (line.metrics || []).forEach((m) => addMetricRow(node, m));
+  if (line.key && !line.__new) node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
+  node.addEventListener("input", () => node.classList.add("dirty"));
+  return node;
+}
+
+function addMetricRow(card, m = {}) {
+  const row = $("#metric-row-tpl").content.firstElementChild.cloneNode(true);
+  row.querySelector('[data-m="label"]').value = m.label || "";
+  const tagEl = row.querySelector('[data-m="tag"]');
+  tagEl.value = m.tag || "";
+  tagEl.setAttribute("list", card.dataset.dl);          // same scanned-tag dropdown
+  row.querySelector('[data-m="type"]').value = m.type || "number";
+  row.querySelector('[data-m="unit"]').value = m.unit || "";
+  card.querySelector(".metrics-list").appendChild(row);
+  card.classList.add("dirty");
+}
+
+async function scanCard(card) {
+  const info = card.querySelector(".scan-info");
+  info.textContent = "Scanning…"; info.className = "scan-info";
+  const cfg = readCard(card);
+  try {
+    const res = await fetch("/api/config/scan", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ driver: cfg.driver, host: cfg.host, slot: cfg.slot }),
+    });
+    const r = await res.json();
+    if (!r.ok) { info.textContent = "✕ " + (r.error || "scan failed"); info.className = "scan-info err"; return; }
+    const dl = document.getElementById(card.dataset.dl);
+    dl.innerHTML = r.tags.map((t) => `<option value="${t.name}">${t.type}</option>`).join("");
+    info.textContent = `✓ ${r.count} tags — pick from any field's dropdown`;
+    info.className = "scan-info ok";
+  } catch (e) { info.textContent = "✕ " + e.message; info.className = "scan-info err"; }
+}
+
+function readCard(node) {
+  const get = (sel) => node.querySelector(sel)?.value.trim() || "";
+  const tags = {};
+  TAG_FIELDS.forEach((t) => { const v = node.querySelector(`[data-t="${t}"]`).value.trim(); if (v) tags[t] = v; });
+  const metrics = Array.from(node.querySelectorAll(".metric-row")).map((r) => ({
+    label: r.querySelector('[data-m="label"]').value.trim(),
+    tag: r.querySelector('[data-m="tag"]').value.trim(),
+    type: r.querySelector('[data-m="type"]').value,
+    unit: r.querySelector('[data-m="unit"]').value.trim(),
+  })).filter((m) => m.tag);
+  return {
+    key: get('[data-f="key"]') || null,
+    name: get('[data-f="name"]'),
+    area: get('[data-f="area"]') || "Production",
+    driver: get('[data-f="driver"]'),
+    host: get('[data-f="host"]') || null,
+    slot: parseInt(get('[data-f="slot"]') || "0", 10),
+    ideal_rate_per_hour: parseFloat(get('[data-f="ideal_rate_per_hour"]') || "0"),
+    enabled: node.querySelector('[data-f="enabled"]').checked,
+    tags,
+    metrics,
+  };
+}
+
+function msg(node, text, cls) {
+  const m = node.querySelector(".cfg-msg");
+  m.textContent = text;
+  m.className = "cfg-msg" + (cls ? " " + cls : "");
+}
+
+async function saveCard(node) {
+  const payload = readCard(node);
+  if (!payload.name) return msg(node, "Name is required.", "err");
+  const isNew = node.dataset.isNew === "1";
+  msg(node, "Saving…");
+  try {
+    const res = await fetch(isNew ? "/api/config/lines" : `/api/config/lines/${node.dataset.key}`, {
+      method: isNew ? "POST" : "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || res.status); }
+    const saved = await res.json();
+    node.dataset.key = saved.key; node.dataset.isNew = "";
+    node.querySelector('[data-f="key"]').setAttribute("readonly", "true");
+    node.classList.remove("dirty");
+    msg(node, `Saved · ${saved.key} · live within one poll cycle`, "ok");
+    loadTabs();
+  } catch (e) { msg(node, "Save failed: " + e.message, "err"); }
+}
+
+async function testCard(node) {
+  msg(node, "Testing connection…");
+  try {
+    const res = await fetch("/api/config/test", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(readCard(node)),
+    });
+    const r = await res.json();
+    if (r.ok) {
+      const s = r.sample || {};
+      msg(node, `✓ Connected · operator=${s.operator ?? "—"} recipe=${s.recipe ?? "—"} count=${s.count ?? "—"}`, "ok");
+    } else { msg(node, "✕ " + (r.error || "no response"), "err"); }
+  } catch (e) { msg(node, "✕ " + e.message, "err"); }
+}
+
+async function deleteCard(node) {
+  if (node.dataset.isNew === "1") { node.remove(); return; }
+  if (!confirm(`Disable line "${node.dataset.key}"? History is kept; it stops polling.`)) return;
+  try {
+    await fetch(`/api/config/lines/${node.dataset.key}`, { method: "DELETE" });
+    node.querySelector('[data-f="enabled"]').checked = false;
+    msg(node, "Disabled · history retained", "ok");
+    loadTabs();
+  } catch (e) { msg(node, "Failed: " + e.message, "err"); }
+}
+
+function addBlankLine() {
+  const node = buildLineCard({ __new: true, driver: "logix", enabled: true, area: "Production", slot: 0,
+    tags: { operator: "Operator_Name", recipe: "Current_Recipe", count: "Product_Count" } });
+  $("#settings-lines").prepend(node);
+  node.querySelector('[data-f="name"]').focus();
+}
+
+/* ------------------------------------------------------------------ init */
+document.addEventListener("click", (e) => {
+  const nav = e.target.closest("[data-view]");
+  if (nav) { e.preventDefault(); showView(nav.dataset.view); return; }
+  if (e.target.closest("#theme-btn")) return toggleTheme();
+  if (e.target.closest("#add-line-btn")) return addBlankLine();
+
+  const card = e.target.closest(".line-card");
+  if (card) return showView("line:" + card.dataset.key);
+
+  const seg = e.target.closest("#breakdown-toggle button");
+  if (seg) {
+    breakdownGroup = seg.dataset.g;
+    document.querySelectorAll("#breakdown-toggle button").forEach((b) => b.classList.toggle("active", b === seg));
+    if (view.startsWith("line:")) renderBreakdown(view.slice(5));
+  }
+  const cfg = e.target.closest(".cfg-card");
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (cfg && act) {
+    if (act === "save") saveCard(cfg);
+    else if (act === "test") testCard(cfg);
+    else if (act === "delete") deleteCard(cfg);
+    else if (act === "scan") scanCard(cfg);
+    else if (act === "add-metric") addMetricRow(cfg);
+    else if (act === "del-metric") { e.target.closest(".metric-row").remove(); cfg.classList.add("dirty"); }
+  }
+});
+
+async function boot() {
+  applyTheme(localStorage.getItem("mes-theme") || "dark");
+  try {
+    const h = await api("/api/health");
+    $("#footer-meta").textContent = `v${h.version} · ${h.database.toUpperCase()}`;
+  } catch (_) {}
+  tickClock();
+  setInterval(tickClock, 1000);
+  await loadTabs();
+  showView("overview");
+  setInterval(() => {
+    if (view === "overview") renderOverview();
+    else if (view.startsWith("line:")) renderLine(view.slice(5));
+  }, POLL_MS);
+}
+boot();
+
+</script>
+</body>
+</html>
