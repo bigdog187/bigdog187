@@ -7,75 +7,73 @@
 <meta name="description" content="Earlyrise Bakery MES — standalone interactive demo (runs entirely in your browser).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root, [data-theme="dark"] {
-    /* Earlyrise Baking Co. — warm espresso dark theme */
-    --bg-primary:    #1a1512;
-    --bg-secondary:  #211a16;
-    --bg-card:       #241c18;
-    --bg-input:      #1c1511;
-    --border:        #382c25;
-    --border-bright: #4f3e33;
-    --accent:        #d49a63;
-    --accent-fg:     #241910;
-    --text-primary:  #f4ebe1;
-    --text-secondary:#b29a87;
-    --text-muted:    #6f5c4e;
-    --plot:          #d9a566;
-    --plot-fill:     rgba(217,165,102,0.10);
-    --hair:          rgba(244,235,225,0.03);
-    --nav-bg:        rgba(26,21,18,0.95);
-    --glow:          0 0 8px rgba(212,154,99,0.7);
-    --logo-fill:     #f4ebe1;
-    /* colour palette (warm, dark) */
-    --good:          #5fb47e;
-    --good-dim:      rgba(95,180,126,0.15);
-    --warn:          #e8a24a;
-    --warn-dim:      rgba(232,162,74,0.15);
-    --bad:           #e07a5f;
-    --bad-dim:       rgba(224,122,95,0.15);
-    --info:          #cf9a63;
-    --info-dim:      rgba(207,154,99,0.15);
-    --brand:         #bc8157;
-    --target:        #9c8a7a;
-    --font-display:  'Playfair Display', Georgia, serif;
-    --font-mono:     'Roboto Mono', monospace;
-    --font-body:     'Roboto', sans-serif;
+    --bg-primary:    #000000;
+    --bg-secondary:  #080808;
+    --bg-card:       #0a0a0a;
+    --bg-input:      #050505;
+    --border:        #1c1c1c;
+    --border-bright: #2e2e2e;
+    --accent:        #ffffff;
+    --accent-fg:     #000000;
+    --text-primary:  #ffffff;
+    --text-secondary:#6b6b6b;
+    --text-muted:    #363636;
+    --plot:          #ffffff;
+    --plot-fill:     rgba(255,255,255,0.05);
+    --hair:          rgba(255,255,255,0.02);
+    --nav-bg:        rgba(0,0,0,0.95);
+    --glow:          0 0 8px rgba(255,255,255,0.8);
+    --logo-fill:     #ffffff;
+    /* colour palette (dark) */
+    --good:          #34d399;
+    --good-dim:      rgba(52,211,153,0.14);
+    --warn:          #fbbf24;
+    --warn-dim:      rgba(251,191,36,0.14);
+    --bad:           #f87171;
+    --bad-dim:       rgba(248,113,113,0.14);
+    --info:          #60a5fa;
+    --info-dim:      rgba(96,165,250,0.14);
+    --brand:         #5eead4;
+    --target:        #94a3b8;
+    --font-display:  'Space Grotesk', sans-serif;
+    --font-mono:     'JetBrains Mono', monospace;
+    --font-body:     'Inter', sans-serif;
 }
 
 [data-theme="light"] {
-    /* Earlyrise Baking Co. — warm cream light theme */
-    --bg-primary:    #f3e9de;
-    --bg-secondary:  #fbf6f0;
+    --bg-primary:    #f4f4f2;
+    --bg-secondary:  #ffffff;
     --bg-card:       #ffffff;
-    --bg-input:      #f6eee4;
-    --border:        #e7d8c8;
-    --border-bright: #d3bda6;
-    --accent:        #a6692f;
+    --bg-input:      #f7f7f5;
+    --border:        #e2e2dd;
+    --border-bright: #c9c9c2;
+    --accent:        #000000;
     --accent-fg:     #ffffff;
-    --text-primary:  #2c2420;
-    --text-secondary:#6f5d50;
-    --text-muted:    #a08b78;
-    --plot:          #b07a45;
-    --plot-fill:     rgba(176,122,69,0.10);
-    --hair:          rgba(44,36,32,0.03);
-    --nav-bg:        rgba(243,233,222,0.95);
-    --glow:          0 0 8px rgba(166,105,47,0.35);
-    --logo-fill:     #322f31;
-    /* colour palette (warm, light) */
-    --good:          #2f8a57;
-    --good-dim:      rgba(47,138,87,0.12);
-    --warn:          #c2691f;
-    --warn-dim:      rgba(194,105,31,0.12);
-    --bad:           #b3361a;
-    --bad-dim:       rgba(179,54,26,0.10);
-    --info:          #9c6b38;
-    --info-dim:      rgba(156,107,56,0.12);
-    --brand:         #bc8157;
-    --target:        #8a7560;
+    --text-primary:  #0a0a0a;
+    --text-secondary:#6b6b6b;
+    --text-muted:    #a6a6a0;
+    --plot:          #0a0a0a;
+    --plot-fill:     rgba(0,0,0,0.05);
+    --hair:          rgba(0,0,0,0.025);
+    --nav-bg:        rgba(244,244,242,0.95);
+    --glow:          0 0 8px rgba(0,0,0,0.35);
+    --logo-fill:     #0a0a0a;
+    /* colour palette (light) */
+    --good:          #059669;
+    --good-dim:      rgba(5,150,105,0.12);
+    --warn:          #b45309;
+    --warn-dim:      rgba(180,83,9,0.12);
+    --bad:           #dc2626;
+    --bad-dim:       rgba(220,38,38,0.10);
+    --info:          #2563eb;
+    --info-dim:      rgba(37,99,235,0.10);
+    --brand:         #0d9488;
+    --target:        #64748b;
 }
 
 html { scroll-behavior: smooth; }
@@ -124,8 +122,8 @@ nav {
 }
 .erb-logo { width: 100%; height: 100%; fill: var(--logo-fill); transition: fill 0.25s ease; }
 .nav-logo-text { display: flex; flex-direction: column; gap: 0.12rem; }
-.nav-logo-name { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em; color: var(--text-primary); }
-.nav-logo-sub  { font-family: var(--font-mono); font-size: 0.48rem; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
+.nav-logo-name { font-family: var(--font-display); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.08em; color: var(--text-primary); }
+.nav-logo-sub  { font-family: var(--font-mono); font-size: 0.5rem; color: var(--text-muted); letter-spacing: 0.2em; text-transform: uppercase; }
 .nav-status { display: flex; align-items: center; gap: 0.85rem; font-size: 0.62rem; letter-spacing: 0.18em; color: var(--text-secondary); }
 .nav-clock { color: var(--text-primary); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
