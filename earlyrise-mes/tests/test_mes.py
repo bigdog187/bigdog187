@@ -133,6 +133,34 @@ def test_offline_then_online_events(collector):
         assert "offline" in kinds and "online" in kinds
 
 
+def test_schema_migration_adds_missing_columns():
+    """init_db must add columns that didn't exist in older databases
+    (create_all alone never alters existing tables)."""
+    import sqlite3
+
+    if sqlite3.sqlite_version_info < (3, 35):
+        pytest.skip("DROP COLUMN needs sqlite >= 3.35 to simulate an old schema")
+
+    from sqlalchemy import inspect, text
+
+    from mes.database import engine
+
+    init_db()
+    with engine.begin() as conn:  # simulate a pre-upgrade database
+        conn.execute(text("ALTER TABLE lines DROP COLUMN metrics_json"))
+        conn.execute(text("ALTER TABLE samples DROP COLUMN extra_json"))
+
+    init_db()  # must restore the missing columns
+
+    cols_lines = {c["name"] for c in inspect(engine).get_columns("lines")}
+    cols_samples = {c["name"] for c in inspect(engine).get_columns("samples")}
+    assert "metrics_json" in cols_lines
+    assert "extra_json" in cols_samples
+    # And the ORM can read rows again (the original failure mode was a crash here).
+    with new_session() as s:
+        s.query(Sample).all()
+
+
 def test_oee_components(collector):
     collector.drivers["l1"] = ScriptedDriver("l1", [
         _read(count=0, running=True, reject=0),

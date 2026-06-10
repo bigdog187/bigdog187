@@ -22,13 +22,15 @@ MES_SQLSERVER_TRUSTED set "1" to use Windows integrated auth.
 
 from __future__ import annotations
 
+import logging
 import os
-import urllib.parse
 from pathlib import Path
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.orm import Session, sessionmaker
+
+log = logging.getLogger("mes.database")
 
 from .config import PACKAGE_ROOT
 from .models import Base
@@ -102,8 +104,42 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 
 def init_db() -> None:
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist, then apply additive migrations."""
     Base.metadata.create_all(engine)
+    _ensure_columns()
+
+
+def _ensure_columns() -> None:
+    """Additive micro-migration: add any model columns missing from existing
+    tables. ``create_all`` only creates *new* tables — it never alters existing
+    ones — so without this, a database created on an older version of the
+    schema would crash with "no such column" after an upgrade.
+
+    Only handles ADD COLUMN (we never rename/drop). Columns are added nullable,
+    with the model's scalar default baked in as the SQL DEFAULT when there is
+    one, so existing rows get sensible values. Works on SQLite and SQL Server.
+    """
+    insp = inspect(engine)
+    prep = engine.dialect.identifier_preparer
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            existing = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing:
+                    continue
+                ddl = (f"ALTER TABLE {prep.quote(table.name)} "
+                       f"ADD {prep.quote(col.name)} {col.type.compile(engine.dialect)}")
+                default = getattr(col.default, "arg", None)
+                if isinstance(default, str):
+                    ddl += " DEFAULT '" + default.replace("'", "''") + "'"
+                elif isinstance(default, bool):
+                    ddl += f" DEFAULT {int(default)}"
+                elif isinstance(default, (int, float)):
+                    ddl += f" DEFAULT {default}"
+                conn.execute(text(ddl))
+                log.info("Schema migration: added %s.%s", table.name, col.name)
 
 
 def new_session() -> Session:

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
@@ -283,27 +284,56 @@ def _provider() -> str:
     return os.getenv("MES_INSIGHTS_PROVIDER", "local").strip().lower()
 
 
+# The dashboard polls insights with the rest of the view (~every 3s), but the
+# day's insights only change slowly — and the Claude provider costs an API call
+# per generation. Cache results for a short TTL (override: MES_INSIGHTS_TTL).
+_cache: dict[str, tuple[float, dict]] = {}
+
+
+def _cache_ttl() -> float:
+    try:
+        return float(os.getenv("MES_INSIGHTS_TTL", "60"))
+    except ValueError:
+        return 60.0
+
+
+def _cached(cache_key: str, build) -> dict:
+    now = time.monotonic()
+    hit = _cache.get(cache_key)
+    if hit is not None and (now - hit[0]) < _cache_ttl():
+        return hit[1]
+    result = build()
+    _cache[cache_key] = (now, result)
+    return result
+
+
 def site_insights(s: Session, hours: float = 24.0) -> dict:
-    facts = site_facts(s, hours)
-    provider = _provider()
-    insights = None
-    if provider == "claude":
-        insights = _claude_insights("whole site", facts)
-    if insights is None:
-        insights = _local_site_insights(facts)
-        provider = "local"
-    return {"scope": "site", "generated_by": provider,
-            "generated_at": datetime.now(timezone.utc).isoformat(), "insights": insights}
+    def build() -> dict:
+        facts = site_facts(s, hours)
+        provider = _provider()
+        insights = None
+        if provider == "claude":
+            insights = _claude_insights("whole site", facts)
+        if insights is None:
+            insights = _local_site_insights(facts)
+            provider = "local"
+        return {"scope": "site", "generated_by": provider,
+                "generated_at": datetime.now(timezone.utc).isoformat(), "insights": insights}
+
+    return _cached(f"site:{hours}", build)
 
 
 def line_insights(s: Session, key: str, hours: float = 24.0) -> dict:
-    facts = line_facts(s, key, hours)
-    provider = _provider()
-    insights = None
-    if provider == "claude":
-        insights = _claude_insights(f"the {facts['line']} production line", facts)
-    if insights is None:
-        insights = _local_line_insights(facts)
-        provider = "local"
-    return {"scope": key, "generated_by": provider,
-            "generated_at": datetime.now(timezone.utc).isoformat(), "insights": insights}
+    def build() -> dict:
+        facts = line_facts(s, key, hours)
+        provider = _provider()
+        insights = None
+        if provider == "claude":
+            insights = _claude_insights(f"the {facts['line']} production line", facts)
+        if insights is None:
+            insights = _local_line_insights(facts)
+            provider = "local"
+        return {"scope": key, "generated_by": provider,
+                "generated_at": datetime.now(timezone.utc).isoformat(), "insights": insights}
+
+    return _cached(f"line:{key}:{hours}", build)

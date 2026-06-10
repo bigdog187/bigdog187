@@ -66,11 +66,16 @@ def _start_collector() -> None:
     collector.setup()
 
     def _loop() -> None:
+        import logging as _logging
         import time as _t
 
+        _log = _logging.getLogger("mes.collector")
         interval = collector.config.poll_interval_seconds
         while True:
-            collector.poll_once()
+            try:
+                collector.poll_once()
+            except Exception:  # noqa: BLE001 - a transient error must not kill the thread
+                _log.exception("Collector poll failed; retrying next cycle")
             _t.sleep(interval)
 
     _collector_thread = threading.Thread(target=_loop, name="mes-collector", daemon=True)
@@ -167,8 +172,13 @@ def _line_dict(l: Line) -> dict:
 def _effective_driver(driver: str) -> str:
     """Apply the global simulate overlay (matches the collector) so scan/test
     work in demo mode and really talk to the PLC on-site."""
-    if os.getenv("MES_SIMULATE", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return "simulator"
+    try:
+        from ..config import load_config
+
+        if load_config().simulate:  # covers MES_SIMULATE env and site.simulate YAML
+            return "simulator"
+    except Exception:  # noqa: BLE001 - config problems shouldn't break scan/test
+        pass
     return driver
 
 
@@ -181,13 +191,19 @@ def _slug_metric(name: str) -> str:
 
 def _clean_metrics(metrics: list[dict]) -> list[dict]:
     """Normalise incoming metric defs: require a tag, derive a key from the
-    label/key, default the type, keep only known fields."""
+    label/key, default the type, de-duplicate keys, keep only known fields."""
     cleaned = []
+    seen: set[str] = set()
     for m in metrics or []:
         tag = (m.get("tag") or "").strip()
         if not tag:
             continue
         key = _slug_metric(m.get("key") or m.get("label") or tag)
+        base, n = key, 2
+        while key in seen:  # two metrics with the same label must not collide
+            key = f"{base}_{n}"
+            n += 1
+        seen.add(key)
         cleaned.append({
             "key": key,
             "label": (m.get("label") or key).strip(),

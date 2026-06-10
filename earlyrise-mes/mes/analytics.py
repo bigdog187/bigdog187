@@ -9,7 +9,9 @@ Quality). All times stored in the DB are UTC; callers pass UTC windows.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -351,8 +353,19 @@ def _as_naive_utc(dt: datetime) -> datetime:
     return dt
 
 
+@lru_cache(maxsize=1)
+def _site_tz():
+    """The site's local timezone from config (falls back to UTC)."""
+    try:
+        from .config import load_config
+
+        return ZoneInfo(load_config().timezone)
+    except Exception:  # noqa: BLE001 - config problems shouldn't break reporting
+        return timezone.utc
+
+
 def _start_of_local_day() -> datetime:
-    # Approximate "today" using UTC midnight; the site tz refinement lives in
-    # the collector's shift logic. Good enough for the header KPI.
-    now = _now()
-    return now.replace(hour=0, minute=0, second=0, microsecond=0)
+    """Midnight today in the site's local timezone, as UTC."""
+    local_now = _now().astimezone(_site_tz())
+    local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    return local_midnight.astimezone(timezone.utc)

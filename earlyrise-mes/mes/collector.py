@@ -306,5 +306,9 @@ class Collector:
         s.add(LineEvent(line_id=st.line_id, ts=utcnow(), kind=kind, detail=detail))
 
     def _shift_for(self, when_utc: datetime) -> Optional[str]:
+        # Timestamps are stored naive-UTC; attach UTC before converting,
+        # otherwise astimezone() would treat them as system-local time.
+        if when_utc.tzinfo is None:
+            when_utc = when_utc.replace(tzinfo=timezone.utc)
         local = when_utc.astimezone(self.tz)
         return self.config.shift_for(local.time())
