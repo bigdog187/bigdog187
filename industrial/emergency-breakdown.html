@@ -102,9 +102,177 @@
             .page-cta{flex-direction:column;align-items:flex-start}
         }
         @media(max-width:1200px){ .body-grid{grid-template-columns:repeat(2,1fr)} }
-</style>
+
+        /* ══════════════════════════════════════════
+           MOBILE MENU OVERLAY
+        ══════════════════════════════════════════ */
+        .mob-overlay {
+            position: fixed; inset: 0; z-index: 3000;
+            background: #000;
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        .mob-overlay.is-open { transform: translateX(0); }
+
+        .mob-header {
+            display: flex; align-items: center; justify-content: space-between;
+            position: relative; z-index: 10; padding: 0 1.5rem; height: 64px; flex-shrink: 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .mob-logo {
+            font-size: .9rem; font-weight: 800; letter-spacing: .3em;
+            text-transform: uppercase; color: #fff; text-decoration: none;
+        }
+        .mob-logo span { font-weight: 400; color: #666; }
+        .mob-close {
+            width: 44px; height: 44px; display: flex; align-items: center;
+            justify-content: center; background: none; border: 1px solid #222;
+            cursor: pointer; color: #fff; flex-shrink: 0;
+        }
+        .mob-close svg { width: 16px; height: 16px; }
+
+        .mob-nav { flex: 1; padding: 0.5rem 0; }
+
+        .mob-nav-item { border-bottom: 1px solid #111; }
+
+        .mob-nav-row {
+            display: flex; align-items: center; justify-content: space-between;
+            min-height: 56px; padding: 0 1.5rem; cursor: pointer;
+            text-decoration: none;
+        }
+        .mob-nav-row span {
+            font-size: .72rem; font-weight: 700; letter-spacing: .2em;
+            text-transform: uppercase; color: #fff;
+        }
+        .mob-arrow {
+            width: 10px; height: 10px; flex-shrink: 0;
+            border-right: 1.5px solid #555; border-bottom: 1.5px solid #555;
+            transform: rotate(45deg); transition: transform 0.2s;
+            margin-right: 2px;
+        }
+        .mob-nav-item.is-open .mob-arrow { transform: rotate(-135deg); }
+
+        .mob-sub {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #060606;
+        }
+        .mob-nav-item.is-open .mob-sub { max-height: 700px; }
+
+        .mob-sub a {
+            display: flex; align-items: center; min-height: 50px;
+            padding: 0 1.5rem 0 2.25rem;
+            font-size: .75rem; font-weight: 500; letter-spacing: .08em;
+            color: rgba(255,255,255,.65); text-decoration: none;
+            border-bottom: 1px solid #0d0d0d; transition: color .15s;
+        }
+        .mob-sub a:last-child { border-bottom: none; }
+        .mob-sub a:active { color: #fff; }
+
+        .mob-footer {
+            padding: 2rem 1.5rem; border-top: 1px solid #1a1a1a; flex-shrink: 0;
+        }
+        .mob-phone {
+            display: block; font-size: 1.6rem; font-weight: 800;
+            letter-spacing: .02em; color: #fff; text-decoration: none;
+            margin-bottom: 1.25rem;
+        }
+        .mob-cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+        .mob-btn {
+            flex: 1; min-width: 130px; display: flex; align-items: center;
+            justify-content: center; height: 48px;
+            font-family: inherit; font-size: .68rem; font-weight: 700;
+            letter-spacing: .2em; text-transform: uppercase;
+            text-decoration: none; text-align: center;
+            border: 1.5px solid #fff; color: #fff; background: transparent;
+            transition: background .2s, color .2s; cursor: pointer;
+        }
+        .mob-btn.solid { background: #fff; color: #000; }
+        .mob-btn:active { background: #fff; color: #000; }
+
+        /* Hamburger animation */
+        .nav-hamburger.is-open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+        .nav-hamburger.is-open span:nth-child(2) { opacity: 0; }
+        .nav-hamburger.is-open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+        /* Extra mobile tweaks */
+        @media (max-width: 480px) {
+            .panel-headline { font-size: clamp(2rem, 10vw, 2.8rem); }
+            .stat-value { font-size: clamp(2.4rem, 10vw, 3.5rem); }
+        }
+    </style>
 </head>
 <body>
+
+<!-- ══ MOBILE MENU ══════════════════════════════════════════════ -->
+<div class="mob-overlay" id="mobOverlay" aria-modal="true" role="dialog" aria-label="Navigation">
+  <div class="mob-header">
+    <a href="../index.html" class="mob-logo" id="mobLogoLink">WEILEY<span>&nbsp;ELECTRICAL</span></a>
+    <button class="mob-close" id="mobClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <nav class="mob-nav">
+    <!-- Industrial -->
+    <div class="mob-nav-item" id="mobInd">
+      <div class="mob-nav-row" role="button" tabindex="0">
+        <span>Industrial</span>
+        <span class="mob-arrow"></span>
+      </div>
+      <div class="mob-sub">
+        <a href="../industrial/installations-wiring.html">Installations &amp; Wiring</a>
+        <a href="../industrial/plc-scada.html">PLC &amp; SCADA Systems</a>
+        <a href="../industrial/hazardous-area.html">Hazardous Area</a>
+        <a href="../industrial/automation-control.html">Automation &amp; Control</a>
+        <a href="../industrial/preventive-maintenance.html">Preventive Maintenance</a>
+        <a href="../industrial/emergency-breakdown.html">24/7 Breakdown Response</a>
+      </div>
+    </div>
+    <!-- Commercial -->
+    <div class="mob-nav-item" id="mobCom">
+      <div class="mob-nav-row" role="button" tabindex="0">
+        <span>Commercial</span>
+        <span class="mob-arrow"></span>
+      </div>
+      <div class="mob-sub">
+        <a href="../commercial/installations-upgrades.html">Installations &amp; Upgrades</a>
+        <a href="../commercial/repairs-fault-finding.html">Repairs &amp; Fault Finding</a>
+        <a href="../commercial/data-fibre-cabling.html">Data &amp; Fibre Cabling</a>
+        <a href="../commercial/security-systems.html">Security Systems</a>
+        <a href="../commercial/facility-maintenance.html">Facility Maintenance</a>
+        <a href="../commercial/complex-cabling.html">Complex Cabling</a>
+      </div>
+    </div>
+    <!-- Compliance -->
+    <div class="mob-nav-item" id="mobComp">
+      <div class="mob-nav-row" role="button" tabindex="0">
+        <span>Compliance</span>
+        <span class="mob-arrow"></span>
+      </div>
+      <div class="mob-sub">
+        <a href="../compliance/compliance-auditing.html">Compliance Auditing</a>
+        <a href="../compliance/rcd-testing.html">RCD Testing</a>
+        <a href="../compliance/test-tag.html">Test &amp; Tag</a>
+        <a href="../compliance/emergency-lighting.html">Emergency Lighting</a>
+        <a href="../compliance/switchboard-assessment.html">Switchboard Assessment</a>
+        <a href="../compliance/safety-reports.html">Safety Reports</a>
+      </div>
+    </div>
+    <!-- Flat links -->
+    <div class="mob-nav-item"><a href="../hire.html" class="mob-nav-row"><span>Hire</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#about" class="mob-nav-row"><span>About</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#contact" class="mob-nav-row"><span>Contact</span></a></div>
+  </nav>
+  <div class="mob-footer">
+    <a href="tel:0268849292" class="mob-phone">02 6884 9292</a>
+    <div class="mob-cta-row">
+      <a href="tel:0268849292" class="mob-btn">Call Now</a>
+      <a href="../index.html#contact" class="mob-btn solid">Get a Quote</a>
+    </div>
+  </div>
+</div>
 
 
 <nav id="nav">
@@ -286,6 +454,45 @@ Response</h1>
         if (!e.target.closest('.nav-item'))
             document.querySelectorAll('.nav-item.open').forEach(i => i.classList.remove('open'));
     });
+
+    // Mobile menu
+    (function() {
+        const overlay  = document.getElementById('mobOverlay');
+        const openBtn  = document.getElementById('menuBtn');
+        const closeBtn = document.getElementById('mobClose');
+        if (!overlay || !openBtn) return;
+
+        function openMenu() {
+            overlay.classList.add('is-open');
+            openBtn.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMenu() {
+            overlay.classList.remove('is-open');
+            openBtn.classList.remove('is-open');
+            document.body.style.overflow = '';
+        }
+
+        openBtn.addEventListener('click', openMenu);
+        closeBtn.addEventListener('click', closeMenu);
+
+        // Accordion toggles
+        ['mobInd','mobCom','mobComp'].forEach(id => {
+            const item = document.getElementById(id);
+            if (!item) return;
+            item.querySelector('.mob-nav-row').addEventListener('click', () => {
+                item.classList.toggle('is-open');
+            });
+            item.querySelector('.mob-nav-row').addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.classList.toggle('is-open'); }
+            });
+        });
+
+        // Close on outside tap
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) closeMenu();
+        });
+    })();
 </script>
 </body>
 </html>
