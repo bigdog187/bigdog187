@@ -1,0 +1,31 @@
+{
+  "name": "oee-dashboard",
+  "version": "1.0.0",
+  "description": "Generic multi-site OEE / production monitoring dashboard with Allen Bradley PLC connectivity",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/seed.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": [
+    "oee",
+    "manufacturing",
+    "plc",
+    "allen-bradley",
+    "ethernet-ip",
+    "modbus",
+    "scada",
+    "production-monitoring"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "express": "^5.2.1",
+    "ws": "^8.21.0"
+  },
+  "optionalDependencies": {
+    "st-ethernet-ip": "^2.7.5"
+  }
+}

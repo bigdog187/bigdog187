@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OEE Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◉</span>
+      <div>
+        <h1>OEE Dashboard</h1>
+        <span class="subtitle">Production Monitoring</span>
+      </div>
+    </div>
+    <div class="overview" id="overview"><!-- KPI chips injected here --></div>
+    <div class="topbar-actions">
+      <span class="conn" id="conn-status" title="Live connection">● live</span>
+      <button class="btn" id="btn-add-site">+ Site</button>
+      <button class="btn primary" id="btn-add-machine">+ Machine</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-head">Sites &amp; Machines</div>
+      <div id="machine-list" class="machine-list"></div>
+    </aside>
+
+    <main class="content" id="content">
+      <div class="empty-state" id="empty-state">
+        <h2>Select a machine</h2>
+        <p>Pick a machine from the left to view live OEE, feed rate, downtime and alarms — or add a new site/machine to connect a generic production line or Allen Bradley PLC.</p>
+      </div>
+
+      <section class="detail" id="detail" hidden>
+        <div class="detail-head">
+          <div>
+            <h2 id="d-name">—</h2>
+            <span class="muted" id="d-site">—</span>
+          </div>
+          <div class="detail-controls">
+            <span class="state-badge" id="d-state">—</span>
+            <select id="range-select" class="select">
+              <option value="today" selected>Today (shift)</option>
+              <option value="1h">Last 1h</option>
+              <option value="8h">Last 8h</option>
+              <option value="24h">Last 24h</option>
+              <option value="7d">Last 7 days</option>
+            </select>
+            <button class="btn" id="btn-edit">Edit</button>
+            <button class="btn" id="btn-export">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="card gauge-card">
+            <canvas id="gauge-oee"></canvas>
+            <div class="gauge-sub" id="oee-target">target —</div>
+          </div>
+          <div class="card mini"><div class="mini-label">Availability</div><div class="mini-val" id="k-avail">—</div><div class="mini-bar"><span id="bar-avail"></span></div></div>
+          <div class="card mini"><div class="mini-label">Performance</div><div class="mini-val" id="k-perf">—</div><div class="mini-bar"><span id="bar-perf"></span></div></div>
+          <div class="card mini"><div class="mini-label">Quality</div><div class="mini-val" id="k-qual">—</div><div class="mini-bar"><span id="bar-qual"></span></div></div>
+          <div class="card mini">
+            <div class="mini-label">Feed Rate</div>
+            <div class="mini-val" id="k-feed">—</div>
+            <div class="mini-foot" id="k-feed-ideal">ideal —</div>
+          </div>
+          <div class="card mini">
+            <div class="mini-label">Operator</div>
+            <div class="mini-val sm" id="k-operator">—</div>
+            <div class="mini-foot" id="k-operator-set"><a href="#" id="set-operator">set manually</a></div>
+          </div>
+        </div>
+
+        <div class="panel-grid">
+          <div class="card chart-card span2">
+            <div class="card-head"><span>Feed Rate Trend</span><span class="muted sm" id="feed-unit"></span></div>
+            <canvas id="chart-feed" class="chart"></canvas>
+          </div>
+          <div class="card chart-card span2">
+            <div class="card-head"><span>Status Timeline</span>
+              <span class="legend">
+                <i class="dot run"></i>Run <i class="dot stop"></i>Stop <i class="dot flt"></i>Fault <i class="dot idle"></i>Idle
+              </span>
+            </div>
+            <canvas id="chart-timeline" class="timeline"></canvas>
+          </div>
+
+          <div class="card chart-card">
+            <div class="card-head"><span>Downtime Pareto</span></div>
+            <canvas id="chart-pareto" class="chart"></canvas>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span>Production</span></div>
+            <div class="prod-stats" id="prod-stats"></div>
+          </div>
+
+          <div class="card span2">
+            <div class="card-head"><span>Alarms &amp; Events</span><span class="muted sm" id="alarm-count"></span></div>
+            <div class="alarm-list" id="alarm-list"></div>
+          </div>
+
+          <div class="card span2">
+            <div class="card-head"><span>Operator Log</span></div>
+            <div class="operator-list" id="operator-list"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <div class="modal" id="modal">
+      <div class="modal-head"><h3 id="modal-title">Add</h3><button class="modal-close" id="modal-close">✕</button></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-foot">
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn primary" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
