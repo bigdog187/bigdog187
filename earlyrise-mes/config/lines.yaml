@@ -15,6 +15,15 @@ site:
   # regardless of its configured driver. Handy for demos / off-site dev.
   simulate: false
 
+  # --- Data maintenance (production) ---------------------------------------
+  # The collector folds closed production runs into a compact daily summary
+  # (daily_stats) and can purge old raw data so storage stays bounded. Reports
+  # read runs / daily_stats, not raw samples, so purging samples is safe.
+  rollup_enabled: true              # maintain the daily_stats summary table
+  sample_retention_days: 90         # delete per-poll samples older than this (0 = keep forever)
+  event_retention_days: 365         # delete audit events older than this (0 = keep forever)
+  maintenance_interval_minutes: 360 # how often the collector runs purge + roll-up
+
 # Shift windows are used to bucket production reporting. Times are local (site tz).
 # A window whose end is earlier than its start (e.g. Night) wraps past midnight.
 shifts:

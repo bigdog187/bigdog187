@@ -16,7 +16,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from .models import Line, LineEvent, ProductionRun, Sample
+from .models import DailyStat, Line, LineEvent, ProductionRun, Sample
 
 
 def _now() -> datetime:
@@ -194,6 +194,38 @@ def operator_performance(s: Session, key: str, start: datetime, end: datetime) -
     for i, o in enumerate(ops, 1):
         o["rank"] = i
     return {"key": line.key, "name": line.name, "target_rate": target, "operators": ops}
+
+
+def daily_history(s: Session, key: str, days: int = 30) -> dict:
+    """Per-day production history from the ``daily_stats`` roll-up — fast over
+    long ranges and unaffected by sample retention. One entry per local day with
+    produced, reject, running hours and rate attainment."""
+    line = _line(s, key)
+    target = line.ideal_rate_per_hour or 0.0
+    start_day = _now().astimezone(_site_tz()).date() - timedelta(days=days - 1)
+    rows = s.scalars(
+        select(DailyStat)
+        .where(DailyStat.line_id == line.id, DailyStat.day >= start_day)
+        .order_by(DailyStat.day)
+    ).all()
+    byday: dict[str, dict] = {}
+    for r in rows:
+        d = byday.setdefault(r.day.isoformat(),
+                             {"produced": 0, "reject": 0, "running_seconds": 0.0, "runs": 0})
+        d["produced"] += r.produced
+        d["reject"] += r.reject
+        d["running_seconds"] += r.running_seconds
+        d["runs"] += r.runs
+    out = []
+    for day, a in sorted(byday.items()):
+        rh = a["running_seconds"] / 3600.0
+        actual = (a["produced"] / rh) if rh > 0 else 0.0
+        out.append({
+            "day": day, "produced": a["produced"], "reject": a["reject"],
+            "running_hours": round(rh, 3), "actual_rate": round(actual, 1),
+            "attainment": round((actual / target) if target else 0.0, 4), "runs": a["runs"],
+        })
+    return {"key": line.key, "name": line.name, "target_rate": target, "days": out}
 
 
 def operator_performance_all(s: Session, start: datetime, end: datetime) -> dict:

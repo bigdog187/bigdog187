@@ -55,6 +55,11 @@ class SiteConfig:
     timezone: str = "Australia/Sydney"
     poll_interval_seconds: float = 2.0
     simulate: bool = False
+    # Data maintenance (production): keep storage bounded + reports fast.
+    sample_retention_days: int = 0        # 0 = keep raw samples forever
+    event_retention_days: int = 0         # 0 = keep events forever
+    rollup_enabled: bool = True           # maintain the daily_stats summary
+    maintenance_interval_minutes: float = 360.0
     shifts: list[Shift] = field(default_factory=list)
     lines: list[LineConfig] = field(default_factory=list)
 
@@ -134,11 +139,30 @@ def load_config(path: str | os.PathLike | None = None) -> SiteConfig:
     if dupes:
         raise ValueError(f"Duplicate line keys in config: {sorted(dupes)}")
 
+    def _int(env_name, yaml_key, default):
+        val = os.getenv(env_name)
+        if val is not None and val.strip():
+            try:
+                return int(float(val))
+            except ValueError:
+                pass
+        return int(site_raw.get(yaml_key, default) or 0)
+
+    rollup = site_raw.get("rollup_enabled", True)
+    if os.getenv("MES_ROLLUP_ENABLED", "").strip():
+        rollup = _env_truthy("MES_ROLLUP_ENABLED")
+
     return SiteConfig(
         name=site_raw.get("name", "Earlyrise Bakery"),
         timezone=site_raw.get("timezone", "Australia/Sydney"),
         poll_interval_seconds=float(site_raw.get("poll_interval_seconds", 2)),
         simulate=force_sim,
+        sample_retention_days=_int("MES_SAMPLE_RETENTION_DAYS", "sample_retention_days", 0),
+        event_retention_days=_int("MES_EVENT_RETENTION_DAYS", "event_retention_days", 0),
+        rollup_enabled=bool(rollup),
+        maintenance_interval_minutes=float(
+            os.getenv("MES_MAINTENANCE_INTERVAL_MIN")
+            or site_raw.get("maintenance_interval_minutes", 360) or 360),
         shifts=shifts,
         lines=lines,
     )

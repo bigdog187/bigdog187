@@ -58,6 +58,7 @@ class Collector:
         self.states: dict[str, LineState] = {}
         self._signatures: dict[str, tuple] = {}
         self._stop = threading.Event()
+        self._last_maint: Optional[float] = None
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -182,6 +183,7 @@ class Collector:
             while not self._stop.is_set():
                 start = time.monotonic()
                 self.poll_once()
+                self.run_maintenance_if_due()
                 elapsed = time.monotonic() - start
                 self._stop.wait(max(0.0, interval - elapsed))
         finally:
@@ -189,6 +191,38 @@ class Collector:
 
     def stop(self) -> None:
         self._stop.set()
+
+    # -- maintenance (retention purge + daily roll-up) -----------------------
+
+    def run_maintenance_if_due(self) -> None:
+        """Run retention/roll-up on a schedule. Self-gating, so loops can call
+        it every cycle. Runs once shortly after startup, then every
+        ``maintenance_interval_minutes``."""
+        interval = max(60.0, self.config.maintenance_interval_minutes * 60.0)
+        now = time.monotonic()
+        if self._last_maint is not None and (now - self._last_maint) < interval:
+            return
+        self._last_maint = now
+        try:
+            self.run_maintenance()
+        except Exception:  # noqa: BLE001 - maintenance must never kill polling
+            log.exception("Maintenance pass failed; will retry next interval")
+
+    def run_maintenance(self) -> None:
+        from datetime import timedelta
+
+        from . import maintenance
+
+        with new_session() as s:
+            if self.config.rollup_enabled:
+                while maintenance.rollup_daily(s, self.tz):  # drain in batches
+                    pass
+            if self.config.sample_retention_days > 0:
+                cutoff = utcnow() - timedelta(days=self.config.sample_retention_days)
+                maintenance.purge_samples(s, cutoff)
+            if self.config.event_retention_days > 0:
+                cutoff = utcnow() - timedelta(days=self.config.event_retention_days)
+                maintenance.purge_events(s, cutoff)
 
     # -- core state machine --------------------------------------------------
 

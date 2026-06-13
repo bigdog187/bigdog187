@@ -188,6 +188,61 @@ def test_operator_performance_ranks_best_to_worst(collector):
         assert any(l["key"] == "l1" for l in all_perf["lines"])
 
 
+def test_daily_rollup_is_incremental_and_idempotent(collector):
+    from zoneinfo import ZoneInfo
+
+    from mes import maintenance
+    from mes.models import DailyStat, ProductionRun
+
+    # Two stints: recipe change closes run 1; run 2 stays open.
+    collector.drivers["l1"] = ScriptedDriver("l1", [
+        _read(operator="Alice", recipe="R1", count=0),
+        _read(operator="Alice", recipe="R1", count=100),
+        _read(operator="Alice", recipe="R2", count=130),  # changeover -> closes run 1
+        _read(operator="Alice", recipe="R2", count=160),
+    ])
+    for _ in range(4):
+        collector.poll_once()
+
+    tz = ZoneInfo("UTC")
+    with new_session() as s:
+        rolled = maintenance.rollup_daily(s, tz)
+        assert rolled == 1                                  # only the closed run
+        stats = s.query(DailyStat).all()
+        assert len(stats) == 1
+        assert stats[0].recipe == "R1" and stats[0].produced == 100 and stats[0].runs == 1
+        # idempotent: re-running rolls up nothing new, totals unchanged
+        assert maintenance.rollup_daily(s, tz) == 0
+        assert s.query(DailyStat).first().produced == 100
+        # the open run was left for a later pass
+        assert s.query(ProductionRun).filter_by(status="open", rolled_up=False).count() == 1
+
+    with new_session() as s:
+        hist = analytics.daily_history(s, "l1", days=7)
+        assert sum(d["produced"] for d in hist["days"]) == 100
+
+
+def test_purge_samples_respects_cutoff(collector):
+    from datetime import timedelta
+
+    from mes import maintenance
+    from mes.models import Sample, utcnow
+
+    collector.drivers["l1"] = ScriptedDriver("l1", [_read(count=0), _read(count=50)])
+    collector.poll_once()
+    collector.poll_once()
+
+    with new_session() as s:
+        # Backdate the first sample well past the retention window.
+        first = s.query(Sample).order_by(Sample.id).first()
+        first.ts = utcnow() - timedelta(days=120)
+        s.commit()
+        before = s.query(Sample).count()
+        purged = maintenance.purge_samples(s, utcnow() - timedelta(days=90))
+        assert purged == 1
+        assert s.query(Sample).count() == before - 1
+
+
 def test_oee_components(collector):
     collector.drivers["l1"] = ScriptedDriver("l1", [
         _read(count=0, running=True, reject=0),

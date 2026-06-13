@@ -16,10 +16,11 @@ The schema is portable across SQLite (dev/demo) and SQL Server (on-site).
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -153,10 +154,42 @@ class ProductionRun(Base):
     running_seconds: Mapped[float] = mapped_column(Float, default=0.0)
 
     status: Mapped[str] = mapped_column(String(16), default="open")  # open | closed
+    # Set once a closed run has been folded into the daily roll-up table, so the
+    # roll-up is incremental and idempotent (each run counted exactly once).
+    rolled_up: Mapped[bool] = mapped_column(Boolean, default=False)
 
     line: Mapped["Line"] = relationship(back_populates="runs")
 
-    __table_args__ = (Index("ix_runs_line_status", "line_id", "status"),)
+    __table_args__ = (
+        Index("ix_runs_line_status", "line_id", "status"),
+        Index("ix_runs_rollup", "status", "rolled_up"),
+    )
+
+
+class DailyStat(Base):
+    """Per-day production summary, one row per
+    (line, day, operator, recipe, shift). Built incrementally from closed
+    production runs by the maintenance job, so long-range reports never have to
+    touch the high-frequency ``samples`` table and survive sample retention.
+    Grouping keys use ``""`` rather than NULL so upserts match cleanly."""
+
+    __tablename__ = "daily_stats"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    line_id: Mapped[int] = mapped_column(ForeignKey("lines.id"), index=True)
+    day: Mapped[date] = mapped_column(Date, index=True)            # local (site tz) date
+    operator: Mapped[str] = mapped_column(String(128), default="")
+    recipe: Mapped[str] = mapped_column(String(128), default="")
+    shift: Mapped[str] = mapped_column(String(64), default="")
+
+    produced: Mapped[int] = mapped_column(Integer, default=0)
+    reject: Mapped[int] = mapped_column(Integer, default=0)
+    running_seconds: Mapped[float] = mapped_column(Float, default=0.0)
+    runs: Mapped[int] = mapped_column(Integer, default=0)
+
+    __table_args__ = (
+        Index("ix_daily_unique", "line_id", "day", "operator", "recipe", "shift", unique=True),
+    )
 
 
 class LineEvent(Base):

@@ -209,11 +209,34 @@ the browser (`localStorage`), so each operator/station can pick light or dark.
 | `samples`         | One telemetry snapshot per poll per line (time-series for charts).|
 | `production_runs` | The MES core: a continuous run of one recipe by one operator.     |
 | `line_events`     | Audit trail: operator/recipe changes, start/stop, faults, resets. |
+| `daily_stats`     | Per-day roll-up (line/operator/recipe/shift) for long-range reports.|
 
 The **collector state machine** reads each line on a fixed interval, computes
 reset-aware "produced" deltas from the product counter, and opens/closes a
 production run whenever the operator or recipe changes — so totals are always
 attributed to the right operator, recipe and shift.
+
+Reports aggregate `production_runs` (and `samples` only for live charts) **on
+read** — they are not pre-computed. `daily_stats` is the compact long-range
+summary.
+
+## Data retention & roll-up (production)
+
+At a 2-second poll the `samples` table grows ~1.3M rows / line / month, so the
+collector runs a periodic maintenance pass (every `maintenance_interval_minutes`):
+
+1. **Roll-up** — each *closed* production run is folded once into `daily_stats`
+   (idempotent via a `rolled_up` flag). This is the durable, query-cheap summary
+   behind long-range reports and survives sample purging.
+2. **Retention** — raw `samples` older than `sample_retention_days` and
+   `line_events` older than `event_retention_days` are deleted in batches.
+   `production_runs` and `daily_stats` are kept (they're small).
+
+Defaults are in `config/lines.yaml` (`rollup_enabled`, `sample_retention_days`,
+`event_retention_days`, `maintenance_interval_minutes`) and overridable via the
+matching `MES_*` env vars. Set the retention days to `0` to keep raw data
+forever. The schema upgrades in place: on startup, missing columns/tables are
+added and any existing closed runs are rolled up on the next maintenance pass.
 
 ---
 
@@ -227,6 +250,7 @@ attributed to the right operator, recipe and shift.
 | `GET /api/lines/{key}/insights`            | AI insights for one line's day.          |
 | `GET /api/lines/{key}/rate`                | Actual rate/hr vs target rate/hr.        |
 | `GET /api/operators`                       | Operator rankings (best→worst) per line. |
+| `GET /api/lines/{key}/history`             | Per-day production history (daily roll-up).|
 | `GET /api/lines`                           | Configured lines.                        |
 | `GET /api/lines/{key}/status`              | Live status for one line.                |
 | `GET /api/lines/{key}/production?group_by=`| Totals by `recipe`/`operator`/`shift`.   |

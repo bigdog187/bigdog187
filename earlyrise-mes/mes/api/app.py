@@ -74,6 +74,7 @@ def _start_collector() -> None:
         while True:
             try:
                 collector.poll_once()
+                collector.run_maintenance_if_due()
             except Exception:  # noqa: BLE001 - a transient error must not kill the thread
                 _log.exception("Collector poll failed; retrying next cycle")
             _t.sleep(interval)
@@ -100,6 +101,16 @@ def health() -> dict:
 def summary() -> dict:
     with new_session() as s:
         return analytics.site_summary(s)
+
+
+@app.get("/api/lines/{key}/history")
+def line_history(key: str, days: int = Query(30, ge=1, le=730)) -> dict:
+    """Per-day production history from the daily roll-up (long-range, fast)."""
+    with new_session() as s:
+        try:
+            return analytics.daily_history(s, key, days)
+        except KeyError:
+            raise HTTPException(404, f"Unknown line: {key}")
 
 
 @app.get("/api/operators")
