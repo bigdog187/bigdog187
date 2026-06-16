@@ -1,0 +1,19 @@
+{
+  "name": "weiley-aroflo-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Weiley Electrical work dashboard — connects AroFlo and Claude. Ask questions in plain English, get answers from live AroFlo data, and reshape the dashboard on the fly.",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon --watch server --watch public --watch data -e js,html,css,json server/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

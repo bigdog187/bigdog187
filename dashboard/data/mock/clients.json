@@ -1,0 +1,8 @@
+[
+  { "id": "C-01", "name": "Dubbo RSL Club", "contact": "Mark Fenton", "phone": "02 6882 4411", "openJobs": 1, "ytdValue": 28400 },
+  { "id": "C-02", "name": "Orana Mall Management", "contact": "Sue Calder", "phone": "02 6884 1200", "openJobs": 1, "ytdValue": 15600 },
+  { "id": "C-03", "name": "Western Meats", "contact": "Dom Hayes", "phone": "02 6887 9900", "openJobs": 1, "ytdValue": 9200 },
+  { "id": "C-04", "name": "Macquarie Accounting", "contact": "Lily Tran", "phone": "02 6881 3322", "openJobs": 1, "ytdValue": 12500 },
+  { "id": "C-05", "name": "Dubbo Base Hospital", "contact": "Facilities Dept", "phone": "02 6809 6000", "openJobs": 1, "ytdValue": 41000 },
+  { "id": "C-06", "name": "Central West Feeds", "contact": "Garry Pike", "phone": "02 6885 7788", "openJobs": 1, "ytdValue": 18900 }
+]

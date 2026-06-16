@@ -1,0 +1,9 @@
+[
+  { "id": "TS-01", "staff": "Jake M.", "date": "2026-06-10", "job": "T-1042", "hours": 7.5 },
+  { "id": "TS-02", "staff": "Jake M.", "date": "2026-06-11", "job": "T-1039", "hours": 6.0 },
+  { "id": "TS-03", "staff": "Priya S.", "date": "2026-06-10", "job": "T-1043", "hours": 8.0 },
+  { "id": "TS-04", "staff": "Tom R.", "date": "2026-06-11", "job": "T-1031", "hours": 7.0 },
+  { "id": "TS-05", "staff": "Priya S.", "date": "2026-06-11", "job": "T-1028", "hours": 5.5 },
+  { "id": "TS-06", "staff": "Tom R.", "date": "2026-06-12", "job": "T-1044", "hours": 4.0 },
+  { "id": "TS-07", "staff": "Jake M.", "date": "2026-06-12", "job": "T-1015", "hours": 8.0 }
+]

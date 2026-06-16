@@ -1,0 +1,10 @@
+[
+  { "id": "T-1042", "title": "Switchboard upgrade — Dubbo RSL", "client": "Dubbo RSL Club", "status": "In Progress", "priority": "High", "assignedTo": "Jake M.", "due": "2026-06-18", "overdue": false, "value": 8400 },
+  { "id": "T-1043", "title": "RCD testing — Orana Mall", "client": "Orana Mall Management", "status": "Scheduled", "priority": "Medium", "assignedTo": "Priya S.", "due": "2026-06-20", "overdue": false, "value": 3200 },
+  { "id": "T-1039", "title": "Emergency breakdown — cold room", "client": "Western Meats", "status": "In Progress", "priority": "Urgent", "assignedTo": "Jake M.", "due": "2026-06-13", "overdue": true, "value": 1500 },
+  { "id": "T-1031", "title": "Data & fibre cabling — new office", "client": "Macquarie Accounting", "status": "Awaiting Parts", "priority": "Medium", "assignedTo": "Tom R.", "due": "2026-06-25", "overdue": false, "value": 12500 },
+  { "id": "T-1028", "title": "Annual compliance audit", "client": "Dubbo Base Hospital", "status": "Scheduled", "priority": "High", "assignedTo": "Priya S.", "due": "2026-06-30", "overdue": false, "value": 6800 },
+  { "id": "T-1009", "title": "Lighting install — warehouse", "client": "Fletcher Logistics", "status": "Completed", "priority": "Medium", "assignedTo": "Tom R.", "due": "2026-06-05", "overdue": false, "value": 9700 },
+  { "id": "T-1015", "title": "PLC fault finding — feed mill", "client": "Central West Feeds", "status": "In Progress", "priority": "High", "assignedTo": "Jake M.", "due": "2026-06-12", "overdue": true, "value": 4300 },
+  { "id": "T-1044", "title": "Powerpoint additions — reno", "client": "K. Henderson", "status": "Scheduled", "priority": "Low", "assignedTo": "Tom R.", "due": "2026-06-22", "overdue": false, "value": 1100 }
+]

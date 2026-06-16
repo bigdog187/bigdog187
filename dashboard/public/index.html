@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weiley Electrical — Operations Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">WEILEY <span>OPERATIONS</span></div>
+    <div class="status" id="status">
+      <span class="dot" id="dot-claude"></span> Claude
+      <span class="dot" id="dot-aroflo"></span> AroFlo
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Dashboard -->
+    <section class="board-wrap">
+      <div class="board-head">
+        <h1 id="board-title">Dashboard</h1>
+        <div class="board-actions">
+          <button id="btn-add" class="btn">+ Add widget</button>
+          <button id="btn-refresh" class="btn ghost">Refresh</button>
+          <button id="btn-reset" class="btn ghost">Reset layout</button>
+        </div>
+      </div>
+      <div id="grid" class="grid"></div>
+    </section>
+
+    <!-- Chat -->
+    <aside class="chat">
+      <div class="chat-head">
+        <h2>Ask AroFlo</h2>
+        <button id="btn-clear" class="btn ghost small">Clear</button>
+      </div>
+      <div id="messages" class="messages">
+        <div class="msg assistant">
+          <p>Ask me anything about your jobs, clients, invoices or schedule — e.g.
+          <em>"what's overdue?"</em>, <em>"how many hours this week?"</em>, or
+          <em>"add a widget showing unpaid invoices"</em>.</p>
+        </div>
+      </div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off" />
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </aside>
+  </main>
+
+  <!-- Add-widget dialog -->
+  <dialog id="add-dialog">
+    <form method="dialog" id="add-form">
+      <h3>Add a widget</h3>
+      <label>Title <input name="title" required placeholder="e.g. Overdue Jobs" /></label>
+      <label>Type
+        <select name="type" id="add-type">
+          <option value="metric">Metric (single number)</option>
+          <option value="table">Table (list)</option>
+        </select>
+      </label>
+      <label>Data source
+        <select name="source" id="add-source"></select>
+      </label>
+      <label id="field-row">Metric field
+        <select name="field" id="add-field"></select>
+      </label>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn ghost">Cancel</button>
+        <button value="ok" class="btn" id="add-ok">Add</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>

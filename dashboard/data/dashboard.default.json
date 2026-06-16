@@ -1,0 +1,13 @@
+{
+  "title": "Weiley Electrical — Operations",
+  "widgets": [
+    { "id": "w-open",     "type": "metric", "title": "Open Jobs",        "source": "metrics", "field": "openJobs" },
+    { "id": "w-overdue",  "type": "metric", "title": "Overdue Jobs",     "source": "metrics", "field": "overdueJobs", "tone": "warn" },
+    { "id": "w-unpaid",   "type": "metric", "title": "Unpaid Invoices",  "source": "metrics", "field": "unpaidInvoices" },
+    { "id": "w-owed",     "type": "metric", "title": "Outstanding ($)",  "source": "metrics", "field": "unpaidTotal", "format": "money", "tone": "warn" },
+    { "id": "w-hours",    "type": "metric", "title": "Hours This Week",   "source": "metrics", "field": "hoursThisWeek" },
+    { "id": "w-clients",  "type": "metric", "title": "Active Clients",    "source": "metrics", "field": "activeClients" },
+    { "id": "w-jobs",     "type": "table",  "title": "Active Jobs",       "source": "jobs",     "columns": ["id", "title", "client", "status", "assignedTo", "due"] },
+    { "id": "w-sched",    "type": "table",  "title": "Today's Schedule",  "source": "schedule", "columns": ["time", "staff", "title", "client"] }
+  ]
+}

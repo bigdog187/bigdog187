@@ -1,0 +1,7 @@
+[
+  { "id": "INV-3301", "client": "Fletcher Logistics", "amount": 9700, "status": "Paid", "issued": "2026-06-06", "due": "2026-06-20" },
+  { "id": "INV-3298", "client": "Dubbo RSL Club", "amount": 4200, "status": "Sent", "issued": "2026-06-02", "due": "2026-06-16" },
+  { "id": "INV-3290", "client": "Western Meats", "amount": 1500, "status": "Overdue", "issued": "2026-05-20", "due": "2026-06-03" },
+  { "id": "INV-3285", "client": "Central West Feeds", "amount": 4300, "status": "Sent", "issued": "2026-06-01", "due": "2026-06-15" },
+  { "id": "INV-3270", "client": "Macquarie Accounting", "amount": 6250, "status": "Overdue", "issued": "2026-05-12", "due": "2026-05-26" }
+]

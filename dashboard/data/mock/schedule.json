@@ -1,0 +1,7 @@
+[
+  { "time": "07:30", "staff": "Jake M.", "job": "T-1039", "title": "Emergency breakdown — cold room", "client": "Western Meats" },
+  { "time": "08:00", "staff": "Priya S.", "job": "T-1043", "title": "RCD testing — Orana Mall", "client": "Orana Mall Management" },
+  { "time": "09:00", "staff": "Tom R.", "job": "T-1031", "title": "Data & fibre cabling", "client": "Macquarie Accounting" },
+  { "time": "13:00", "staff": "Jake M.", "job": "T-1042", "title": "Switchboard upgrade", "client": "Dubbo RSL Club" },
+  { "time": "14:30", "staff": "Tom R.", "job": "T-1044", "title": "Powerpoint additions", "client": "K. Henderson" }
+]
