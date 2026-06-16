@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wyelec Mill SCADA — Demo (single file)</title>
+  <meta name="description" content="Self-contained SCADA / HMI demo for a grain handling and flour milling plant. Open directly in a browser — no server required." />
+  <style>
+/* ====================================================================
+   Grain Handling & Flour Milling SCADA - HMI stylesheet
+   Dark industrial control-room theme. Vanilla CSS, no build step.
+   ==================================================================== */
+
+:root {
+  --bg:        #0d1117;
+  --bg-2:      #161b22;
+  --bg-3:      #1c2330;
+  --panel:     #11161f;
+  --line:      #2a3340;
+  --line-2:    #38404d;
+  --txt:       #d7dee8;
+  --txt-dim:   #8b97a7;
+  --txt-mute:  #5a6675;
+  --accent:    #2f81f7;
+  --accent-2:  #1f6feb;
+
+  /* process / status colours */
+  --run:       #2ea043;   /* running / healthy */
+  --run-glow:  #2ea04355;
+  --stop:      #6e7681;   /* stopped / idle */
+  --warn:      #d29922;   /* warning */
+  --alarm:     #f85149;   /* alarm / fault */
+  --alarm-glow:#f8514955;
+  --auto:      #2f81f7;
+  --manual:    #d29922;
+  --grain:     #c8a24b;   /* grain / product fill */
+  --water:     #2f81f7;
+
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow: 0 6px 24px rgba(0,0,0,.45);
+  --mono: "SF Mono", "Cascadia Code", ui-monospace, Menlo, Consolas, monospace;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--txt);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ layout */
+#app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 52px 1fr 30px;
+  grid-template-areas:
+    "brand topbar"
+    "nav   main"
+    "nav   statusbar";
+  height: 100vh;
+}
+
+/* ----------------------------------------------------------------- topbar */
+.brand {
+  grid-area: brand;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: var(--bg-2);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.brand .logo {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--grain), #8a6f2b);
+  display: grid; place-items: center;
+  font-weight: 800; color: #1a1305; font-size: 15px;
+  flex: none;
+}
+.brand .title { font-weight: 700; font-size: 14px; letter-spacing: .2px; }
+.brand .title small { display: block; font-weight: 500; color: var(--txt-mute); font-size: 10px; letter-spacing: .5px; }
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 18px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+}
+.topbar .page-title { font-size: 15px; font-weight: 600; }
+.topbar .page-title small { color: var(--txt-mute); font-weight: 400; margin-left: 8px; font-size: 12px; }
+.topbar .spacer { flex: 1; }
+
+.clock { font-family: var(--mono); font-size: 13px; color: var(--txt-dim); }
+
+.conn-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px; border-radius: 20px;
+  background: var(--bg-3); border: 1px solid var(--line-2);
+  font-size: 12px; font-family: var(--mono);
+}
+.conn-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--stop); }
+.conn-pill.online  .dot { background: var(--run); box-shadow: 0 0 8px var(--run-glow); animation: pulse 2s infinite; }
+.conn-pill.sim     .dot { background: var(--warn); box-shadow: 0 0 8px #d2992255; animation: pulse 2s infinite; }
+.conn-pill.offline .dot { background: var(--alarm); }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+.user-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 10px 4px 4px; border-radius: 20px;
+  background: var(--bg-3); border: 1px solid var(--line-2);
+  font-size: 12px; cursor: pointer;
+}
+.user-chip .ava { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-2); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+
+/* ------------------------------------------------------------------- nav */
+.nav {
+  grid-area: nav;
+  background: var(--bg-2);
+  border-right: 1px solid var(--line);
+  padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 3px;
+  overflow-y: auto;
+}
+.nav .group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-mute); padding: 14px 10px 6px; }
+.nav a {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 11px; border-radius: var(--radius-sm);
+  color: var(--txt-dim); text-decoration: none; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background .12s, color .12s;
+}
+.nav a:hover { background: var(--bg-3); color: var(--txt); }
+.nav a.active { background: var(--accent-2); color: #fff; }
+.nav a .ic { width: 18px; text-align: center; font-size: 15px; flex: none; }
+.nav a .badge { margin-left: auto; background: var(--alarm); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+.nav a .badge.hidden { display: none; }
+
+/* ------------------------------------------------------------------ main */
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 18px;
+  background:
+    radial-gradient(1200px 500px at 80% -10%, #16202e 0%, transparent 60%),
+    var(--bg);
+}
+
+/* ------------------------------------------------------------- statusbar */
+.statusbar {
+  grid-area: statusbar;
+  display: flex; align-items: center; gap: 20px;
+  padding: 0 16px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 11px; color: var(--txt-dim);
+}
+.statusbar .seg { display: inline-flex; align-items: center; gap: 6px; }
+.statusbar .seg b { color: var(--txt); font-weight: 600; }
+.statusbar .spacer { flex: 1; }
+
+/* --------------------------------------------------------------- alarms */
+.alarm-banner {
+  display: none;
+  align-items: center; gap: 10px;
+  background: linear-gradient(90deg, var(--alarm) 0%, #b3231d 100%);
+  color: #fff; padding: 8px 14px; border-radius: var(--radius-sm);
+  margin-bottom: 14px; font-weight: 600; font-size: 13px;
+  box-shadow: 0 0 0 1px var(--alarm-glow);
+}
+.alarm-banner.show { display: flex; }
+.alarm-banner.warn { background: linear-gradient(90deg, var(--warn) 0%, #a87a14 100%); box-shadow: none; color: #1a1305; }
+.alarm-banner .count { background: rgba(0,0,0,.25); padding: 1px 8px; border-radius: 10px; font-family: var(--mono); }
+.alarm-banner .ack { margin-left: auto; background: rgba(255,255,255,.18); border: none; color: inherit; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+.alarm-banner .ack:hover { background: rgba(255,255,255,.3); }
+.blink { animation: blink 1s steps(2,start) infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+
+/* --------------------------------------------------------------- panels */
+.grid { display: grid; gap: 14px; }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1200px){ .cols-4,.cols-6 { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 900px){ .cols-2,.cols-3,.cols-4,.cols-6 { grid-template-columns: repeat(2,1fr); } }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.panel.flat { padding: 0; overflow: hidden; }
+.panel-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.panel-head h2 { font-size: 13px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; color: var(--txt-dim); }
+.panel-head .spacer { flex: 1; }
+.panel-head .hint { font-size: 11px; color: var(--txt-mute); }
+
+/* --------------------------------------------------------------- stat tiles */
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  position: relative; overflow: hidden;
+}
+.stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--txt-mute); }
+.stat .value { font-size: 26px; font-weight: 700; font-family: var(--mono); margin-top: 4px; }
+.stat .value small { font-size: 13px; color: var(--txt-dim); font-weight: 500; margin-left: 4px; }
+.stat .sub { font-size: 11px; color: var(--txt-dim); margin-top: 3px; }
+.stat .accent-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.stat.good .accent-bar { background: var(--run); }
+.stat.warn .accent-bar { background: var(--warn); }
+.stat.bad  .accent-bar { background: var(--alarm); }
+.stat.grain .accent-bar { background: var(--grain); }
+
+/* --------------------------------------------------------------- buttons */
+.btn {
+  border: 1px solid var(--line-2); background: var(--bg-3); color: var(--txt);
+  padding: 7px 14px; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 13px; font-weight: 500; font-family: var(--sans);
+  transition: background .12s, border-color .12s;
+}
+.btn:hover { background: #232c39; border-color: #46505f; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.primary { background: var(--accent-2); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent); }
+.btn.run { background: var(--run); border-color: var(--run); color: #fff; }
+.btn.run:hover { filter: brightness(1.1); }
+.btn.stop { background: var(--alarm); border-color: var(--alarm); color: #fff; }
+.btn.stop:hover { filter: brightness(1.1); }
+.btn.sm { padding: 4px 10px; font-size: 12px; }
+.btn.ghost { background: transparent; }
+
+.seg-ctl { display: inline-flex; background: var(--bg); border: 1px solid var(--line-2); border-radius: var(--radius-sm); overflow: hidden; }
+.seg-ctl button { border: none; background: transparent; color: var(--txt-dim); padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.seg-ctl button.active.auto   { background: var(--auto);   color: #fff; }
+.seg-ctl button.active.manual { background: var(--manual); color: #1a1305; }
+.seg-ctl button:not(.active):hover { color: var(--txt); }
+
+/* --------------------------------------------------------------- motor symbol */
+.motor {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-3); border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm); padding: 9px 11px; cursor: pointer;
+  transition: border-color .12s, box-shadow .12s; min-width: 0;
+}
+.motor:hover { border-color: var(--accent); }
+.motor .m-ic {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-weight: 800; font-size: 12px;
+  background: var(--stop); color: #0d1117; position: relative;
+}
+.motor.run .m-ic { background: var(--run); box-shadow: 0 0 10px var(--run-glow); animation: spin 1.4s linear infinite; }
+.motor.fault .m-ic { background: var(--alarm); box-shadow: 0 0 10px var(--alarm-glow); animation: none; }
+.motor.warn .m-ic { background: var(--warn); }
+@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+.motor .m-body { min-width: 0; flex: 1; }
+.motor .m-tag { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.motor .m-desc { font-size: 11px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.motor .m-meta { font-size: 10px; font-family: var(--mono); color: var(--txt-mute); margin-top: 1px; }
+.motor .m-mode { font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 3px; letter-spacing: .5px; flex: none; }
+.motor .m-mode.auto { background: var(--auto); color:#fff; }
+.motor .m-mode.manual { background: var(--manual); color:#1a1305; }
+
+/* --------------------------------------------------------------- silo / tank */
+.vessel-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.vessel-card .vtag { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+.vessel-card .vgrain { font-size: 11px; color: var(--grain); font-weight: 600; }
+.silo {
+  width: 86px; height: 130px; position: relative;
+}
+.silo .shell {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, #1a212c, #232c39 50%, #1a212c);
+  border: 1px solid var(--line-2);
+  border-radius: 8px 8px 0 0;
+  clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+  overflow: hidden;
+}
+.silo .fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, #d9b65a, #b88f30);
+  transition: height .6s ease;
+}
+.silo .fill.water { background: linear-gradient(180deg, #4a9eff, #1f6feb); }
+.silo .pct {
+  position: absolute; left: 0; right: 0; top: 38%;
+  text-align: center; font-family: var(--mono); font-weight: 700; font-size: 15px;
+  color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); z-index: 2;
+}
+.silo.low .shell { border-color: var(--warn); }
+.silo.high .shell { border-color: var(--alarm); box-shadow: 0 0 0 1px var(--alarm-glow); }
+.vessel-card .vsub { font-size: 10px; font-family: var(--mono); color: var(--txt-mute); }
+
+/* --------------------------------------------------------------- gauge */
+.gauge { display: flex; flex-direction: column; align-items: center; }
+.gauge svg { display: block; }
+.gauge .g-val { font-family: var(--mono); font-weight: 700; font-size: 18px; margin-top: -28px; }
+.gauge .g-lbl { font-size: 11px; color: var(--txt-dim); margin-top: 14px; }
+
+/* --------------------------------------------------------------- setpoint */
+.sp-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--line);
+}
+.sp-row:last-child { border-bottom: none; }
+.sp-row .sp-label { flex: 1; }
+.sp-row .sp-label b { display: block; font-size: 13px; font-weight: 600; }
+.sp-row .sp-label span { font-size: 11px; color: var(--txt-mute); }
+.sp-row .sp-pv { font-family: var(--mono); font-size: 13px; color: var(--txt-dim); width: 90px; text-align: right; }
+.sp-row .sp-pv b { color: var(--txt); }
+.sp-input {
+  display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.sp-input button { border: none; background: var(--bg-3); color: var(--txt); width: 30px; height: 32px; cursor: pointer; font-size: 16px; font-weight: 700; }
+.sp-input button:hover { background: #2b3543; }
+.sp-input input {
+  width: 72px; border: none; background: transparent; color: var(--txt);
+  text-align: center; font-family: var(--mono); font-size: 14px; font-weight: 600; outline: none;
+  -moz-appearance: textfield;
+}
+.sp-input input::-webkit-outer-spin-button, .sp-input input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sp-input .unit { padding: 0 9px; color: var(--txt-mute); font-size: 12px; font-family: var(--mono); }
+
+/* --------------------------------------------------------------- flow line */
+.pipe { stroke: var(--line-2); stroke-width: 4; fill: none; }
+.pipe.active { stroke: var(--grain); stroke-dasharray: 8 6; animation: flow 1s linear infinite; }
+.pipe.water.active { stroke: var(--water); }
+@keyframes flow { to { stroke-dashoffset: -28; } }
+
+/* --------------------------------------------------------------- tables */
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.tbl th { text-align: left; padding: 9px 12px; color: var(--txt-mute); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--line); }
+table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+table.tbl tr:hover td { background: var(--bg-2); }
+table.tbl td.mono, table.tbl th.mono { font-family: var(--mono); }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.pill.run { background: var(--run-glow); color: #7ee787; }
+.pill.stop { background: #6e768133; color: var(--txt-dim); }
+.pill.warn { background: #d2992233; color: #e3b341; }
+.pill.alarm { background: var(--alarm-glow); color: #ff9a92; }
+.pill.auto { background: #2f81f733; color: #79c0ff; }
+
+.bar-track { background: var(--bg); border-radius: 4px; height: 8px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.bar-fill.grain { background: var(--grain); }
+.bar-fill.good { background: var(--run); }
+
+/* --------------------------------------------------------------- modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(2,5,10,.66);
+  display: none; align-items: center; justify-content: center; z-index: 100;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  border-radius: 12px; width: 560px; max-width: 94vw; max-height: 92vh; overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+.modal-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: var(--bg-2); z-index: 1;
+}
+.modal-head .m-ic { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; background: var(--stop); color: #0d1117; flex: none; }
+.modal-head.run .m-ic { background: var(--run); }
+.modal-head.fault .m-ic { background: var(--alarm); }
+.modal-head h3 { font-size: 16px; font-weight: 700; }
+.modal-head h3 small { display: block; font-weight: 400; color: var(--txt-dim); font-size: 12px; }
+.modal-head .x { margin-left: auto; background: none; border: none; color: var(--txt-dim); font-size: 22px; cursor: pointer; line-height: 1; }
+.modal-head .x:hover { color: var(--txt); }
+.modal-body { padding: 20px; }
+.modal-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--txt-mute); margin: 18px 0 10px; }
+.modal-section-title:first-child { margin-top: 0; }
+
+.kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+.kv { background: var(--panel); padding: 9px 12px; }
+.kv .k { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--txt-mute); }
+.kv .v { font-family: var(--mono); font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+.ctl-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.ctl-row .lbl { font-size: 12px; color: var(--txt-dim); margin-right: auto; }
+
+/* form fields */
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; color: var(--txt-dim); margin-bottom: 5px; font-weight: 500; }
+.field label small { color: var(--txt-mute); font-weight: 400; }
+.field input[type=text], .field input[type=number], .field input[type=password], .field select {
+  width: 100%; padding: 8px 11px; background: var(--bg); border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm); color: var(--txt); font-family: var(--mono); font-size: 13px; outline: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* toggle switch */
+.switch { position: relative; width: 42px; height: 24px; flex: none; }
+.switch input { display: none; }
+.switch .track { position: absolute; inset: 0; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: 12px; transition: .15s; }
+.switch .track::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--txt-dim); top: 2px; left: 2px; transition: .15s; }
+.switch input:checked + .track { background: var(--accent-2); border-color: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(18px); background: #fff; }
+
+.toast-wrap { position: fixed; bottom: 44px; right: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 200; }
+.toast { background: var(--bg-3); border: 1px solid var(--line-2); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; box-shadow: var(--shadow); animation: slidein .2s ease; max-width: 320px; }
+.toast.good { border-left-color: var(--run); }
+.toast.warn { border-left-color: var(--warn); }
+.toast.bad { border-left-color: var(--alarm); }
+@keyframes slidein { from { transform: translateX(20px); opacity: 0; } }
+
+.trend { width: 100%; height: 120px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--txt-dim); margin-top: 8px; }
+.legend .li { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 12px; height: 3px; border-radius: 2px; }
+
+.empty { text-align: center; color: var(--txt-mute); padding: 30px; font-size: 13px; }
+.muted { color: var(--txt-mute); }
+.mono { font-family: var(--mono); }
+.right { text-align: right; }
+.tag-chip { font-family: var(--mono); font-size: 11px; color: var(--txt-mute); background: var(--bg); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); }
+
+  </style>
+</head>
+<body>
+  <noscript>This SCADA interface requires JavaScript.</noscript>
+  <!-- ================= PLC TAG LAYER ================= -->
+  <script>
+/* ====================================================================
+   plc.js — PLC tag layer
+   --------------------------------------------------------------------
+   The whole HMI talks ONLY to this module. It exposes a tag database
+   that mirrors the controller tags you would create in Studio 5000 on
+   an Allen-Bradley ControlLogix / CompactLogix PLC.
+
+   Two drivers are provided:
+     • SimDriver  — a self-contained process simulator (default). Lets
+                    the interface run with no hardware.
+     • LiveDriver — connects over a WebSocket to the Node.js gateway in
+                    /server/ab-gateway.js, which uses EtherNet/IP
+                    (node-ethernet-ip / pylogix) to read & write the
+                    real PLC tags. Browsers cannot speak EtherNet/IP
+                    directly, hence the gateway.
+
+   Switch drivers from the Settings page (or window.PLC.connectLive()).
+   ==================================================================== */
+
+const PLC = (() => {
+  /* ---- persisted config ------------------------------------------ */
+  const CFG_KEY = 'scada.cfg.v1';
+  const defaultCfg = {
+    driver: 'sim',                 // 'sim' | 'live'
+    plcPath: '192.168.1.10',       // controller IP / CIP path
+    plcSlot: 0,                    // backplane slot of the CPU
+    gatewayUrl: 'ws://localhost:8080',
+    scanRateMs: 500,
+    units: 'metric',               // metric | imperial
+    site: 'Wyelec Mill — Line 1',
+    tagPrefix: 'Program:Mill.',    // program scope prefix for live tags
+  };
+  let cfg = { ...defaultCfg, ...load(CFG_KEY, {}) };
+
+  function load(k, def){ try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } }
+  function save(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+  function saveCfg(){ save(CFG_KEY, cfg); }
+
+  /* ---- tag database ----------------------------------------------- */
+  /* Each tag mirrors a controller tag. `t` is the AB data type, `addr`
+     is the symbolic tag name the gateway reads/writes on the PLC.      */
+  const tags = {};
+  const listeners = new Set();
+
+  function defTag(name, value, addr, t='REAL'){
+    tags[name] = { name, value, addr: addr || name, t };
+  }
+
+  function read(name){ return tags[name] ? tags[name].value : undefined; }
+  function readAll(){ const o = {}; for (const k in tags) o[k] = tags[k].value; return o; }
+
+  /* write goes through the active driver (sim updates locally, live
+     pushes to the gateway then reflects the echoed value)             */
+  function write(name, value){
+    if (!tags[name]) { console.warn('write to unknown tag', name); return; }
+    driver.write(name, value);
+  }
+  /* internal — driver sets confirmed value & notifies UI */
+  function _set(name, value){
+    if (!tags[name]) return;
+    if (tags[name].value === value) return;
+    tags[name].value = value;
+    emit(name);
+  }
+  function emit(name){ for (const fn of listeners) { try { fn(name); } catch(e){ console.error(e); } } }
+  function onUpdate(fn){ listeners.add(fn); return () => listeners.delete(fn); }
+
+  /* ================================================================
+     EQUIPMENT MODEL — motors, vessels, recipes, operators
+     ================================================================ */
+
+  /* Motor master records — nameplate data lives here (would come from
+     the asset register / PLC UDT). Live values (run, current, starts,
+     runHrs) are mirrored as tags so the sim/PLC can drive them.        */
+  const MOTORS = [
+    // tag, desc, area, kW, V, poles, rpm, flc(A), frame, sf, vsd?
+    ['M_IC1',  'Intake Drag Conveyor',     'silos',  15,  415, 4, 1455, 27.5, 'D160M', 1.15, false],
+    ['M_BE1',  'Bucket Elevator #1',       'silos',  22,  415, 4, 1460, 39.0, 'D180M', 1.15, false],
+    ['M_PC1',  'Pre-Cleaner Aspirator',    'silos',  7.5, 415, 2, 2920, 14.2, 'D132S', 1.10, true ],
+    ['M_DST',  'Silo Distributor Drive',   'silos',  3.0, 415, 4, 1420, 6.6,  'D100L', 1.10, false],
+    ['M_DEDUST','Intake Dedust Fan',       'silos',  11,  415, 2, 2940, 20.5, 'D160M', 1.10, true ],
+
+    ['M_DAMP', 'Dampener Auger',           'temper', 5.5, 415, 4, 1440, 11.1, 'D132S', 1.15, true ],
+    ['M_WP1',  'Tempering Water Pump',     'temper', 4.0, 415, 2, 2900, 8.3,  'D112M', 1.10, true ],
+    ['M_TC1',  'Temper Bin Screw #1',      'temper', 5.5, 415, 4, 1445, 11.1, 'D132S', 1.15, false],
+    ['M_TC2',  'Temper Bin Screw #2',      'temper', 5.5, 415, 4, 1445, 11.1, 'D132S', 1.15, false],
+    ['M_BE2',  'Bucket Elevator #2',       'temper', 18.5,415, 4, 1458, 33.5, 'D180M', 1.15, false],
+
+    ['M_B1',   'Break Roll B1 Main',       'mill',   90,  415, 4, 1485, 152,  'D280S', 1.15, true ],
+    ['M_B2',   'Break Roll B2 Main',       'mill',   75,  415, 4, 1480, 130,  'D280S', 1.15, true ],
+    ['M_C1',   'Reduction Roll C1 Main',   'mill',   110, 415, 4, 1487, 188,  'D315S', 1.15, true ],
+    ['M_C2',   'Reduction Roll C2 Main',   'mill',   90,  415, 4, 1485, 152,  'D280S', 1.15, true ],
+    ['M_SIFT', 'Plansifter Drive',         'mill',   7.5, 415, 6, 960,  15.8, 'D132M', 1.15, false],
+    ['M_PUR',  'Purifier Drive',           'mill',   5.5, 415, 6, 955,  12.0, 'D132S', 1.15, false],
+    ['M_PNF',  'Pneumatic Conveying Fan',  'mill',   132, 415, 2, 2965, 225,  'D315M', 1.10, true ],
+    ['M_PACK', 'Flour Packing Auger',      'mill',   4.0, 415, 4, 1430, 8.3,  'D112M', 1.10, true ],
+  ];
+
+  MOTORS.forEach(m => {
+    const [tag] = m;
+    defTag(tag + '_RUN',     false, cfg.tagPrefix + tag + '.Run', 'BOOL');
+    defTag(tag + '_AUTO',    true,  cfg.tagPrefix + tag + '.Auto', 'BOOL');
+    defTag(tag + '_FAULT',   false, cfg.tagPrefix + tag + '.Fault', 'BOOL');
+    defTag(tag + '_CMD',     false, cfg.tagPrefix + tag + '.StartCmd', 'BOOL'); // operator start request
+    defTag(tag + '_SPEED',   0,     cfg.tagPrefix + tag + '.SpeedFbk');         // % speed (VSD) or 0/100
+    defTag(tag + '_CURRENT', 0,     cfg.tagPrefix + tag + '.Current');          // A
+    defTag(tag + '_STARTS',  Math.floor(Math.random()*400)+50, cfg.tagPrefix + tag + '.StartCount', 'DINT');
+    defTag(tag + '_RUNHRS',  Math.floor(Math.random()*9000)+200, cfg.tagPrefix + tag + '.RunHours');
+    defTag(tag + '_TEMP',    35 + Math.random()*8, cfg.tagPrefix + tag + '.WindingTemp'); // °C
+  });
+
+  function motor(tag){ return MOTORS.find(m => m[0] === tag); }
+  function motorMeta(tag){
+    const m = motor(tag);
+    if (!m) return null;
+    const [, desc, area, kW, V, poles, rpm, flc, frame, sf, vsd] = m;
+    return { tag, desc, area, kW, V, poles, rpm, flc, frame, sf, vsd,
+             syncRpm: 120*50/poles };
+  }
+
+  /* Vessels — silos & temper bins */
+  const VESSELS = [
+    // tag, label, area, capacity(t), type
+    ['S1','Silo 1','silos',120,'grain'],
+    ['S2','Silo 2','silos',120,'grain'],
+    ['S3','Silo 3','silos',120,'grain'],
+    ['S4','Silo 4','silos',120,'grain'],
+    ['S5','Silo 5','silos',80,'grain'],
+    ['S6','Silo 6','silos',80,'grain'],
+    ['TB1','Temper Bin 1','temper',45,'grain'],
+    ['TB2','Temper Bin 2','temper',45,'grain'],
+    ['TB3','Temper Bin 3','temper',45,'grain'],
+    ['TB4','Temper Bin 4','temper',45,'grain'],
+  ];
+  const GRAIN_TYPES = ['APH Wheat','AH Wheat','ASW Wheat','Durum','Soft Biscuit','Empty'];
+  VESSELS.forEach((v,i) => {
+    const [tag,,,cap] = v;
+    defTag(tag + '_LEVEL', 20 + Math.random()*60, cfg.tagPrefix + tag + '.LevelPct'); // %
+    defTag(tag + '_GRAIN', i < 6 ? (i % 5) : 0, cfg.tagPrefix + tag + '.GrainId', 'DINT');
+    defTag(tag + '_MOIST', 11 + Math.random()*1.5, cfg.tagPrefix + tag + '.Moisture'); // %
+    tags[tag + '_LEVEL'].cap = cap;
+  });
+  function vessel(tag){ return VESSELS.find(v => v[0] === tag); }
+
+  /* Recipes / blends */
+  const RECIPES = [
+    // id, name, blend {grainId: pct}, targetMoisture, extraction%, targetTph
+    { id:'BAK', name:"Baker's Flour",   blend:{0:60,1:40},     moisture:16.0, extraction:78, tph:12 },
+    { id:'WHM', name:'Wholemeal',       blend:{1:50,2:50},     moisture:15.5, extraction:98, tph:10 },
+    { id:'CAKE',name:'Cake / Soft',     blend:{4:80,2:20},     moisture:14.5, extraction:72, tph:9  },
+    { id:'PIZ', name:'Pizza / Strong',  blend:{0:80,1:20},     moisture:16.5, extraction:76, tph:11 },
+    { id:'PASTA',name:'Pasta Semolina', blend:{3:100},         moisture:16.0, extraction:65, tph:8  },
+  ];
+
+  /* Operators */
+  const OPERATORS = ['R. Wyatt','J. Tan','M. Okafor','S. Petrov','L. Nguyen','D. Brooks'];
+
+  /* Process / setpoint tags ---------------------------------------- */
+  defTag('SP_ACTIVE_RECIPE', 0, cfg.tagPrefix + 'ActiveRecipe', 'DINT');
+  defTag('SP_MILL_TPH',     12,  cfg.tagPrefix + 'MillRateSP');
+  defTag('PV_MILL_TPH',     0,   cfg.tagPrefix + 'MillRatePV');
+  defTag('SP_FILL_TPH',     45,  cfg.tagPrefix + 'IntakeRateSP');
+  defTag('PV_FILL_TPH',     0,   cfg.tagPrefix + 'IntakeRatePV');
+  defTag('SP_FILL_TARGET',  0,   cfg.tagPrefix + 'IntakeTargetSilo','DINT'); // silo index 0..5
+  defTag('SP_FILL_GRAIN',   0,   cfg.tagPrefix + 'IntakeGrainId','DINT');
+
+  defTag('SP_TEMPER_MOIST', 16.0,cfg.tagPrefix + 'TemperMoistSP');
+  defTag('PV_TEMPER_MOIST', 0,   cfg.tagPrefix + 'TemperMoistPV');
+  defTag('SP_TEMPER_TIME',  18,  cfg.tagPrefix + 'TemperTimeSP');  // hours
+  defTag('SP_WATER_LPM',    0,   cfg.tagPrefix + 'WaterFlowSP');   // L/min (auto-calc)
+  defTag('PV_WATER_LPM',    0,   cfg.tagPrefix + 'WaterFlowPV');
+  defTag('PV_INLET_MOIST',  11.2,cfg.tagPrefix + 'InletMoisturePV');
+
+  defTag('SP_B1_GAP',  0.55, cfg.tagPrefix + 'B1RollGapSP'); // mm
+  defTag('SP_C1_GAP',  0.18, cfg.tagPrefix + 'C1RollGapSP');
+  defTag('PV_EXTRACTION', 0, cfg.tagPrefix + 'ExtractionPV'); // %
+  defTag('PV_ASH',     0.52, cfg.tagPrefix + 'AshPV');        // % ash (quality)
+
+  /* line state */
+  defTag('LINE_INTAKE_RUN', false, cfg.tagPrefix + 'IntakeSeqRun','BOOL');
+  defTag('LINE_TEMPER_RUN', false, cfg.tagPrefix + 'TemperSeqRun','BOOL');
+  defTag('LINE_MILL_RUN',   false, cfg.tagPrefix + 'MillSeqRun','BOOL');
+
+  /* background / settings tags (rarely changed) */
+  defTag('CFG_SILO_HI',   95,  cfg.tagPrefix + 'SiloHiAlarmSP');
+  defTag('CFG_SILO_LO',   8,   cfg.tagPrefix + 'SiloLoAlarmSP');
+  defTag('CFG_MOTOR_TEMP_HI', 95, cfg.tagPrefix + 'MotorTempAlarmSP');
+  defTag('CFG_WATER_KFACTOR', 1.04, cfg.tagPrefix + 'WaterCalibKFactor');
+  defTag('CFG_SCALE_SPAN', 1000, cfg.tagPrefix + 'WeighScaleSpan');
+  defTag('CFG_DENSITY',   780,  cfg.tagPrefix + 'BulkDensity'); // kg/m3
+
+  /* counters / production (totalised) */
+  defTag('CNT_FLOUR_TODAY', 0, cfg.tagPrefix + 'FlourTotalToday');
+  defTag('CNT_BRAN_TODAY',  0, cfg.tagPrefix + 'BranTotalToday');
+  defTag('CNT_INTAKE_TODAY',0, cfg.tagPrefix + 'IntakeTotalToday');
+
+  /* ================================================================
+     ALARMS
+     ================================================================ */
+  const alarmState = new Map(); // key -> {sev, msg, ts, ack}
+  function setAlarm(key, sev, msg){
+    if (!alarmState.has(key)) alarmState.set(key, { sev, msg, ts: Date.now(), ack:false });
+    else { const a = alarmState.get(key); a.sev = sev; a.msg = msg; }
+  }
+  function clearAlarm(key){ alarmState.delete(key); }
+  function activeAlarms(){ return [...alarmState.entries()].map(([key,a]) => ({ key, ...a })); }
+  function ackAll(){ for (const a of alarmState.values()) a.ack = true; }
+
+  function evalAlarms(){
+    const hi = read('CFG_SILO_HI'), lo = read('CFG_SILO_LO');
+    const mtHi = read('CFG_MOTOR_TEMP_HI');
+    VESSELS.forEach(v => {
+      const lvl = read(v[0] + '_LEVEL');
+      const k = v[0] + '_LVL';
+      if (lvl >= hi) setAlarm(k, 'alarm', `${v[1]} HIGH level ${lvl.toFixed(0)}%`);
+      else if (lvl <= lo && v[2]==='silos') setAlarm(k, 'warn', `${v[1]} LOW level ${lvl.toFixed(0)}%`);
+      else clearAlarm(k);
+    });
+    MOTORS.forEach(m => {
+      const t = m[0];
+      if (read(t+'_FAULT')) setAlarm(t+'_FLT','alarm', `${t} ${m[1]} — motor fault / overload trip`);
+      else clearAlarm(t+'_FLT');
+      const temp = read(t+'_TEMP');
+      if (temp >= mtHi) setAlarm(t+'_TMP','warn', `${t} winding temp high ${temp.toFixed(0)}°C`);
+      else clearAlarm(t+'_TMP');
+    });
+  }
+
+  /* ================================================================
+     DRIVERS
+     ================================================================ */
+  let driver, scanTimer;
+
+  /* ---- Simulation driver ---------------------------------------- */
+  const SimDriver = {
+    name: 'sim',
+    write(name, value){
+      // certain writes have side-effects (faceplate start/stop/mode)
+      _set(name, value);
+      if (name.endsWith('_CMD')) {
+        const tag = name.slice(0, -4);
+        if (read(tag+'_AUTO')) return; // auto ignores manual cmd
+        if (value && !read(tag+'_FAULT')) startMotor(tag);
+        else stopMotor(tag);
+      }
+    },
+    start(){
+      if (scanTimer) clearInterval(scanTimer);
+      scanTimer = setInterval(() => { sim.tick(); evalAlarms(); }, cfg.scanRateMs);
+      _conn('sim');
+    },
+    stop(){ if (scanTimer) clearInterval(scanTimer); },
+  };
+
+  function startMotor(tag){ _set(tag+'_RUN', true); _set(tag+'_STARTS', read(tag+'_STARTS')+1); }
+  function stopMotor(tag){ _set(tag+'_RUN', false); _set(tag+'_SPEED', 0); _set(tag+'_CURRENT', 0); }
+
+  /* ---- Live driver (WebSocket → AB gateway) --------------------- */
+  const LiveDriver = {
+    name: 'live', ws: null, reconnect: null,
+    write(name, value){
+      const tag = tags[name];
+      if (!tag) return;
+      _set(name, value); // optimistic
+      if (this.ws && this.ws.readyState === 1) {
+        this.ws.send(JSON.stringify({ type:'write', tag: tag.addr, value }));
+      }
+    },
+    start(){
+      _conn('connecting');
+      try {
+        this.ws = new WebSocket(cfg.gatewayUrl);
+      } catch (e) { _conn('offline'); this._retry(); return; }
+      this.ws.onopen = () => {
+        _conn('online');
+        // subscribe to all mapped tags
+        const subs = Object.values(tags).map(t => t.addr);
+        this.ws.send(JSON.stringify({ type:'subscribe', tags: subs,
+          plc: { path: cfg.plcPath, slot: cfg.plcSlot }, rate: cfg.scanRateMs }));
+      };
+      this.ws.onmessage = (ev) => {
+        let msg; try { msg = JSON.parse(ev.data); } catch { return; }
+        if (msg.type === 'data') {
+          // map addr → tag name
+          for (const [addr, val] of Object.entries(msg.values)) {
+            const t = Object.values(tags).find(x => x.addr === addr);
+            if (t) _set(t.name, val);
+          }
+          evalAlarms();
+        }
+      };
+      this.ws.onclose = () => { _conn('offline'); this._retry(); };
+      this.ws.onerror = () => { _conn('offline'); };
+    },
+    _retry(){ clearTimeout(this.reconnect); this.reconnect = setTimeout(() => this.start(), 4000); },
+    stop(){ if (this.ws) { this.ws.onclose = null; this.ws.close(); } clearTimeout(this.reconnect); },
+  };
+
+  /* connection state broadcast */
+  let connState = 'offline';
+  function _conn(s){ connState = s; emit('__conn__'); }
+  function connection(){ return connState; }
+
+  /* ================================================================
+     PROCESS SIMULATION
+     ================================================================ */
+  const sim = (() => {
+    const trends = { tph: [], moist: [], extraction: [] };
+    function pushTrend(){
+      const cap = 60;
+      trends.tph.push(read('PV_MILL_TPH'));
+      trends.moist.push(read('PV_TEMPER_MOIST'));
+      trends.extraction.push(read('PV_EXTRACTION'));
+      for (const k in trends) if (trends[k].length > cap) trends[k].shift();
+    }
+    let lastTotalise = Date.now();
+
+    function tick(){
+      const dt = cfg.scanRateMs / 1000;
+
+      /* --- auto sequencing: in AUTO, motors follow the line state -- */
+      autoSequence();
+
+      /* --- INTAKE / SILO FILLING --------------------------------- */
+      const intakeRun = read('LINE_INTAKE_RUN') && read('M_BE1_RUN') && read('M_IC1_RUN');
+      const fillTph = intakeRun ? approach(read('PV_FILL_TPH'), read('SP_FILL_TPH'), 6*dt) : approach(read('PV_FILL_TPH'),0,20*dt);
+      _set('PV_FILL_TPH', fillTph);
+      if (intakeRun) {
+        const tIdx = read('SP_FILL_TARGET');
+        const vt = VESSELS[tIdx];
+        if (vt) {
+          const cap = tags[vt[0]+'_LEVEL'].cap;
+          const add = (fillTph * dt/3600) / cap * 100;
+          _set(vt[0]+'_LEVEL', clamp(read(vt[0]+'_LEVEL') + add, 0, 100));
+          _set(vt[0]+'_GRAIN', read('SP_FILL_GRAIN'));
+        }
+        _set('CNT_INTAKE_TODAY', read('CNT_INTAKE_TODAY') + fillTph*dt/3600);
+      }
+
+      /* --- TEMPERING --------------------------------------------- */
+      const temperRun = read('LINE_TEMPER_RUN') && read('M_DAMP_RUN');
+      _set('PV_INLET_MOIST', approach(read('PV_INLET_MOIST'), 11.2 + Math.sin(Date.now()/9e4)*0.4, 0.05));
+      // water added to reach target moisture; flow auto-calculated
+      const inlet = read('PV_INLET_MOIST');
+      const tgt = read('SP_TEMPER_MOIST');
+      // throughput driving the dampener — use intake rate, fall back to mill rate
+      const throughput = read('PV_FILL_TPH') > 0.5 ? read('SP_FILL_TPH') : read('SP_MILL_TPH');
+      const flowSP = temperRun ? Math.max(0,(tgt - inlet)) * throughput * 0.18 * read('CFG_WATER_KFACTOR') : 0;
+      _set('SP_WATER_LPM', flowSP);
+      _set('PV_WATER_LPM', approach(read('PV_WATER_LPM'), read('M_WP1_RUN')?flowSP:0, 4*dt));
+      const moistTarget = temperRun ? tgt : inlet;
+      _set('PV_TEMPER_MOIST', approach(read('PV_TEMPER_MOIST'), moistTarget, 0.06));
+      // temper bins fill/drain slowly
+      if (temperRun) {
+        ['TB1','TB2'].forEach(b => _set(b+'_LEVEL', clamp(read(b+'_LEVEL') + (Math.random()*0.3-0.05), 5, 100)));
+        ['TB1','TB2','TB3','TB4'].forEach(b => _set(b+'_MOIST', approach(read(b+'_MOIST'), tgt, 0.02)));
+      }
+
+      /* --- MILLING ----------------------------------------------- */
+      const millRun = read('LINE_MILL_RUN') && read('M_B1_RUN') && read('M_C1_RUN') && read('M_PNF_RUN');
+      const millTph = millRun ? approach(read('PV_MILL_TPH'), read('SP_MILL_TPH'), 4*dt) : approach(read('PV_MILL_TPH'),0,15*dt);
+      _set('PV_MILL_TPH', millTph);
+      const rec = RECIPES[read('SP_ACTIVE_RECIPE')] || RECIPES[0];
+      const extTarget = millRun ? rec.extraction + (read('SP_B1_GAP')-0.55)*-8 : 0;
+      _set('PV_EXTRACTION', approach(read('PV_EXTRACTION'), clamp(extTarget,0,100), 1.2*dt*10));
+      _set('PV_ASH', approach(read('PV_ASH'), 0.45 + (read('PV_EXTRACTION')/100)*0.35 + (read('SP_C1_GAP')-0.18)*0.3, 0.01));
+      if (millRun) {
+        const flour = millTph * (read('PV_EXTRACTION')/100) * dt/3600;
+        const bran  = millTph * (1-read('PV_EXTRACTION')/100) * dt/3600;
+        _set('CNT_FLOUR_TODAY', read('CNT_FLOUR_TODAY') + flour);
+        _set('CNT_BRAN_TODAY',  read('CNT_BRAN_TODAY') + bran);
+        // draw down temper bins feeding the mill
+        ['TB3','TB4'].forEach(b => _set(b+'_LEVEL', clamp(read(b+'_LEVEL') - millTph*dt/3600/45*100, 0, 100)));
+      }
+
+      /* --- per-motor live values --------------------------------- */
+      MOTORS.forEach(m => {
+        const t = m[0], flc = m[7], vsd = m[10];
+        if (read(t+'_RUN')) {
+          const tgtSpeed = vsd ? speedDemand(t) : 100;
+          _set(t+'_SPEED', approach(read(t+'_SPEED'), tgtSpeed, 30*dt));
+          const load = 0.4 + (read(t+'_SPEED')/100)*0.5 + Math.random()*0.08;
+          _set(t+'_CURRENT', flc * load);
+          _set(t+'_RUNHRS', read(t+'_RUNHRS') + dt/3600);
+          _set(t+'_TEMP', approach(read(t+'_TEMP'), 55 + load*30 + Math.random()*4, 0.2));
+        } else {
+          _set(t+'_SPEED', 0); _set(t+'_CURRENT', 0);
+          _set(t+'_TEMP', approach(read(t+'_TEMP'), 32, 0.1));
+        }
+      });
+
+      pushTrend();
+      // periodic recipe-run logging handled in app layer via counters
+    }
+
+    function speedDemand(t){
+      // VSD motors track a process demand
+      if (['M_B1','M_B2','M_C1','M_C2','M_PNF'].includes(t)) return clamp(read('SP_MILL_TPH')/14*100, 30, 100);
+      if (['M_PC1','M_DEDUST'].includes(t)) return clamp(read('SP_FILL_TPH')/50*100, 40, 100);
+      if (t==='M_DAMP'||t==='M_WP1') return clamp(read('PV_WATER_LPM')*4+40, 40, 100);
+      return 100;
+    }
+
+    function autoSequence(){
+      // Motors in AUTO follow their line sequence run flag
+      const map = {
+        silos:  read('LINE_INTAKE_RUN'),
+        temper: read('LINE_TEMPER_RUN'),
+        mill:   read('LINE_MILL_RUN'),
+      };
+      MOTORS.forEach(m => {
+        const t = m[0], area = m[2];
+        if (read(t+'_AUTO') && !read(t+'_FAULT')) {
+          const shouldRun = !!map[area];
+          if (shouldRun && !read(t+'_RUN')) startMotor(t);
+          if (!shouldRun && read(t+'_RUN')) stopMotor(t);
+        }
+      });
+    }
+
+    return { tick, trends };
+  })();
+
+  function approach(cur, target, step){
+    if (cur < target) return Math.min(cur + step, target);
+    if (cur > target) return Math.max(cur - step, target);
+    return cur;
+  }
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  /* ================================================================
+     PUBLIC API
+     ================================================================ */
+  function setDriver(name){
+    if (driver) driver.stop();
+    driver = name === 'live' ? LiveDriver : SimDriver;
+    cfg.driver = driver.name; saveCfg();
+    driver.start();
+  }
+  function connectLive(){ setDriver('live'); }
+  function connectSim(){ setDriver('sim'); }
+
+  function getCfg(){ return { ...cfg }; }
+  function setCfg(patch){ cfg = { ...cfg, ...patch }; saveCfg(); }
+
+  function start(){ setDriver(cfg.driver); }
+
+  /* trigger a simulated fault (for demo / training) */
+  function injectFault(tag){ _set(tag+'_FAULT', true); _set(tag+'_RUN', false); }
+  function resetFault(tag){ _set(tag+'_FAULT', false); }
+
+  return {
+    start, setDriver, connectLive, connectSim, connection,
+    read, readAll, write, onUpdate,
+    tags, MOTORS, VESSELS, RECIPES, OPERATORS, GRAIN_TYPES,
+    motorMeta, vessel,
+    activeAlarms, ackAll, evalAlarms, injectFault, resetFault,
+    getCfg, setCfg,
+    trends: () => sim.trends,
+    _internal: { tags },
+  };
+})();
+
+window.PLC = PLC;
+
+  </script>
+  <!-- ================= UI COMPONENTS ================= -->
+  <script>
+/* ====================================================================
+   components.js — reusable HMI widgets (vanilla DOM, no framework)
+   ==================================================================== */
+const UI = (() => {
+
+  /* tiny DOM helper */
+  function el(tag, attrs = {}, ...children){
+    const n = document.createElement(tag);
+    for (const [k,v] of Object.entries(attrs)){
+      if (k === 'class') n.className = v;
+      else if (k === 'html') n.innerHTML = v;
+      else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2), v);
+      else if (v === true) n.setAttribute(k, '');
+      else if (v !== false && v != null) n.setAttribute(k, v);
+    }
+    for (const c of children.flat()){
+      if (c == null || c === false) continue;
+      n.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+    return n;
+  }
+
+  function num(v, d=1){ return (v==null||isNaN(v)) ? '–' : Number(v).toFixed(d); }
+
+  /* --------------------------------------------------------------- motor */
+  function motor(tag){
+    const meta = PLC.motorMeta(tag);
+    const run = PLC.read(tag+'_RUN'), fault = PLC.read(tag+'_FAULT'), auto = PLC.read(tag+'_AUTO');
+    const cls = fault ? 'fault' : run ? 'run' : '';
+    const node = el('div', { class: 'motor ' + cls, 'data-motor': tag,
+                             onclick: () => faceplate(tag) },
+      el('div', { class: 'm-ic' }, 'M'),
+      el('div', { class: 'm-body' },
+        el('div', { class: 'm-tag' }, tag.replace('M_','')),
+        el('div', { class: 'm-desc' }, meta.desc),
+        el('div', { class: 'm-meta' },
+          fault ? 'FAULT' : run ? `${num(PLC.read(tag+'_CURRENT'),1)}A · ${num(PLC.read(tag+'_SPEED'),0)}%` : 'Stopped'),
+      ),
+      el('span', { class: 'm-mode ' + (auto?'auto':'manual') }, auto?'A':'M'),
+    );
+    return node;
+  }
+
+  /* --------------------------------------------------- motor faceplate modal */
+  function faceplate(tag){
+    const meta = PLC.motorMeta(tag);
+    const overlay = document.getElementById('modal-root');
+    function render(){
+      const run = PLC.read(tag+'_RUN'), fault = PLC.read(tag+'_FAULT'), auto = PLC.read(tag+'_AUTO');
+      const cls = fault ? 'fault' : run ? 'run' : '';
+      overlay.innerHTML = '';
+      overlay.appendChild(el('div', { class: 'modal' },
+        el('div', { class: 'modal-head ' + cls },
+          el('div', { class: 'm-ic' }, 'M'),
+          el('h3', {}, tag.replace('M_',''), el('small', {}, meta.desc)),
+          el('button', { class:'x', onclick: close }, '×'),
+        ),
+        el('div', { class: 'modal-body' },
+          /* status row */
+          el('div', { class:'kv-grid', style:'margin-bottom:16px' },
+            kv('Status', fault?'FAULTED':run?'RUNNING':'STOPPED'),
+            kv('Mode', auto?'AUTO':'MANUAL'),
+            kv('Current', num(PLC.read(tag+'_CURRENT'),1)+' A  / '+meta.flc+' A FLC'),
+            kv('Speed', num(PLC.read(tag+'_SPEED'),0)+' %'),
+          ),
+
+          el('div', { class:'modal-section-title' }, 'Control'),
+          el('div', { class:'ctl-row' },
+            el('span', { class:'lbl' }, 'Operating mode'),
+            seg(auto, (a) => { PLC.write(tag+'_AUTO', a); toast(`${tag} → ${a?'AUTO':'MANUAL'}`); render(); }),
+          ),
+          el('div', { class:'ctl-row' },
+            el('span', { class:'lbl' }, 'Manual command'),
+            el('button', { class:'btn run', disabled: auto||fault||run,
+              onclick: () => { PLC.write(tag+'_CMD', true); render(); } }, '▶ Start'),
+            el('button', { class:'btn stop', disabled: auto|| !run,
+              onclick: () => { PLC.write(tag+'_CMD', false); render(); } }, '■ Stop'),
+            fault
+              ? el('button', { class:'btn', onclick: () => { PLC.resetFault(tag); toast(`${tag} fault reset`,'good'); render(); } }, '⟳ Reset')
+              : el('button', { class:'btn ghost', onclick: () => { PLC.injectFault(tag); toast(`${tag} fault (sim)`,'bad'); render(); } }, 'Sim Fault'),
+          ),
+          auto ? el('div', { class:'muted', style:'font-size:11px;margin:-6px 0 10px' },
+                  'Motor is in AUTO — controlled by the line sequence. Switch to MANUAL for local start/stop.') : null,
+
+          el('div', { class:'modal-section-title' }, 'Runtime & Maintenance'),
+          el('div', { class:'kv-grid' },
+            kv('Number of Starts', PLC.read(tag+'_STARTS').toLocaleString()),
+            kv('Run Hours', num(PLC.read(tag+'_RUNHRS'),1)+' h'),
+            kv('Winding Temp', num(PLC.read(tag+'_TEMP'),0)+' °C'),
+            kv('Service Due', serviceDue(PLC.read(tag+'_RUNHRS'))),
+          ),
+
+          el('div', { class:'modal-section-title' }, 'Motor Nameplate / Specifications'),
+          el('div', { class:'kv-grid' },
+            kv('Rated Power', meta.kW+' kW'),
+            kv('Voltage', meta.V+' V  3~ 50Hz'),
+            kv('Poles', meta.poles+' pole'),
+            kv('Synchronous Speed', meta.syncRpm+' rpm'),
+            kv('Rated Speed', meta.rpm+' rpm'),
+            kv('Full Load Current', meta.flc+' A'),
+            kv('Frame Size', meta.frame),
+            kv('Service Factor', meta.sf),
+            kv('Starter Type', meta.vsd ? 'Variable Speed Drive (VSD)' : 'Direct-on-Line / Soft-start'),
+            kv('Slip', num((meta.syncRpm-meta.rpm)/meta.syncRpm*100,1)+' %'),
+          ),
+          el('div', { style:'margin-top:14px;text-align:right' },
+            el('span', { class:'tag-chip' }, PLC.tags[tag+'_RUN'].addr.replace('.Run','')),
+          ),
+        ),
+      ));
+    }
+    function close(){ overlay.classList.remove('show'); off(); }
+    const off = PLC.onUpdate((n) => { if (n.startsWith(tag) || n==='__conn__') render(); });
+    render();
+    overlay.classList.add('show');
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+  }
+  function serviceDue(hrs){ const next = Math.ceil(hrs/4000)*4000; return (next-hrs).toFixed(0)+' h ('+next+'h svc)'; }
+
+  function kv(k, v){ return el('div', { class:'kv' }, el('div',{class:'k'},k), el('div',{class:'v'}, String(v))); }
+
+  function seg(isAuto, onChange){
+    const wrap = el('div', { class:'seg-ctl' });
+    const a = el('button', { class:'auto'+(isAuto?' active auto':''), onclick:()=>onChange(true) }, 'AUTO');
+    const m = el('button', { class:'manual'+(!isAuto?' active manual':''), onclick:()=>onChange(false) }, 'MANUAL');
+    wrap.append(a, m); return wrap;
+  }
+
+  /* --------------------------------------------------------------- silo */
+  function silo(tag){
+    const v = PLC.vessel(tag);
+    const lvl = PLC.read(tag+'_LEVEL');
+    const grainId = PLC.read(tag+'_GRAIN');
+    const cap = PLC.tags[tag+'_LEVEL'].cap;
+    const hi = PLC.read('CFG_SILO_HI'), lo = PLC.read('CFG_SILO_LO');
+    const stateCls = lvl>=hi ? 'high' : (lvl<=lo && v[2]==='silos') ? 'low' : '';
+    const isWater = v[2] !== 'silos' && false;
+    return el('div', { class:'vessel-card' },
+      el('div', { class:'silo '+stateCls },
+        el('div', { class:'shell' },
+          el('div', { class:'fill'+(isWater?' water':''), style:`height:${lvl}%` }),
+        ),
+        el('div', { class:'pct' }, num(lvl,0)+'%'),
+      ),
+      el('div', { class:'vtag' }, v[1]),
+      el('div', { class:'vgrain' }, PLC.GRAIN_TYPES[grainId] || '—'),
+      el('div', { class:'vsub' }, num(lvl/100*cap,1)+' / '+cap+' t'),
+    );
+  }
+
+  /* --------------------------------------------------------------- gauge */
+  function gauge(value, min, max, label, unit, color){
+    const r = 46, cx = 60, cy = 60;
+    const a0 = Math.PI*0.75, a1 = Math.PI*2.25; // 270° sweep
+    const frac = Math.max(0, Math.min(1, (value-min)/(max-min)));
+    const ang = a0 + (a1-a0)*frac;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns,'svg');
+    svg.setAttribute('width','120'); svg.setAttribute('height','96'); svg.setAttribute('viewBox','0 6 120 84');
+    function arc(a0,a1,stroke,w){
+      const p = document.createElementNS(ns,'path');
+      const x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+      const large = (a1-a0) > Math.PI ? 1 : 0;
+      p.setAttribute('d',`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`);
+      p.setAttribute('fill','none'); p.setAttribute('stroke',stroke); p.setAttribute('stroke-width',w); p.setAttribute('stroke-linecap','round');
+      return p;
+    }
+    svg.appendChild(arc(a0,a1,'#2a3340',9));
+    svg.appendChild(arc(a0,ang,color||'#2f81f7',9));
+    const wrap = el('div', { class:'gauge' });
+    wrap.appendChild(svg);
+    wrap.appendChild(el('div', { class:'g-val', style:`color:${color||'#2f81f7'}` }, num(value, value<10?1:0)+(unit?'':''), el('span',{style:'font-size:11px;color:var(--txt-mute)'},unit?(' '+unit):'')));
+    wrap.appendChild(el('div', { class:'g-lbl' }, label));
+    return wrap;
+  }
+
+  /* --------------------------------------------------------------- setpoint row */
+  function setpoint(opts){
+    // {label, sub, tag, pvTag, unit, min, max, step, decimals, onWrite}
+    const dec = opts.decimals ?? 1;
+    const input = el('input', { type:'number', value: num(PLC.read(opts.tag), dec),
+      min: opts.min, max: opts.max, step: opts.step });
+    const commit = () => {
+      let v = parseFloat(input.value);
+      if (isNaN(v)) v = PLC.read(opts.tag);
+      v = Math.max(opts.min ?? -Infinity, Math.min(opts.max ?? Infinity, v));
+      PLC.write(opts.tag, v); input.value = num(v, dec);
+      toast(`${opts.label} setpoint → ${num(v,dec)} ${opts.unit||''}`,'good');
+      if (opts.onWrite) opts.onWrite(v);
+    };
+    input.addEventListener('change', commit);
+    const step = opts.step || 1;
+    const row = el('div', { class:'sp-row' },
+      el('div', { class:'sp-label' }, el('b',{},opts.label), opts.sub?el('span',{},opts.sub):null),
+      opts.pvTag ? el('div', { class:'sp-pv', 'data-pv': opts.pvTag },
+        'PV ', el('b',{}, num(PLC.read(opts.pvTag), dec)), ' '+(opts.unit||'')) : null,
+      el('div', { class:'sp-input' },
+        el('button', { onclick:()=>{ input.value = num(parseFloat(input.value)-step,dec); commit(); } }, '–'),
+        input,
+        el('span', { class:'unit' }, opts.unit||''),
+        el('button', { onclick:()=>{ input.value = num(parseFloat(input.value)+step,dec); commit(); } }, '+'),
+      ),
+    );
+    return row;
+  }
+
+  /* --------------------------------------------------------------- trend chart */
+  function trend(series, opts={}){
+    // series: [{data:[], color, label}]
+    const w = opts.w||560, h = opts.h||120, pad=4;
+    const ns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('class','trend'); svg.setAttribute('viewBox',`0 0 ${w} ${h}`); svg.setAttribute('preserveAspectRatio','none');
+    let max = opts.max ?? Math.max(1,...series.flatMap(s=>s.data));
+    let min = opts.min ?? 0;
+    // grid
+    for (let i=0;i<=4;i++){
+      const y=pad+(h-2*pad)*i/4;
+      const l=document.createElementNS(ns,'line');
+      l.setAttribute('x1',0);l.setAttribute('x2',w);l.setAttribute('y1',y);l.setAttribute('y2',y);
+      l.setAttribute('stroke','#1c2330');l.setAttribute('stroke-width',1);svg.appendChild(l);
+    }
+    series.forEach(s=>{
+      if(!s.data.length) return;
+      const n=s.data.length;
+      const pts=s.data.map((v,i)=>{
+        const x=n>1?(w*i/(n-1)):0;
+        const y=pad+(h-2*pad)*(1-(v-min)/(max-min||1));
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const pl=document.createElementNS(ns,'polyline');
+      pl.setAttribute('points',pts);pl.setAttribute('fill','none');
+      pl.setAttribute('stroke',s.color);pl.setAttribute('stroke-width',2);pl.setAttribute('stroke-linejoin','round');
+      svg.appendChild(pl);
+    });
+    return svg;
+  }
+
+  /* --------------------------------------------------------------- bar chart */
+  function barChart(data, opts={}){
+    // data: [{label, value, color}]
+    const max = Math.max(1, ...data.map(d=>d.value));
+    return el('div', { class:'grid', style:'gap:9px' },
+      data.map(d => el('div', {},
+        el('div', { style:'display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px' },
+          el('span',{},d.label), el('span',{class:'mono'}, num(d.value, opts.dec??1)+(opts.unit||''))),
+        el('div', { class:'bar-track', style:'height:10px' },
+          el('div', { class:'bar-fill', style:`width:${d.value/max*100}%;background:${d.color||'var(--accent)'}` })),
+      )),
+    );
+  }
+
+  /* --------------------------------------------------------------- donut */
+  function donut(segments, opts={}){
+    // segments [{value,color,label}]
+    const total = segments.reduce((s,x)=>s+x.value,0)||1;
+    const ns='http://www.w3.org/2000/svg', R=54, C=2*Math.PI*R;
+    const svg=document.createElementNS(ns,'svg');
+    svg.setAttribute('width','140');svg.setAttribute('height','140');svg.setAttribute('viewBox','0 0 140 140');
+    let off=0;
+    segments.forEach(s=>{
+      const frac=s.value/total;
+      const c=document.createElementNS(ns,'circle');
+      c.setAttribute('cx',70);c.setAttribute('cy',70);c.setAttribute('r',R);
+      c.setAttribute('fill','none');c.setAttribute('stroke',s.color);c.setAttribute('stroke-width',16);
+      c.setAttribute('stroke-dasharray',`${C*frac} ${C*(1-frac)}`);
+      c.setAttribute('stroke-dashoffset',-C*off);
+      c.setAttribute('transform','rotate(-90 70 70)');
+      svg.appendChild(c);off+=frac;
+    });
+    const center=el('div',{style:'position:absolute;inset:0;display:grid;place-items:center;text-align:center'},
+      el('div',{},
+        el('div',{class:'mono',style:'font-size:22px;font-weight:700'}, opts.centerVal??num(total,0)),
+        el('div',{class:'muted',style:'font-size:10px'}, opts.centerLabel||'')));
+    return el('div',{style:'position:relative;width:140px;height:140px;margin:0 auto'}, svg, center);
+  }
+
+  /* --------------------------------------------------------------- toast */
+  let toastWrap;
+  function toast(msg, kind=''){
+    if (!toastWrap){ toastWrap = el('div',{class:'toast-wrap'}); document.body.appendChild(toastWrap); }
+    const t = el('div', { class:'toast '+kind }, msg);
+    toastWrap.appendChild(t);
+    setTimeout(()=>{ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2600);
+  }
+
+  return { el, num, motor, faceplate, silo, gauge, setpoint, trend, barChart, donut, toast, kv, seg };
+})();
+window.UI = UI;
+
+  </script>
+  <!-- ================= APPLICATION ================= -->
+  <script>
+/* ====================================================================
+   app.js — application shell, router, and page renderers
+   ==================================================================== */
+(() => {
+  const { el, num } = UI;
+  const $ = (s) => document.querySelector(s);
+
+  /* ---- navigation model ----------------------------------------- */
+  const PAGES = [
+    { id:'overview', label:'Plant Overview', ic:'▥',  group:'Operations' },
+    { id:'silos',    label:'Silo Filling',   ic:'▤',  group:'Operations' },
+    { id:'temper',   label:'Grain Tempering',ic:'💧', group:'Operations' },
+    { id:'mill',     label:'Milling',        ic:'⚙',  group:'Operations' },
+    { id:'reports',  label:'Reporting',      ic:'▦',  group:'Management' },
+    { id:'settings', label:'Settings',       ic:'⚙', group:'Management' },
+  ];
+
+  let current = location.hash.replace('#','') || 'overview';
+  let pageOff = null; // unsubscribe of current page live bindings
+
+  /* ================================================================
+     SHELL
+     ================================================================ */
+  function buildShell(){
+    const cfg = PLC.getCfg();
+    document.body.innerHTML = '';
+    const nav = el('nav', { class:'nav' });
+    let lastGroup = '';
+    PAGES.forEach(p => {
+      if (p.group !== lastGroup){ nav.appendChild(el('div',{class:'group-label'},p.group)); lastGroup=p.group; }
+      nav.appendChild(el('a', { 'data-page':p.id, class: p.id===current?'active':'',
+        onclick:()=>go(p.id) },
+        el('span',{class:'ic'},p.ic), el('span',{},p.label),
+        p.id==='overview'?el('span',{class:'badge hidden','data-alarmbadge':''},'0'):null));
+    });
+
+    const app = el('div', { id:'app' },
+      el('div', { class:'brand' },
+        el('div',{class:'logo'},'W'),
+        el('div',{class:'title'},'Wyelec Mill SCADA', el('small',{},'Grain Handling & Flour Milling'))),
+      el('div', { class:'topbar' },
+        el('div',{class:'page-title','data-pagetitle':''}, ''),
+        el('div',{class:'spacer'}),
+        el('div',{class:'clock','data-clock':''},''),
+        connPill(),
+        el('div',{class:'user-chip', onclick:()=>UI.toast('Logged in as Operator: '+currentOperator())},
+          el('span',{class:'ava'}, currentOperator().split(/[ .]/).map(s=>s[0]).join('').slice(0,2)),
+          el('span',{}, currentOperator())),
+      ),
+      nav,
+      el('main', { class:'main', id:'page' }),
+      el('div', { class:'statusbar' },
+        el('div',{class:'seg'},'Site: ',el('b',{},cfg.site)),
+        el('div',{class:'seg'},'Driver: ',el('b',{'data-drv':''},cfg.driver.toUpperCase())),
+        el('div',{class:'seg'},'Scan: ',el('b',{},cfg.scanRateMs+'ms')),
+        el('div',{class:'spacer'}),
+        el('div',{class:'seg','data-alarmstat':''},'● No active alarms'),
+      ),
+    );
+    document.body.appendChild(app);
+    document.body.appendChild(el('div',{class:'modal-overlay',id:'modal-root'}));
+    tickClock();
+  }
+
+  function connPill(){
+    return el('div', { class:'conn-pill','data-conn':'' },
+      el('span',{class:'dot'}), el('span',{'data-conntext':''},'—'));
+  }
+
+  function updateConn(){
+    const s = PLC.connection();
+    const pill = $('[data-conn]'); if (!pill) return;
+    pill.className = 'conn-pill ' + (s==='online'?'online': s==='sim'?'sim':'offline');
+    const map = { online:'PLC ONLINE', sim:'SIMULATION', connecting:'CONNECTING…', offline:'OFFLINE' };
+    $('[data-conntext]').textContent = map[s]||s;
+    const drv=$('[data-drv]'); if(drv) drv.textContent = PLC.getCfg().driver.toUpperCase();
+  }
+
+  function tickClock(){
+    const c=$('[data-clock]'); if(c) c.textContent = new Date().toLocaleString('en-AU',{hour12:false});
+    setTimeout(tickClock, 1000);
+  }
+
+  function currentOperator(){ return localStorage.getItem('scada.operator') || PLC.OPERATORS[0]; }
+
+  /* ---- alarm banner / badge ------------------------------------- */
+  function refreshAlarms(){
+    const alarms = PLC.activeAlarms().sort((a,b)=> (a.sev===b.sev?0:a.sev==='alarm'?-1:1));
+    const badge = $('[data-alarmbadge]');
+    const stat = $('[data-alarmstat]');
+    if (badge){ badge.textContent = alarms.length; badge.classList.toggle('hidden', alarms.length===0); }
+    if (stat){
+      if (!alarms.length){ stat.innerHTML='● No active alarms'; stat.style.color='var(--run)'; }
+      else { const top=alarms[0]; stat.innerHTML='● '+alarms.length+' active — '+top.msg; stat.style.color=top.sev==='alarm'?'var(--alarm)':'var(--warn)'; }
+    }
+    // page-level banner
+    const banner = $('[data-banner]');
+    if (banner){
+      const unack = alarms.filter(a=>!a.ack);
+      if (!alarms.length){ banner.className='alarm-banner'; }
+      else {
+        const worst = alarms[0].sev;
+        banner.className = 'alarm-banner show '+(worst==='warn'?'warn':'')+(unack.length?' blink':'');
+        banner.innerHTML='';
+        banner.append(
+          el('span',{},'⚠'),
+          el('span',{class:'count'},alarms.length),
+          el('span',{}, alarms[0].msg + (alarms.length>1?` (+${alarms.length-1} more)`:'')),
+          el('button',{class:'ack',onclick:()=>{PLC.ackAll();refreshAlarms();}},'ACK ALL'),
+        );
+      }
+    }
+  }
+
+  /* ================================================================
+     ROUTER
+     ================================================================ */
+  function go(id){
+    current = id; location.hash = id;
+    document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
+    render();
+  }
+
+  function render(){
+    if (pageOff){ pageOff(); pageOff=null; }
+    const main = $('#page');
+    const page = PAGES.find(p=>p.id===current) || PAGES[0];
+    $('[data-pagetitle]').innerHTML = page.label + ' <small>'+pageSub(current)+'</small>';
+    main.innerHTML='';
+    main.appendChild(el('div',{class:'alarm-banner','data-banner':''}));
+    const fn = RENDER[current] || RENDER.overview;
+    const ctx = { refresh: [] };
+    main.appendChild(fn(ctx));
+    // live binding: re-run lightweight refreshers on tag updates
+    pageOff = PLC.onUpdate(() => { ctx.refresh.forEach(f=>{ try{f();}catch(e){} }); refreshAlarms(); updateConn(); });
+    refreshAlarms(); updateConn();
+  }
+
+  function pageSub(id){
+    return ({
+      overview:'Live plant status — all areas',
+      silos:'Intake & silo filling — blends and fill control',
+      temper:'Grain conditioning — moisture & dwell control',
+      mill:'Roller milling — rate, recipe & extraction',
+      reports:'Production counters, recipe logs & operator KPIs',
+      settings:'Background configuration & PLC connection',
+    })[id]||'';
+  }
+
+  /* helper: a self-refreshing text node bound to a tag */
+  function live(ctx, fn, node){ const upd=()=>{ const v=fn(); if(node.textContent!==v) node.textContent=v; }; ctx.refresh.push(upd); return node; }
+
+  /* ================================================================
+     PAGE: OVERVIEW
+     ================================================================ */
+  const RENDER = {};
+
+  RENDER.overview = (ctx) => {
+    const wrap = el('div');
+    // KPI tiles
+    const tiles = el('div',{class:'grid cols-4',style:'margin-bottom:16px'});
+    const mk=(label,fn,unit,kind,sub)=>{
+      const v=el('div',{class:'value'}); const s=el('div',{class:'sub'},sub||'');
+      const t=el('div',{class:'stat '+kind}, el('div',{class:'accent-bar'}),
+        el('div',{class:'label'},label), v, s);
+      ctx.refresh.push(()=>{ v.innerHTML=''; v.append(document.createTextNode(num(fn(),1)), el('small',{},unit)); });
+      return t;
+    };
+    tiles.append(
+      mk('Milling Rate', ()=>PLC.read('PV_MILL_TPH'),' t/h','good','Target '+num(PLC.read('SP_MILL_TPH'),0)+' t/h'),
+      mk('Intake Rate', ()=>PLC.read('PV_FILL_TPH'),' t/h','grain','To '+PLC.VESSELS[PLC.read('SP_FILL_TARGET')][1]),
+      mk('Extraction', ()=>PLC.read('PV_EXTRACTION'),' %','', 'Ash '+num(PLC.read('PV_ASH'),2)+'%'),
+      mk('Flour Today', ()=>PLC.read('CNT_FLOUR_TODAY'),' t','good','Bran '+num(PLC.read('CNT_BRAN_TODAY'),1)+' t'),
+    );
+    wrap.appendChild(tiles);
+
+    // three area panels
+    const areas = el('div',{class:'grid cols-3'});
+    areas.append(
+      areaPanel(ctx,'Silo Filling','silos','LINE_INTAKE_RUN',['M_IC1','M_BE1','M_PC1','M_DST']),
+      areaPanel(ctx,'Tempering','temper','LINE_TEMPER_RUN',['M_DAMP','M_WP1','M_TC1','M_BE2']),
+      areaPanel(ctx,'Milling','mill','LINE_MILL_RUN',['M_B1','M_C1','M_SIFT','M_PNF']),
+    );
+    wrap.appendChild(areas);
+
+    // trend
+    const tpanel = el('div',{class:'panel',style:'margin-top:16px'},
+      el('div',{class:'panel-head'},el('h2',{},'Live Trends — last 30 s'),el('div',{class:'spacer'}),
+        el('div',{class:'legend'},
+          legend('Mill t/h','#2ea043'),legend('Moisture %','#2f81f7'),legend('Extraction %','#c8a24b'))));
+    const tnode = el('div'); tpanel.appendChild(tnode);
+    ctx.refresh.push(()=>{ const tr=PLC.trends(); tnode.innerHTML='';
+      tnode.appendChild(UI.trend([
+        {data:tr.tph,color:'#2ea043'},
+        {data:tr.moist,color:'#2f81f7'},
+        {data:tr.extraction,color:'#c8a24b'},
+      ],{max:100,h:130,w:1000})); });
+    wrap.appendChild(tpanel);
+    return wrap;
+  };
+
+  function legend(label,color){ return el('span',{class:'li'},el('span',{class:'sw',style:`background:${color}`}),label); }
+
+  function areaPanel(ctx, title, area, lineTag, motors){
+    const head = el('div',{class:'panel-head'},
+      el('h2',{},title),el('div',{class:'spacer'}),
+      lineStateChip(ctx,lineTag));
+    const motorBox = el('div',{class:'grid',style:'gap:8px;margin-bottom:12px'});
+    motors.forEach(m=>motorBox.appendChild(UI.motor(m)));
+    const panel = el('div',{class:'panel'}, head, motorBox,
+      el('div',{style:'display:flex;gap:8px'},
+        el('button',{class:'btn run sm',style:'flex:1',onclick:()=>{PLC.write(lineTag,true);UI.toast(title+' sequence STARTED','good');}},'▶ Start Line'),
+        el('button',{class:'btn stop sm',style:'flex:1',onclick:()=>{PLC.write(lineTag,false);UI.toast(title+' sequence STOPPED','warn');}},'■ Stop Line'),
+      ));
+    // rebuild motor faceplate states on refresh (replace whole box)
+    ctx.refresh.push(()=>{ motorBox.innerHTML=''; motors.forEach(m=>motorBox.appendChild(UI.motor(m))); });
+    return panel;
+  }
+
+  function lineStateChip(ctx, tag){
+    const chip=el('span',{class:'pill'});
+    ctx.refresh.push(()=>{ const r=PLC.read(tag); chip.className='pill '+(r?'run':'stop'); chip.textContent=r?'RUNNING':'STOPPED'; });
+    return chip;
+  }
+
+  /* ================================================================
+     PAGE: SILO FILLING
+     ================================================================ */
+  RENDER.silos = (ctx) => {
+    const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+
+    /* left: mimic + silos */
+    const left = el('div');
+    // intake conveying mimic
+    const mimic = el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Intake Conveying Line'),el('div',{class:'spacer'}),
+        el('span',{class:'hint'},'Tip pit → pre-clean → bucket elevator → distributor')));
+    const mrow = el('div',{class:'grid',style:'grid-template-columns:repeat(5,1fr);gap:8px'});
+    ['M_IC1','M_DEDUST','M_PC1','M_BE1','M_DST'].forEach(m=>mrow.appendChild(UI.motor(m)));
+    ctx.refresh.push(()=>{ mrow.innerHTML=''; ['M_IC1','M_DEDUST','M_PC1','M_BE1','M_DST'].forEach(m=>mrow.appendChild(UI.motor(m))); });
+    mimic.appendChild(mrow);
+    left.appendChild(mimic);
+
+    // silos
+    const siloPanel = el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Storage Silos'),el('div',{class:'spacer'}),
+        el('span',{class:'hint'},'Click a motor for auto/manual control')));
+    const siloGrid = el('div',{class:'grid cols-6',style:'gap:10px'});
+    const siloTags=['S1','S2','S3','S4','S5','S6'];
+    siloTags.forEach(s=>siloGrid.appendChild(UI.silo(s)));
+    ctx.refresh.push(()=>{ siloGrid.innerHTML=''; siloTags.forEach(s=>siloGrid.appendChild(UI.silo(s))); });
+    siloPanel.appendChild(siloGrid);
+    left.appendChild(siloPanel);
+    wrap.appendChild(left);
+
+    /* right: setpoints */
+    const right = el('div');
+    const sp = el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Fill Setpoints')));
+
+    // target silo selector
+    const siloSel = el('select');
+    PLC.VESSELS.filter(v=>v[2]==='silos').forEach((v,i)=>siloSel.appendChild(el('option',{value:i},v[1])));
+    siloSel.value = PLC.read('SP_FILL_TARGET');
+    siloSel.onchange=()=>{ PLC.write('SP_FILL_TARGET',+siloSel.value); UI.toast('Fill target → '+PLC.VESSELS[+siloSel.value][1]); };
+
+    // grain type selector
+    const grainSel = el('select');
+    PLC.GRAIN_TYPES.forEach((g,i)=>{ if(i<5) grainSel.appendChild(el('option',{value:i},g)); });
+    grainSel.value = PLC.read('SP_FILL_GRAIN');
+    grainSel.onchange=()=>{ PLC.write('SP_FILL_GRAIN',+grainSel.value); UI.toast('Grain type → '+PLC.GRAIN_TYPES[+grainSel.value]); };
+
+    sp.append(
+      el('div',{class:'field'},el('label',{},'Destination Silo'),siloSel),
+      el('div',{class:'field'},el('label',{},'Grain Type / Blend Component'),grainSel),
+      UI.setpoint({label:'Intake Fill Rate',sub:'Throughput to silo',tag:'SP_FILL_TPH',pvTag:'PV_FILL_TPH',unit:'t/h',min:0,max:80,step:1,decimals:0}),
+    );
+    right.appendChild(sp);
+
+    // blend recipe quick reference
+    const blendPanel = el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Wheat Inventory')));
+    const invTable=el('table',{class:'tbl'});
+    const rebuildInv=()=>{
+      invTable.innerHTML='';
+      invTable.appendChild(el('tr',{},el('th',{},'Grain'),el('th',{class:'right'},'Tonnes'),el('th',{class:'right'},'Silos')));
+      const totals={};
+      siloTags.forEach(s=>{ const g=PLC.read(s+'_GRAIN'); const t=PLC.read(s+'_LEVEL')/100*PLC.tags[s+'_LEVEL'].cap;
+        totals[g]=totals[g]||{t:0,n:0}; totals[g].t+=t; totals[g].n++; });
+      Object.entries(totals).forEach(([g,d])=>{
+        invTable.appendChild(el('tr',{},el('td',{},
+          el('span',{style:'color:var(--grain);font-weight:600'},PLC.GRAIN_TYPES[g])),
+          el('td',{class:'right mono'},num(d.t,1)),el('td',{class:'right mono'},d.n)));
+      });
+    };
+    rebuildInv(); ctx.refresh.push(rebuildInv);
+    blendPanel.appendChild(invTable);
+    right.appendChild(blendPanel);
+    wrap.appendChild(right);
+    return wrap;
+  };
+
+  /* ================================================================
+     PAGE: TEMPERING
+     ================================================================ */
+  RENDER.temper = (ctx) => {
+    const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+    const left = el('div');
+
+    // moisture gauges
+    const gauges = el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Moisture & Water Addition')));
+    const gRow = el('div',{class:'grid cols-4',style:'gap:8px'});
+    gauges.appendChild(gRow);
+    ctx.refresh.push(()=>{ gRow.innerHTML='';
+      gRow.append(
+        UI.gauge(PLC.read('PV_INLET_MOIST'),8,20,'Inlet Moisture','%','#8b97a7'),
+        UI.gauge(PLC.read('PV_TEMPER_MOIST'),8,20,'Tempered Moisture','%','#2f81f7'),
+        UI.gauge(PLC.read('PV_WATER_LPM'),0,60,'Water Flow','L/min','#2f81f7'),
+        UI.gauge(PLC.read('SP_TEMPER_TIME'),0,48,'Dwell Time','h','#c8a24b'),
+      );
+    });
+    left.appendChild(gauges);
+
+    // dampener motors
+    const mpanel = el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Dampening & Conveying')));
+    const mrow = el('div',{class:'grid cols-3',style:'gap:8px'});
+    const tmotors=['M_DAMP','M_WP1','M_TC1','M_TC2','M_BE2'];
+    mpanel.appendChild(mrow);
+    ctx.refresh.push(()=>{ mrow.innerHTML=''; tmotors.forEach(m=>mrow.appendChild(UI.motor(m))); });
+    left.appendChild(mpanel);
+
+    // temper bins
+    const binPanel = el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Temper Bins'),el('div',{class:'spacer'}),
+        el('span',{class:'hint'},'Conditioning dwell before milling')));
+    const binGrid=el('div',{class:'grid cols-4',style:'gap:10px'});
+    const bins=['TB1','TB2','TB3','TB4'];
+    binPanel.appendChild(binGrid);
+    ctx.refresh.push(()=>{ binGrid.innerHTML=''; bins.forEach(b=>binGrid.appendChild(UI.silo(b))); });
+    left.appendChild(binPanel);
+    wrap.appendChild(left);
+
+    // setpoints
+    const right = el('div');
+    const sp = el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Tempering Setpoints')),
+      UI.setpoint({label:'Target Moisture',sub:'Conditioned wheat',tag:'SP_TEMPER_MOIST',pvTag:'PV_TEMPER_MOIST',unit:'%',min:12,max:18,step:0.1,decimals:1}),
+      UI.setpoint({label:'Dwell / Temper Time',sub:'Rest before milling',tag:'SP_TEMPER_TIME',unit:'h',min:4,max:48,step:1,decimals:0}),
+      el('div',{class:'modal-section-title'},'Calculated Water Demand'),
+      (()=>{ const d=el('div',{class:'kv-grid'}); ctx.refresh.push(()=>{ d.innerHTML='';
+        d.append(UI.kv('Water Flow SP', num(PLC.read('SP_WATER_LPM'),1)+' L/min'),
+                 UI.kv('Water Flow PV', num(PLC.read('PV_WATER_LPM'),1)+' L/min'),
+                 UI.kv('Inlet Moisture', num(PLC.read('PV_INLET_MOIST'),1)+' %'),
+                 UI.kv('Moisture Gain', '+'+num(PLC.read('SP_TEMPER_MOIST')-PLC.read('PV_INLET_MOIST'),1)+' %'));
+      }); return d; })(),
+      el('div',{class:'muted',style:'font-size:11px;margin-top:12px'},
+        'Water flow is auto-calculated from inlet moisture, throughput and the water meter K-factor (Settings). Tempering screw and water pump run on the tempering sequence.'),
+    );
+    right.appendChild(sp);
+    wrap.appendChild(right);
+    return wrap;
+  };
+
+  /* ================================================================
+     PAGE: MILLING
+     ================================================================ */
+  RENDER.mill = (ctx) => {
+    const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+    const left = el('div');
+
+    // KPI strip
+    const kpis = el('div',{class:'grid cols-4',style:'margin-bottom:14px;gap:10px'});
+    const mkk=(label,fn,unit,kind)=>{ const v=el('div',{class:'value'});
+      const t=el('div',{class:'stat '+kind},el('div',{class:'accent-bar'}),el('div',{class:'label'},label),v);
+      ctx.refresh.push(()=>{ v.innerHTML=''; v.append(document.createTextNode(num(fn(),1)),el('small',{},unit)); }); return t; };
+    kpis.append(
+      mkk('Mill Rate',()=>PLC.read('PV_MILL_TPH'),' t/h','good'),
+      mkk('Extraction',()=>PLC.read('PV_EXTRACTION'),' %','grain'),
+      mkk('Flour Ash',()=>PLC.read('PV_ASH'),' %',''),
+      mkk('Flour Today',()=>PLC.read('CNT_FLOUR_TODAY'),' t','good'),
+    );
+    left.appendChild(kpis);
+
+    // roller mill mimic
+    const mill = el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Roller Mill Passages'),el('div',{class:'spacer'}),
+        el('span',{class:'hint'},'Break → Reduction → Sifting → Purifying → Packing')));
+    const millRow=el('div',{class:'grid',style:'grid-template-columns:repeat(4,1fr);gap:8px'});
+    const millMotors=['M_B1','M_B2','M_C1','M_C2','M_SIFT','M_PUR','M_PNF','M_PACK'];
+    mill.appendChild(millRow);
+    ctx.refresh.push(()=>{ millRow.innerHTML=''; millMotors.forEach(m=>millRow.appendChild(UI.motor(m))); });
+    left.appendChild(mill);
+
+    // quality trend
+    const qp=el('div',{class:'panel'},el('div',{class:'panel-head'},el('h2',{},'Rate & Extraction Trend')));
+    const qn=el('div'); qp.appendChild(qn);
+    ctx.refresh.push(()=>{ const tr=PLC.trends(); qn.innerHTML='';
+      qn.appendChild(UI.trend([{data:tr.tph,color:'#2ea043'},{data:tr.extraction,color:'#c8a24b'}],{max:100,h:130,w:700}));
+    });
+    qp.appendChild(el('div',{class:'legend'},legend('Mill t/h','#2ea043'),legend('Extraction %','#c8a24b')));
+    left.appendChild(qp);
+    wrap.appendChild(left);
+
+    // setpoints + recipe
+    const right=el('div');
+    const recPanel=el('div',{class:'panel',style:'margin-bottom:14px'},
+      el('div',{class:'panel-head'},el('h2',{},'Active Recipe / Blend')));
+    const recSel=el('select');
+    PLC.RECIPES.forEach((r,i)=>recSel.appendChild(el('option',{value:i},r.name)));
+    recSel.value=PLC.read('SP_ACTIVE_RECIPE');
+    const blendBox=el('div',{style:'margin-top:10px'});
+    const applyRecipe=(commit)=>{
+      const r=PLC.RECIPES[+recSel.value];
+      blendBox.innerHTML='';
+      blendBox.appendChild(el('div',{class:'modal-section-title'},'Blend composition'));
+      blendBox.appendChild(UI.barChart(Object.entries(r.blend).map(([g,p])=>(
+        {label:PLC.GRAIN_TYPES[g],value:p,color:'var(--grain)'})),{unit:'%',dec:0}));
+      blendBox.appendChild(el('div',{class:'kv-grid',style:'margin-top:12px'},
+        UI.kv('Target Moisture',r.moisture+' %'),
+        UI.kv('Target Extraction',r.extraction+' %'),
+        UI.kv('Recommended Rate',r.tph+' t/h'),
+        UI.kv('Recipe Code',r.id)));
+      if(commit){
+        PLC.write('SP_ACTIVE_RECIPE',+recSel.value);
+        PLC.write('SP_TEMPER_MOIST',r.moisture);
+        PLC.write('SP_MILL_TPH',r.tph);
+        UI.toast('Recipe loaded: '+r.name+' — setpoints applied','good');
+        logRecipeStart(r);
+      }
+    };
+    recSel.onchange=()=>applyRecipe(true);
+    recPanel.append(el('div',{class:'field'},el('label',{},'Recipe'),recSel),blendBox);
+    applyRecipe(false);
+    right.appendChild(recPanel);
+
+    const sp=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Milling Setpoints')),
+      UI.setpoint({label:'Milling Rate',sub:'Tons per hour',tag:'SP_MILL_TPH',pvTag:'PV_MILL_TPH',unit:'t/h',min:0,max:20,step:0.5,decimals:1}),
+      UI.setpoint({label:'B1 Break Roll Gap',sub:'First break',tag:'SP_B1_GAP',unit:'mm',min:0.2,max:1.2,step:0.05,decimals:2}),
+      UI.setpoint({label:'C1 Reduction Roll Gap',sub:'First reduction',tag:'SP_C1_GAP',unit:'mm',min:0.05,max:0.5,step:0.01,decimals:2}),
+    );
+    right.appendChild(sp);
+    wrap.appendChild(right);
+    return wrap;
+  };
+
+  /* ================================================================
+     PAGE: SETTINGS
+     ================================================================ */
+  RENDER.settings = (ctx) => {
+    const cfg=PLC.getCfg();
+    const wrap=el('div',{class:'grid cols-2',style:'align-items:start'});
+
+    /* PLC connection */
+    const conn=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'PLC Connection — Allen-Bradley')));
+    const fDriver=el('select');
+    [['sim','Simulator (no hardware)'],['live','Live PLC via gateway']].forEach(([v,l])=>fDriver.appendChild(el('option',{value:v},l)));
+    fDriver.value=cfg.driver;
+    const fIp=el('input',{type:'text',value:cfg.plcPath});
+    const fSlot=el('input',{type:'number',value:cfg.plcSlot,min:0,max:17});
+    const fGw=el('input',{type:'text',value:cfg.gatewayUrl});
+    const fPrefix=el('input',{type:'text',value:cfg.tagPrefix});
+    conn.append(
+      el('div',{class:'field'},el('label',{},'Connection Driver'),fDriver),
+      el('div',{class:'field'},el('label',{},'Controller IP / CIP Path ',el('small',{},'(ControlLogix/CompactLogix)')),fIp),
+      el('div',{class:'field'},el('label',{},'CPU Backplane Slot'),fSlot),
+      el('div',{class:'field'},el('label',{},'Gateway WebSocket URL ',el('small',{},'(Node EtherNet/IP bridge)')),fGw),
+      el('div',{class:'field'},el('label',{},'Tag Scope Prefix ',el('small',{},'(e.g. Program:Mill.)')),fPrefix),
+      el('div',{style:'display:flex;gap:8px;margin-top:6px'},
+        el('button',{class:'btn primary',onclick:()=>{
+          PLC.setCfg({driver:fDriver.value,plcPath:fIp.value,plcSlot:+fSlot.value,gatewayUrl:fGw.value,tagPrefix:fPrefix.value});
+          PLC.setDriver(fDriver.value);
+          UI.toast('Connection settings applied — '+(fDriver.value==='live'?'connecting to PLC…':'simulation running'),'good');
+          updateConn();
+        }},'Apply & Connect'),
+        el('button',{class:'btn',onclick:()=>{ const s=PLC.connection();
+          UI.toast('Connection: '+s.toUpperCase(), s==='online'?'good':s==='offline'?'bad':'warn'); }},'Test Status'),
+      ),
+      el('div',{class:'muted',style:'font-size:11px;margin-top:12px'},
+        'Browsers cannot speak EtherNet/IP directly. Run the Node.js gateway in /server (node-ethernet-ip or pylogix) on the mill network; it bridges PLC tags to this HMI over WebSocket. See README.'),
+    );
+    wrap.appendChild(conn);
+
+    /* background process settings */
+    const proc=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Background Process Settings'),el('div',{class:'spacer'}),
+        el('span',{class:'hint'},'Rarely changed — engineering config')));
+    const cfgTags=[
+      ['CFG_SILO_HI','Silo High-Level Alarm','%',0,100,1,0],
+      ['CFG_SILO_LO','Silo Low-Level Alarm','%',0,100,1,0],
+      ['CFG_MOTOR_TEMP_HI','Motor Winding Temp Alarm','°C',60,140,1,0],
+      ['CFG_WATER_KFACTOR','Water Meter K-Factor','',0.8,1.3,0.01,2],
+      ['CFG_SCALE_SPAN','Weigh Scale Span','kg',100,5000,10,0],
+      ['CFG_DENSITY','Wheat Bulk Density','kg/m³',650,850,1,0],
+    ];
+    cfgTags.forEach(([tag,label,unit,mn,mx,st,dc])=>proc.appendChild(
+      UI.setpoint({label,tag,unit,min:mn,max:mx,step:st,decimals:dc})));
+    wrap.appendChild(proc);
+
+    /* HMI / scan settings */
+    const hmi=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'HMI & Scan')));
+    const fScan=el('input',{type:'number',value:cfg.scanRateMs,min:100,max:5000,step:100});
+    const fSite=el('input',{type:'text',value:cfg.site});
+    const fUnits=el('select'); [['metric','Metric (t, kg, °C)'],['imperial','Imperial (lb, °F)']].forEach(([v,l])=>fUnits.appendChild(el('option',{value:v},l))); fUnits.value=cfg.units;
+    const fOp=el('select'); PLC.OPERATORS.forEach(o=>fOp.appendChild(el('option',{value:o},o))); fOp.value=currentOperator();
+    hmi.append(
+      el('div',{class:'field'},el('label',{},'Logged-in Operator'),fOp),
+      el('div',{class:'field'},el('label',{},'Site / Line Name'),fSite),
+      el('div',{class:'field'},el('label',{},'Scan / Poll Rate (ms)'),fScan),
+      el('div',{class:'field'},el('label',{},'Engineering Units'),fUnits),
+      el('button',{class:'btn primary',onclick:()=>{
+        PLC.setCfg({scanRateMs:+fScan.value,site:fSite.value,units:fUnits.value});
+        localStorage.setItem('scada.operator',fOp.value);
+        PLC.setDriver(PLC.getCfg().driver);
+        UI.toast('HMI settings saved','good'); buildShell(); render();
+      }},'Save HMI Settings'),
+    );
+    wrap.appendChild(hmi);
+
+    /* data / maintenance */
+    const data=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Data & Maintenance')));
+    data.append(
+      el('div',{class:'muted',style:'font-size:12px;margin-bottom:12px'},'Production logs and counters are stored locally in this browser for the demo. On a live system these write to a historian / SQL database via the gateway.'),
+      el('div',{style:'display:flex;gap:8px;flex-wrap:wrap'},
+        el('button',{class:'btn',onclick:()=>{ exportLogs(); }},'⤓ Export Production Log (CSV)'),
+        el('button',{class:'btn',onclick:()=>{ if(confirm('Reset daily production counters?')){ PLC.write('CNT_FLOUR_TODAY',0);PLC.write('CNT_BRAN_TODAY',0);PLC.write('CNT_INTAKE_TODAY',0); UI.toast('Daily counters reset','warn'); }}},'Reset Daily Counters'),
+        el('button',{class:'btn',onclick:()=>{ if(confirm('Clear all stored recipe logs?')){ localStorage.removeItem('scada.recipelog'); UI.toast('Recipe logs cleared','warn'); }}},'Clear Recipe Logs'),
+      ),
+    );
+    wrap.appendChild(data);
+    return wrap;
+  };
+
+  /* ================================================================
+     PAGE: REPORTING
+     ================================================================ */
+  RENDER.reports = (ctx) => {
+    const wrap=el('div');
+    const logs=getRecipeLog();
+
+    // daily production counters
+    const tiles=el('div',{class:'grid cols-4',style:'margin-bottom:16px'});
+    const mk=(label,fn,unit,kind,sub)=>{ const v=el('div',{class:'value'});
+      const t=el('div',{class:'stat '+kind},el('div',{class:'accent-bar'}),el('div',{class:'label'},label),v,sub?el('div',{class:'sub'},sub):null);
+      ctx.refresh.push(()=>{ v.innerHTML=''; v.append(document.createTextNode(num(fn(),1)),el('small',{},unit)); }); return t; };
+    tiles.append(
+      mk('Flour Produced Today',()=>PLC.read('CNT_FLOUR_TODAY'),' t','good','Shift total'),
+      mk('Bran / Offal Today',()=>PLC.read('CNT_BRAN_TODAY'),' t','grain','By-product'),
+      mk('Wheat Intake Today',()=>PLC.read('CNT_INTAKE_TODAY'),' t','','Received'),
+      mk('Avg Extraction',()=>PLC.read('PV_EXTRACTION'),' %','','Current'),
+    );
+    wrap.appendChild(tiles);
+
+    const row=el('div',{class:'grid',style:'grid-template-columns:1fr 1fr;align-items:start;margin-bottom:16px'});
+
+    // production by recipe (donut)
+    const byRecipe={};
+    logs.forEach(l=>{ byRecipe[l.recipe]=(byRecipe[l.recipe]||0)+l.tonnes; });
+    const colors=['#2ea043','#2f81f7','#c8a24b','#d29922','#a371f7'];
+    const segs=Object.entries(byRecipe).map(([r,t],i)=>({label:r,value:t,color:colors[i%colors.length]}));
+    const totT=segs.reduce((s,x)=>s+x.value,0);
+    const donutPanel=el('div',{class:'panel'},
+      el('div',{class:'panel-head'},el('h2',{},'Production by Recipe — 30 days')),
+      segs.length?el('div',{class:'grid',style:'grid-template-columns:140px 1fr;align-items:center;gap:18px'},
+        UI.donut(segs,{centerVal:num(totT,0),centerLabel:'tonnes'}),
+        el('div',{},segs.map(s=>el('div',{style:'display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px'},
+          el('span',{class:'sw',style:`width:12px;height:12px;border-radius:3px;background:${s.color}`}),
+          el('span',{style:'flex:1'},s.label),
+          el('span',{class:'mono'},num(s.value,1)+' t'),
+          el('span',{class:'muted mono',style:'width:48px;text-align:right'},num(s.value/totT*100,0)+'%')))),
+      ):el('div',{class:'empty'},'No recipe runs logged yet'));
+    row.appendChild(donutPanel);
+
+    // operator efficiency leaderboard
+    const opStats=computeOperatorStats(logs);
+    const opPanel=el('div',{class:'panel flat'},
+      el('div',{class:'panel-head',style:'padding:16px 16px 0'},el('h2',{},'Operator Efficiency — Leaderboard')));
+    const opTable=el('table',{class:'tbl'},
+      el('tr',{},el('th',{},'#'),el('th',{},'Operator'),el('th',{class:'right'},'Tonnes'),el('th',{class:'right'},'Avg t/h'),el('th',{class:'right'},'Avg Extract'),el('th',{},'Efficiency')));
+    opStats.forEach((o,i)=>{
+      opTable.appendChild(el('tr',{},
+        el('td',{class:'mono'},(i+1)),
+        el('td',{},i===0?'🏆 '+o.name:o.name),
+        el('td',{class:'right mono'},num(o.tonnes,1)),
+        el('td',{class:'right mono'},num(o.avgRate,1)),
+        el('td',{class:'right mono'},num(o.avgExtract,1)+'%'),
+        el('td',{style:'min-width:120px'},
+          el('div',{class:'bar-track'},el('div',{class:'bar-fill good',style:`width:${o.eff}%`})))));
+    });
+    opPanel.appendChild(opTable);
+    row.appendChild(opPanel);
+    wrap.appendChild(row);
+
+    // daily production trend (last 14 days)
+    const daily=computeDailyTotals(logs);
+    const dailyPanel=el('div',{class:'panel',style:'margin-bottom:16px'},
+      el('div',{class:'panel-head'},el('h2',{},'Daily Flour Production — last 14 days')));
+    dailyPanel.appendChild(UI.barChart(daily.map(d=>({label:d.date,value:d.tonnes,color:'var(--run)'})),{unit:' t',dec:1}));
+    wrap.appendChild(dailyPanel);
+
+    // recipe production log table
+    const logPanel=el('div',{class:'panel flat'},
+      el('div',{class:'panel-head',style:'padding:16px 16px 0'},el('h2',{},'Recipe Production Log'),el('div',{class:'spacer'}),
+        el('button',{class:'btn sm',style:'margin:0 16px',onclick:exportLogs},'⤓ Export CSV')));
+    const logTable=el('table',{class:'tbl'},
+      el('tr',{},el('th',{},'Date / Time'),el('th',{},'Recipe'),el('th',{},'Operator'),el('th',{class:'right'},'Tonnes'),el('th',{class:'right'},'Rate t/h'),el('th',{class:'right'},'Extract %'),el('th',{},'Status')));
+    logs.slice(0,40).forEach(l=>{
+      logTable.appendChild(el('tr',{},
+        el('td',{class:'mono'},new Date(l.ts).toLocaleString('en-AU',{hour12:false})),
+        el('td',{},el('span',{style:'color:var(--grain);font-weight:600'},l.recipe)),
+        el('td',{},l.operator),
+        el('td',{class:'right mono'},num(l.tonnes,1)),
+        el('td',{class:'right mono'},num(l.rate,1)),
+        el('td',{class:'right mono'},num(l.extract,1)),
+        el('td',{},el('span',{class:'pill '+(l.status==='Complete'?'run':'auto')},l.status))));
+    });
+    logPanel.appendChild(logTable);
+    wrap.appendChild(logPanel);
+    return wrap;
+  };
+
+  /* ================================================================
+     REPORT DATA (seeded + accumulating, stored locally)
+     ================================================================ */
+  function ensureSeeded(){
+    if (localStorage.getItem('scada.recipelog') == null)
+      localStorage.setItem('scada.recipelog', JSON.stringify(seedRecipeLog()));
+  }
+  function getRecipeLog(){
+    ensureSeeded();
+    const log = JSON.parse(localStorage.getItem('scada.recipelog')||'[]');
+    return log.sort((a,b)=>b.ts-a.ts);
+  }
+  function seedRecipeLog(){
+    const out=[]; const now=Date.now();
+    for (let d=29; d>=0; d--){
+      const runs=2+Math.floor(Math.random()*3);
+      for (let r=0;r<runs;r++){
+        const rec=PLC.RECIPES[Math.floor(Math.random()*PLC.RECIPES.length)];
+        const op=PLC.OPERATORS[Math.floor(Math.random()*PLC.OPERATORS.length)];
+        const rate=rec.tph*(0.85+Math.random()*0.25);
+        const extract=rec.extraction*(0.96+Math.random()*0.07);
+        const hours=4+Math.random()*4;
+        out.push({ ts: now - d*86400000 - r*5400000 - Math.random()*3600000,
+          recipe:rec.name, recipeId:rec.id, operator:op,
+          tonnes: rate*hours, rate, extract, status:'Complete' });
+      }
+    }
+    return out;
+  }
+  function logRecipeStart(rec){
+    ensureSeeded();
+    const log=JSON.parse(localStorage.getItem('scada.recipelog')||'[]');
+    log.push({ ts:Date.now(), recipe:rec.name, recipeId:rec.id, operator:currentOperator(),
+      tonnes: PLC.read('CNT_FLOUR_TODAY')||0, rate:PLC.read('SP_MILL_TPH'),
+      extract:PLC.read('PV_EXTRACTION')||rec.extraction, status:'In Progress' });
+    localStorage.setItem('scada.recipelog', JSON.stringify(log));
+  }
+  function computeOperatorStats(logs){
+    const m={};
+    logs.forEach(l=>{ const o=m[l.operator]=m[l.operator]||{name:l.operator,tonnes:0,rate:0,extract:0,n:0};
+      o.tonnes+=l.tonnes; o.rate+=l.rate; o.extract+=l.extract; o.n++; });
+    const arr=Object.values(m).map(o=>({...o,avgRate:o.rate/o.n,avgExtract:o.extract/o.n}));
+    // efficiency = blend of throughput vs rated and extraction performance
+    const maxRate=Math.max(...arr.map(o=>o.avgRate),1);
+    arr.forEach(o=>{ o.eff=Math.min(100, (o.avgRate/maxRate*55 + o.avgExtract/100*45)); });
+    return arr.sort((a,b)=>b.eff-a.eff);
+  }
+  function computeDailyTotals(logs){
+    const m={};
+    logs.forEach(l=>{ const k=new Date(l.ts).toLocaleDateString('en-AU',{day:'2-digit',month:'short'});
+      m[k]=(m[k]||0)+l.tonnes; });
+    const keys=Object.keys(m).slice(0,14).reverse();
+    return keys.map(k=>({date:k,tonnes:m[k]}));
+  }
+  function exportLogs(){
+    const logs=getRecipeLog();
+    const rows=[['Timestamp','Recipe','RecipeID','Operator','Tonnes','Rate_tph','Extraction_pct','Status']];
+    logs.forEach(l=>rows.push([new Date(l.ts).toISOString(),l.recipe,l.recipeId,l.operator,
+      l.tonnes.toFixed(2),l.rate.toFixed(2),l.extract.toFixed(2),l.status]));
+    const csv=rows.map(r=>r.join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='production-log-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    UI.toast('Production log exported','good');
+  }
+
+  /* ================================================================
+     BOOT
+     ================================================================ */
+  window.addEventListener('hashchange', () => { const id=location.hash.replace('#',''); if(id&&id!==current) go(id); });
+
+  PLC.start();
+  ensureSeeded();
+  buildShell();
+  render();
+  // global periodic refresh for connection pill even if no tag changes
+  setInterval(()=>{ refreshAlarms(); updateConn(); }, 1000);
+})();
+
+  </script>
+</body>
+</html>

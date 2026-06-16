@@ -13,7 +13,14 @@ Node.js EtherNet/IP gateway.
 
 ## Quick start (simulator — no hardware)
 
-Just open the interface — no build step, no dependencies:
+**Easiest — single file:** just open **`scada/demo.html`** directly in any
+browser (double-click it). Everything (CSS + JS) is inlined, so it needs no
+server and no install. The connection pill shows **SIMULATION** and a realistic
+process model drives every page.
+
+**Multi-file version** (the maintainable source `index.html` loads `css/` +
+`js/`). Some browsers restrict loading separate files over `file://`, so serve
+it:
 
 ```bash
 # from the repo root
@@ -22,8 +29,8 @@ python3 -m http.server 8000      # or any static file server
 # open http://localhost:8000
 ```
 
-Or simply open `scada/index.html` in a browser. The connection pill shows
-**SIMULATION** and a realistic process model drives every page.
+> `demo.html` is generated from `index.html` + `css/` + `js/` — edit the source
+> files and rebuild it by inlining them. It always mirrors the real source.
 
 ---
 
