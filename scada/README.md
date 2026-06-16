@@ -36,14 +36,22 @@ python3 -m http.server 8000      # or any static file server
 
 ## Pages
 
+Styled after **FactoryTalk View**, with a **light / dark theme** toggle (top
+bar — light is the steel "control-room" look, dark is high-contrast for dim
+rooms). Every page has animated **SVG process mimics** built from real
+equipment symbols — drag conveyors, screw augers, bucket elevators, silos, roll
+stands, plansifters, purifiers, fans and pumps — with live material-flow
+animation. Click any **M** (motor) symbol in a mimic to open its faceplate.
+
 | Page | What it does |
 |------|--------------|
-| **Plant Overview** | Live KPIs (mill rate, intake, extraction, flour today), three area mimics with start/stop sequencing, and live trends. |
-| **Silo Filling** | Intake conveying line, 6 storage silos with live level/grain type, wheat inventory, and setpoints for destination silo, grain/blend component and fill rate (t/h). |
-| **Grain Tempering** | Inlet & tempered moisture gauges, auto-calculated water addition, temper bins, and setpoints for **target moisture %** and **dwell/temper time**. |
-| **Milling** | Roller-mill passages (break/reduction/sifting/purifying/packing), recipe/blend selector that loads setpoints, and setpoints for **milling rate (t/h)** and roll gaps. Live rate & extraction trend. |
+| **Dashboard** | Live KPIs (mill rate, intake, extraction, flour today), three area equipment panels with start/stop sequencing, and live trends. |
+| **Process Overview** | The **whole-plant process diagram** — intake → storage → tempering → milling → flour/bran — in one mimic, with inter-area flow arrows and start/stop for each sequence. |
+| **Silo Filling** | Process mimic of the intake line (tip pit → pre-cleaner → elevator → distributor → silos), 6 storage silos with live level/grain type, wheat inventory, and setpoints for destination silo, grain/blend component and fill rate (t/h). |
+| **Grain Tempering** | Process mimic (weigher → dampener + water addition → elevator → temper bins → screws), inlet & tempered moisture gauges, auto-calculated water, and setpoints for **target moisture %** and **dwell/temper time**. |
+| **Milling** | Process mimic of the roll passages (break → plansifter → reduction → purifier → packing), recipe/blend selector that loads setpoints, and setpoints for **milling rate (t/h)** and roll gaps. Live rate & extraction trend. |
 | **Reporting** | Daily production counters, production-by-recipe breakdown, **operator efficiency leaderboard**, 14-day production trend, and a full recipe production log with CSV export. |
-| **Settings** | PLC connection (driver, IP, slot, gateway URL, tag prefix), background process settings (alarm limits, water K-factor, scale span, bulk density), HMI/scan settings and data maintenance. |
+| **Settings** | PLC connection (driver, IP, slot, gateway URL, tag prefix), background process settings (alarm limits, water K-factor, scale span, bulk density), HMI/scan/theme settings and data maintenance. |
 
 ### Motor faceplates
 Click **any motor** anywhere in the HMI to open its faceplate:

@@ -7,7 +7,8 @@
 
   /* ---- navigation model ----------------------------------------- */
   const PAGES = [
-    { id:'overview', label:'Plant Overview', ic:'▥',  group:'Operations' },
+    { id:'dashboard',label:'Dashboard',      ic:'▥',  group:'Operations' },
+    { id:'process',  label:'Process Overview',ic:'⬡', group:'Operations' },
     { id:'silos',    label:'Silo Filling',   ic:'▤',  group:'Operations' },
     { id:'temper',   label:'Grain Tempering',ic:'💧', group:'Operations' },
     { id:'mill',     label:'Milling',        ic:'⚙',  group:'Operations' },
@@ -15,7 +16,7 @@
     { id:'settings', label:'Settings',       ic:'⚙', group:'Management' },
   ];
 
-  let current = location.hash.replace('#','') || 'overview';
+  let current = location.hash.replace('#','') || 'dashboard';
   let pageOff = null; // unsubscribe of current page live bindings
 
   /* ================================================================
@@ -42,6 +43,7 @@
         el('div',{class:'page-title','data-pagetitle':''}, ''),
         el('div',{class:'spacer'}),
         el('div',{class:'clock','data-clock':''},''),
+        el('button',{class:'theme-toggle','data-themebtn':'',onclick:toggleTheme},''),
         connPill(),
         el('div',{class:'user-chip', onclick:()=>UI.toast('Logged in as Operator: '+currentOperator())},
           el('span',{class:'ava'}, currentOperator().split(/[ .]/).map(s=>s[0]).join('').slice(0,2)),
@@ -59,6 +61,7 @@
     );
     document.body.appendChild(app);
     document.body.appendChild(el('div',{class:'modal-overlay',id:'modal-root'}));
+    setTheme(currentTheme());
     tickClock();
   }
 
@@ -82,6 +85,16 @@
   }
 
   function currentOperator(){ return localStorage.getItem('scada.operator') || PLC.OPERATORS[0]; }
+
+  /* ---- theme (light / dark) ------------------------------------- */
+  function currentTheme(){ return localStorage.getItem('scada.theme') || 'dark'; }
+  function setTheme(t){
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('scada.theme', t);
+    const btn=$('[data-themebtn]');
+    if (btn) btn.innerHTML = t==='dark' ? '☀ Light' : '🌙 Dark';
+  }
+  function toggleTheme(){ setTheme(currentTheme()==='dark'?'light':'dark'); }
 
   /* ---- alarm banner / badge ------------------------------------- */
   function refreshAlarms(){
@@ -128,7 +141,7 @@
     $('[data-pagetitle]').innerHTML = page.label + ' <small>'+pageSub(current)+'</small>';
     main.innerHTML='';
     main.appendChild(el('div',{class:'alarm-banner','data-banner':''}));
-    const fn = RENDER[current] || RENDER.overview;
+    const fn = RENDER[current] || RENDER.dashboard;
     const ctx = { refresh: [] };
     main.appendChild(fn(ctx));
     // live binding: re-run lightweight refreshers on tag updates
@@ -138,10 +151,11 @@
 
   function pageSub(id){
     return ({
-      overview:'Live plant status — all areas',
-      silos:'Intake & silo filling — blends and fill control',
-      temper:'Grain conditioning — moisture & dwell control',
-      mill:'Roller milling — rate, recipe & extraction',
+      dashboard:'Live plant status, KPIs & area controls',
+      process:'Whole-plant process diagram — intake to flour',
+      silos:'Intake & silo filling — process mimic, blends & fill control',
+      temper:'Grain conditioning — process mimic, moisture & dwell control',
+      mill:'Roller milling — process mimic, rate, recipe & extraction',
       reports:'Production counters, recipe logs & operator KPIs',
       settings:'Background configuration & PLC connection',
     })[id]||'';
@@ -155,7 +169,36 @@
      ================================================================ */
   const RENDER = {};
 
-  RENDER.overview = (ctx) => {
+  /* ---- a mimic panel wrapper used by several pages -------------- */
+  function mimicPanel(ctx, title, builder, hint){
+    const diag = builder();
+    ctx.refresh.push(diag.refresh);
+    return el('div',{class:'panel',style:'margin-bottom:16px'},
+      el('div',{class:'panel-head'}, el('h2',{}, title), el('div',{class:'spacer'}),
+        hint?el('span',{class:'hint'}, hint):null),
+      diag.node);
+  }
+
+  RENDER.process = (ctx) => {
+    const wrap = el('div');
+    wrap.appendChild(mimicPanel(ctx,'Whole-Plant Process Diagram', MIMIC.plant,
+      'Click any motor (M) for auto/manual control & specs'));
+    // line state + sequence controls for all three areas
+    const ctrl = el('div',{class:'grid cols-3'});
+    [['Intake / Silo Filling','LINE_INTAKE_RUN'],
+     ['Tempering','LINE_TEMPER_RUN'],
+     ['Milling','LINE_MILL_RUN']].forEach(([title,tag])=>{
+      ctrl.appendChild(el('div',{class:'panel'},
+        el('div',{class:'panel-head'}, el('h2',{},title), el('div',{class:'spacer'}), lineStateChip(ctx,tag)),
+        el('div',{style:'display:flex;gap:8px'},
+          el('button',{class:'btn run sm',style:'flex:1',onclick:()=>{PLC.write(tag,true);UI.toast(title+' sequence STARTED','good');}},'▶ Start'),
+          el('button',{class:'btn stop sm',style:'flex:1',onclick:()=>{PLC.write(tag,false);UI.toast(title+' sequence STOPPED','warn');}},'■ Stop'))));
+    });
+    wrap.appendChild(ctrl);
+    return wrap;
+  };
+
+  RENDER.dashboard = (ctx) => {
     const wrap = el('div');
     // KPI tiles
     const tiles = el('div',{class:'grid cols-4',style:'margin-bottom:16px'});
@@ -228,6 +271,8 @@
      ================================================================ */
   RENDER.silos = (ctx) => {
     const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+    const _mp = mimicPanel(ctx,'Silo Filling — Process Mimic',MIMIC.silos,'Tip pit → pre-cleaner → bucket elevator → distributor → silos');
+    _mp.style.gridColumn='1 / -1'; _mp.style.marginBottom='0'; wrap.appendChild(_mp);
 
     /* left: mimic + silos */
     const left = el('div');
@@ -305,6 +350,8 @@
      ================================================================ */
   RENDER.temper = (ctx) => {
     const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+    const _mp = mimicPanel(ctx,'Grain Tempering — Process Mimic',MIMIC.temper,'Weigher → dampener (water add) → elevator → temper bins → screws → mill');
+    _mp.style.gridColumn='1 / -1'; _mp.style.marginBottom='0'; wrap.appendChild(_mp);
     const left = el('div');
 
     // moisture gauges
@@ -368,6 +415,8 @@
      ================================================================ */
   RENDER.mill = (ctx) => {
     const wrap = el('div',{class:'grid',style:'grid-template-columns:1fr 360px;align-items:start'});
+    const _mp = mimicPanel(ctx,'Milling — Process Mimic',MIMIC.mill,'Break rolls → plansifter → reduction rolls → purifier → packing');
+    _mp.style.gridColumn='1 / -1'; _mp.style.marginBottom='0'; wrap.appendChild(_mp);
     const left = el('div');
 
     // KPI strip

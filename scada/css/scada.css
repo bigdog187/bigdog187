@@ -28,6 +28,17 @@
   --grain:     #c8a24b;   /* grain / product fill */
   --water:     #2f81f7;
 
+  /* process mimic (dark) */
+  --mim-bg:        #0a0e15;
+  --mim-grid:      #141a24;
+  --mim-eq:        #222b39;
+  --mim-eq2:       #161c27;
+  --mim-eq-stroke: #3d4757;
+  --mim-pipe:      #313b4a;
+  --mim-roll:      #2c3644;
+  --mim-zone:      #0f141d;
+  --mim-zone-line: #2a3340;
+
   --radius: 8px;
   --radius-sm: 5px;
   --shadow: 0 6px 24px rgba(0,0,0,.45);
@@ -428,3 +439,133 @@ table.tbl td.mono, table.tbl th.mono { font-family: var(--mono); }
 .mono { font-family: var(--mono); }
 .right { text-align: right; }
 .tag-chip { font-family: var(--mono); font-size: 11px; color: var(--txt-mute); background: var(--bg); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); }
+
+/* ====================================================================
+   LIGHT THEME — FactoryTalk View "steel" look
+   ==================================================================== */
+html[data-theme="light"] {
+  --bg:        #b8bfc7;
+  --bg-2:      #d7dce1;
+  --bg-3:      #e9edf1;
+  --panel:     #eef1f4;
+  --line:      #b3bcc5;
+  --line-2:    #9aa4b1;
+  --txt:       #1b2027;
+  --txt-dim:   #4a5562;
+  --txt-mute:  #6b7682;
+  --accent:    #1f6feb;
+  --accent-2:  #1a5fd0;
+
+  --run:       #1f9d3a;
+  --run-glow:  #1f9d3a44;
+  --stop:      #8a929c;
+  --warn:      #c1840f;
+  --alarm:     #d22f27;
+  --alarm-glow:#d22f2744;
+  --auto:      #1f6feb;
+  --manual:    #c1840f;
+  --grain:     #b8862a;
+  --water:     #1f6feb;
+
+  --mim-bg:        #c5ccd3;
+  --mim-grid:      #b6bdc6;
+  --mim-eq:        #eef1f4;
+  --mim-eq2:       #ccd3da;
+  --mim-eq-stroke: #6f7984;
+  --mim-pipe:      #8b95a1;
+  --mim-roll:      #b9c0c8;
+  --mim-zone:      #ced4db;
+  --mim-zone-line: #9aa4b1;
+
+  --shadow: 0 4px 16px rgba(40,50,65,.25);
+}
+/* raised, beveled panels in light mode (FTView display objects) */
+html[data-theme="light"] .panel,
+html[data-theme="light"] .stat {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(40,50,65,.18);
+}
+html[data-theme="light"] .brand,
+html[data-theme="light"] .topbar,
+html[data-theme="light"] .statusbar { box-shadow: 0 1px 0 rgba(255,255,255,.5) inset; }
+html[data-theme="light"] .main {
+  background:
+    radial-gradient(1200px 500px at 80% -10%, #cdd4db 0%, transparent 60%),
+    var(--bg);
+}
+html[data-theme="light"] .motor,
+html[data-theme="light"] .seg-ctl,
+html[data-theme="light"] .sp-input { box-shadow: inset 0 1px 0 rgba(255,255,255,.6); }
+
+/* theme toggle button */
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg-3); border: 1px solid var(--line-2); color: var(--txt-dim);
+  border-radius: 20px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.theme-toggle:hover { color: var(--txt); border-color: var(--accent); }
+
+/* ====================================================================
+   PROCESS MIMIC (SVG) — equipment symbols & flow
+   ==================================================================== */
+.mimic-wrap { background: var(--mim-bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; position: relative; }
+.mimic-wrap svg { display: block; width: 100%; height: auto; }
+.mimic-grid line { stroke: var(--mim-grid); stroke-width: 1; }
+
+.eq-body    { fill: var(--mim-eq);  stroke: var(--mim-eq-stroke); stroke-width: 1.5; }
+.eq-housing { fill: var(--mim-eq2); stroke: var(--mim-eq-stroke); stroke-width: 1.5; }
+.eq-grain   { fill: var(--grain); }
+.eq-water   { fill: var(--water); }
+.eq-roll    { fill: var(--mim-roll); stroke: var(--mim-eq-stroke); stroke-width: 1.5; }
+.eq-line    { stroke: var(--mim-eq-stroke); stroke-width: 1.5; fill: none; }
+.eq-label   { fill: var(--txt); font: 700 12px var(--mono); }
+.eq-tag     { fill: var(--txt-dim); font: 600 10px var(--mono); }
+.eq-sub     { fill: var(--txt-mute); font: 10px var(--mono); }
+
+/* status tint applied to a group */
+.eq-state .eq-stator { fill: var(--stop); }
+.eq-state.run   .eq-stator { fill: var(--run); }
+.eq-state.fault .eq-stator { fill: var(--alarm); }
+.eq-state.warn  .eq-stator { fill: var(--warn); }
+
+/* motor badge */
+.mim-motor { cursor: pointer; }
+.mim-motor .mb-c { fill: var(--stop); stroke: var(--mim-eq-stroke); stroke-width: 1.5; }
+.mim-motor.run   .mb-c { fill: var(--run); }
+.mim-motor.fault .mb-c { fill: var(--alarm); }
+.mim-motor.warn  .mb-c { fill: var(--warn); }
+.mim-motor .mb-t { fill: #fff; font: 800 11px var(--mono); text-anchor: middle; dominant-baseline: central; }
+.mim-motor:hover .mb-c { stroke: var(--accent); stroke-width: 2.5; }
+.mim-motor.run .mb-rot { animation: mimspin 1.4s linear infinite; transform-box: fill-box; transform-origin: center; }
+
+/* pipes / ducts */
+.mim-pipe      { stroke: var(--mim-pipe); stroke-width: 6; fill: none; stroke-linecap: round; }
+.mim-pipe.thin { stroke-width: 4; }
+.mim-flow      { stroke-dasharray: 11 9; }
+.mim-pipe.active.mim-flow { stroke: var(--grain); animation: mimflow .6s linear infinite; }
+.mim-pipe.water.active.mim-flow { stroke: var(--water); }
+
+/* moving parts */
+.mim-spin   { animation: mimspin 1.2s linear infinite; transform-box: fill-box; transform-origin: center; }
+.mim-belt   { stroke: var(--mim-eq-stroke); stroke-width: 2; stroke-dasharray: 7 7; fill: none; }
+.run .mim-belt    { stroke: var(--grain); animation: mimflow .55s linear infinite; }
+.run .mim-screw   { animation: mimflow .5s linear infinite; }
+.mim-screw  { stroke: var(--mim-eq-stroke); stroke-width: 2; stroke-dasharray: 4 5; fill: none; }
+@keyframes mimspin { to { transform: rotate(360deg); } }
+@keyframes mimflow { to { stroke-dashoffset: -40; } }
+
+/* FTView-style numeric readout box */
+.mim-readout .ro-box { fill: var(--bg); stroke: var(--mim-eq-stroke); stroke-width: 1.5; }
+html[data-theme="light"] .mim-readout .ro-box { fill: #11161f; }
+.mim-readout .ro-val { fill: #2ea043; font: 700 14px var(--mono); text-anchor: end; }
+.mim-readout .ro-lbl { fill: var(--txt-mute); font: 600 9px var(--mono); }
+
+/* zone bands on the plant overview */
+.mim-zone-band { fill: var(--mim-zone); stroke: var(--mim-zone-line); stroke-width: 1; }
+.mim-zone-title { fill: var(--txt-dim); font: 700 13px var(--sans); letter-spacing: 1px; }
+.mim-arrow-lbl { fill: var(--txt-dim); font: 600 11px var(--mono); }
+.mim-arrow { fill: var(--mim-pipe); }
+.mim-arrow.active { fill: var(--grain); }
+
+.mimic-legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 10px 14px; font-size: 11px; color: var(--txt-dim); border-top: 1px solid var(--line); background: var(--bg-2); }
+.mimic-legend .li { display: inline-flex; align-items: center; gap: 6px; }
+.mimic-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
