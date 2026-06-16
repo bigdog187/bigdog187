@@ -1,0 +1,135 @@
+# Wyelec Mill SCADA — Grain Handling & Flour Milling
+
+A browser-based SCADA / HMI for a grain handling and flour milling plant,
+designed to connect to an **Allen-Bradley ControlLogix / CompactLogix** PLC.
+
+It runs **stand-alone in any browser** out of the box using a built-in process
+simulator, and switches to a **live PLC** by pointing it at the included
+Node.js EtherNet/IP gateway.
+
+![overview](../images/industrial.jpg)
+
+---
+
+## Quick start (simulator — no hardware)
+
+Just open the interface — no build step, no dependencies:
+
+```bash
+# from the repo root
+cd scada
+python3 -m http.server 8000      # or any static file server
+# open http://localhost:8000
+```
+
+Or simply open `scada/index.html` in a browser. The connection pill shows
+**SIMULATION** and a realistic process model drives every page.
+
+---
+
+## Pages
+
+| Page | What it does |
+|------|--------------|
+| **Plant Overview** | Live KPIs (mill rate, intake, extraction, flour today), three area mimics with start/stop sequencing, and live trends. |
+| **Silo Filling** | Intake conveying line, 6 storage silos with live level/grain type, wheat inventory, and setpoints for destination silo, grain/blend component and fill rate (t/h). |
+| **Grain Tempering** | Inlet & tempered moisture gauges, auto-calculated water addition, temper bins, and setpoints for **target moisture %** and **dwell/temper time**. |
+| **Milling** | Roller-mill passages (break/reduction/sifting/purifying/packing), recipe/blend selector that loads setpoints, and setpoints for **milling rate (t/h)** and roll gaps. Live rate & extraction trend. |
+| **Reporting** | Daily production counters, production-by-recipe breakdown, **operator efficiency leaderboard**, 14-day production trend, and a full recipe production log with CSV export. |
+| **Settings** | PLC connection (driver, IP, slot, gateway URL, tag prefix), background process settings (alarm limits, water K-factor, scale span, bulk density), HMI/scan settings and data maintenance. |
+
+### Motor faceplates
+Click **any motor** anywhere in the HMI to open its faceplate:
+- **Auto / Manual** mode switch and manual **Start / Stop**
+- Live status: running/stopped/faulted, current vs FLC, speed %
+- **Runtime & maintenance:** number of starts, run hours, winding temp, next service due
+- **Motor nameplate:** rated kW, voltage, **poles**, synchronous & rated **rpm**, full-load current, frame size, service factor, slip, starter type (DOL / VSD)
+- A **Sim Fault / Reset** button for training and alarm testing
+
+---
+
+## Connecting to a real Allen-Bradley PLC
+
+A browser cannot speak EtherNet/IP (CIP) directly, so a small gateway sits on
+the mill network and bridges PLC tags to the HMI over WebSocket.
+
+```
+┌───────────┐   EtherNet/IP   ┌──────────────┐   WebSocket    ┌──────────┐
+│  AB PLC   │◄───────────────►│  ab-gateway  │◄──────────────►│  SCADA   │
+│ ControlLogix/             │  (Node.js)   │                │  browser │
+│ CompactLogix              └──────────────┘                └──────────┘
+└───────────┘
+```
+
+### 1. Run the gateway on the mill network
+
+```bash
+cd scada/server
+npm install                       # installs ws + ethernet-ip
+PLC_IP=192.168.1.10 PLC_SLOT=0 PORT=8080 node ab-gateway.js
+```
+
+> If `ethernet-ip` is not installed the gateway starts in **demo/echo mode**
+> so you can test the WebSocket path without a controller.
+
+### 2. Point the HMI at the gateway
+
+In the SCADA **Settings → PLC Connection** panel:
+- **Driver:** `Live PLC via gateway`
+- **Controller IP / CIP Path:** your PLC IP (e.g. `192.168.1.10`)
+- **CPU Backplane Slot:** controller slot (usually `0`)
+- **Gateway WebSocket URL:** `ws://<gateway-pc>:8080`
+- **Tag Scope Prefix:** program scope, e.g. `Program:Mill.`
+
+Click **Apply & Connect**. The pill turns **PLC ONLINE** when subscribed.
+
+### 3. Tag mapping
+
+Every HMI value maps to a symbolic controller tag (see `js/plc.js`). The
+prefix is configurable; for example with prefix `Program:Mill.`:
+
+| HMI tag | Controller tag | Type |
+|---------|----------------|------|
+| `SP_MILL_TPH` | `Program:Mill.MillRateSP` | REAL |
+| `PV_MILL_TPH` | `Program:Mill.MillRatePV` | REAL |
+| `SP_TEMPER_MOIST` | `Program:Mill.TemperMoistSP` | REAL |
+| `M_B1_RUN` | `Program:Mill.M_B1.Run` | BOOL |
+| `M_B1_AUTO` | `Program:Mill.M_B1.Auto` | BOOL |
+| `M_B1_STARTS` | `Program:Mill.M_B1.StartCount` | DINT |
+| `S1_LEVEL` | `Program:Mill.S1.LevelPct` | REAL |
+| ... | ... | ... |
+
+Create matching tags (ideally a `Motor` UDT with `.Run/.Auto/.Fault/.StartCmd/
+.SpeedFbk/.Current/.StartCount/.RunHours/.WindingTemp`) in Studio 5000 and the
+HMI lights up against live data.
+
+---
+
+## Architecture
+
+```
+scada/
+├── index.html            # single-page HMI shell
+├── css/scada.css         # dark control-room theme
+├── js/
+│   ├── plc.js            # tag database + Sim/Live drivers + process model + alarms
+│   ├── components.js     # motor faceplate, silo, gauge, setpoint, trend, donut widgets
+│   └── app.js            # router + the six pages + reporting/historian logic
+└── server/
+    ├── ab-gateway.js     # EtherNet/IP ⇄ WebSocket bridge
+    └── package.json
+```
+
+**The whole HMI talks only to `PLC.read()` / `PLC.write()`.** Swapping the
+simulator for the live PLC is a one-line driver change — no page code changes.
+
+### Notes
+- Setpoints, operator and config persist in the browser (`localStorage`); on a
+  live deployment these are PLC tags / historian records via the gateway.
+- Production logs are seeded with 30 days of demo data and accumulate as recipes
+  are run. Export to CSV from Reporting or Settings. In production, point the
+  gateway at a SQL historian.
+- Alarms (silo high/low level, motor fault/overload, winding temp) evaluate every
+  scan and surface in the banner, nav badge and status bar.
+
+Built by **Wyelec — Weiley Electrical** · industrial automation & PLC/SCADA.
