@@ -24,29 +24,40 @@
      ================================================================ */
   function buildShell(){
     document.body.innerHTML = '';
-    // bottom tab bar
-    const tabs = el('nav', { class:'ios-tabbar' });
+    // sidebar navigation
+    const nav = el('nav', { class:'sb-nav' });
+    let lastGroup = '';
     PAGES.forEach(p => {
-      tabs.appendChild(el('a', { 'data-page':p.id, class: p.id===current?'active':'', onclick:()=>go(p.id) },
+      if (p.group !== lastGroup){ nav.appendChild(el('div',{class:'sb-group-label'}, p.group)); lastGroup=p.group; }
+      nav.appendChild(el('a', { 'data-page':p.id, class:'sb-item'+(p.id===current?' active':''), onclick:()=>go(p.id) },
         el('span',{class:'ic'}, p.ic),
-        el('span',{class:'lbl'}, p.tab || p.label),
+        el('span',{}, p.label),
         p.id==='dashboard'?el('span',{class:'badge hidden','data-alarmbadge':''},'0'):null));
     });
 
+    const op = currentOperator();
     const app = el('div', { id:'app' },
-      // frosted navigation bar
-      el('div', { class:'ios-navbar' },
-        el('div',{class:'logo'},'W'),
-        el('div',{class:'nb-title'},'Wyelec Mill', el('small',{},'Grain & Flour Milling')),
-        el('div',{class:'spacer'}),
-        el('div',{class:'clock','data-clock':''},''),
-        connPill(),
-        el('button',{class:'nb-btn theme-toggle','data-themebtn':'',title:'Toggle theme',onclick:toggleTheme},''),
-        el('button',{class:'user-chip', title:'Operator', onclick:()=>UI.toast('Operator: '+currentOperator())},
-          el('span',{class:'ava'}, currentOperator().split(/[ .]/).map(s=>s[0]).join('').slice(0,2))),
+      el('aside', { class:'sidebar' },
+        el('div',{class:'sb-brand'},
+          el('div',{class:'logo'},'W'),
+          el('div',{class:'nm'},'Wyelec Mill', el('small',{},'Grain & Flour Milling'))),
+        nav,
+        el('div',{class:'sb-foot'},
+          connPill(),
+          el('button',{class:'sb-user', title:'Operator', onclick:()=>UI.toast('Operator: '+op)},
+            el('span',{class:'ava'}, op.split(/[ .]/).map(s=>s[0]).join('').slice(0,2)),
+            el('span',{class:'who'}, el('b',{}, op), el('span',{},'Operator'))),
+        ),
       ),
-      el('main', { class:'main', id:'page' }),
-      tabs,
+      el('div', { class:'main-col' },
+        el('header', { class:'topbar' },
+          el('div',{class:'tb-title'}, el('h1',{'data-title':''},''), el('p',{'data-sub':''},'')),
+          el('div',{class:'spacer'}),
+          el('div',{class:'clock','data-clock':''},''),
+          el('button',{class:'nb-btn theme-toggle','data-themebtn':'',title:'Toggle theme',onclick:toggleTheme},''),
+        ),
+        el('main', { class:'main', id:'page' }),
+      ),
     );
     document.body.appendChild(app);
     document.body.appendChild(el('div',{class:'modal-overlay',id:'modal-root'}));
@@ -119,7 +130,7 @@
      ================================================================ */
   function go(id){
     current = id; location.hash = id;
-    document.querySelectorAll('.ios-tabbar [data-page]').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
+    document.querySelectorAll('.sb-item[data-page]').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
     render();
     $('#page').scrollTop = 0;
   }
@@ -128,9 +139,10 @@
     if (pageOff){ pageOff(); pageOff=null; }
     const main = $('#page');
     const page = PAGES.find(p=>p.id===current) || PAGES[0];
+    const t=$('[data-title]'), s=$('[data-sub]');
+    if (t) t.textContent = page.label;
+    if (s) s.textContent = pageSub(current);
     main.innerHTML='';
-    main.appendChild(el('div',{class:'ios-large-title'},
-      el('div',{class:'lt'}, page.label, el('small',{}, pageSub(current)))));
     main.appendChild(el('div',{class:'alarm-banner','data-banner':''}));
     const fn = RENDER[current] || RENDER.dashboard;
     const ctx = { refresh: [] };
