@@ -7,13 +7,13 @@
 
   /* ---- navigation model ----------------------------------------- */
   const PAGES = [
-    { id:'dashboard',label:'Dashboard',      ic:'▥',  group:'Operations' },
-    { id:'process',  label:'Process Overview',ic:'⬡', group:'Operations' },
-    { id:'silos',    label:'Silo Filling',   ic:'▤',  group:'Operations' },
-    { id:'temper',   label:'Grain Tempering',ic:'💧', group:'Operations' },
-    { id:'mill',     label:'Milling',        ic:'⚙',  group:'Operations' },
-    { id:'reports',  label:'Reporting',      ic:'▦',  group:'Management' },
-    { id:'settings', label:'Settings',       ic:'⚙', group:'Management' },
+    { id:'dashboard',label:'Dashboard',      tab:'Home',    ic:'⌂', group:'Operations' },
+    { id:'process',  label:'Process Overview',tab:'Process',ic:'⬡', group:'Operations' },
+    { id:'silos',    label:'Silo Filling',   tab:'Silos',   ic:'▤',  group:'Operations' },
+    { id:'temper',   label:'Grain Tempering',tab:'Temper',  ic:'💧', group:'Operations' },
+    { id:'mill',     label:'Milling',        tab:'Mill',    ic:'⚙',  group:'Operations' },
+    { id:'reports',  label:'Reporting',      tab:'Reports', ic:'▦',  group:'Management' },
+    { id:'settings', label:'Settings',       tab:'Settings',ic:'☰', group:'Management' },
   ];
 
   let current = location.hash.replace('#','') || 'dashboard';
@@ -23,41 +23,30 @@
      SHELL
      ================================================================ */
   function buildShell(){
-    const cfg = PLC.getCfg();
     document.body.innerHTML = '';
-    const nav = el('nav', { class:'nav' });
-    let lastGroup = '';
+    // bottom tab bar
+    const tabs = el('nav', { class:'ios-tabbar' });
     PAGES.forEach(p => {
-      if (p.group !== lastGroup){ nav.appendChild(el('div',{class:'group-label'},p.group)); lastGroup=p.group; }
-      nav.appendChild(el('a', { 'data-page':p.id, class: p.id===current?'active':'',
-        onclick:()=>go(p.id) },
-        el('span',{class:'ic'},p.ic), el('span',{},p.label),
-        p.id==='overview'?el('span',{class:'badge hidden','data-alarmbadge':''},'0'):null));
+      tabs.appendChild(el('a', { 'data-page':p.id, class: p.id===current?'active':'', onclick:()=>go(p.id) },
+        el('span',{class:'ic'}, p.ic),
+        el('span',{class:'lbl'}, p.tab || p.label),
+        p.id==='dashboard'?el('span',{class:'badge hidden','data-alarmbadge':''},'0'):null));
     });
 
     const app = el('div', { id:'app' },
-      el('div', { class:'brand' },
+      // frosted navigation bar
+      el('div', { class:'ios-navbar' },
         el('div',{class:'logo'},'W'),
-        el('div',{class:'title'},'Wyelec Mill SCADA', el('small',{},'Grain Handling & Flour Milling'))),
-      el('div', { class:'topbar' },
-        el('div',{class:'page-title','data-pagetitle':''}, ''),
+        el('div',{class:'nb-title'},'Wyelec Mill', el('small',{},'Grain & Flour Milling')),
         el('div',{class:'spacer'}),
         el('div',{class:'clock','data-clock':''},''),
-        el('button',{class:'theme-toggle','data-themebtn':'',onclick:toggleTheme},''),
         connPill(),
-        el('div',{class:'user-chip', onclick:()=>UI.toast('Logged in as Operator: '+currentOperator())},
-          el('span',{class:'ava'}, currentOperator().split(/[ .]/).map(s=>s[0]).join('').slice(0,2)),
-          el('span',{}, currentOperator())),
+        el('button',{class:'nb-btn theme-toggle','data-themebtn':'',title:'Toggle theme',onclick:toggleTheme},''),
+        el('button',{class:'user-chip', title:'Operator', onclick:()=>UI.toast('Operator: '+currentOperator())},
+          el('span',{class:'ava'}, currentOperator().split(/[ .]/).map(s=>s[0]).join('').slice(0,2))),
       ),
-      nav,
       el('main', { class:'main', id:'page' }),
-      el('div', { class:'statusbar' },
-        el('div',{class:'seg'},'Site: ',el('b',{},cfg.site)),
-        el('div',{class:'seg'},'Driver: ',el('b',{'data-drv':''},cfg.driver.toUpperCase())),
-        el('div',{class:'seg'},'Scan: ',el('b',{},cfg.scanRateMs+'ms')),
-        el('div',{class:'spacer'}),
-        el('div',{class:'seg','data-alarmstat':''},'● No active alarms'),
-      ),
+      tabs,
     );
     document.body.appendChild(app);
     document.body.appendChild(el('div',{class:'modal-overlay',id:'modal-root'}));
@@ -67,7 +56,7 @@
 
   function connPill(){
     return el('div', { class:'conn-pill','data-conn':'' },
-      el('span',{class:'dot'}), el('span',{'data-conntext':''},'—'));
+      el('span',{class:'dot'}), el('span',{class:'txt-lbl','data-conntext':''},'—'));
   }
 
   function updateConn(){
@@ -92,7 +81,7 @@
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem('scada.theme', t);
     const btn=$('[data-themebtn]');
-    if (btn) btn.innerHTML = t==='dark' ? '☀ Light' : '🌙 Dark';
+    if (btn) btn.textContent = t==='dark' ? '☀' : '☾';
   }
   function toggleTheme(){ setTheme(currentTheme()==='dark'?'light':'dark'); }
 
@@ -130,16 +119,18 @@
      ================================================================ */
   function go(id){
     current = id; location.hash = id;
-    document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
+    document.querySelectorAll('.ios-tabbar [data-page]').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
     render();
+    $('#page').scrollTop = 0;
   }
 
   function render(){
     if (pageOff){ pageOff(); pageOff=null; }
     const main = $('#page');
     const page = PAGES.find(p=>p.id===current) || PAGES[0];
-    $('[data-pagetitle]').innerHTML = page.label + ' <small>'+pageSub(current)+'</small>';
     main.innerHTML='';
+    main.appendChild(el('div',{class:'ios-large-title'},
+      el('div',{class:'lt'}, page.label, el('small',{}, pageSub(current)))));
     main.appendChild(el('div',{class:'alarm-banner','data-banner':''}));
     const fn = RENDER[current] || RENDER.dashboard;
     const ctx = { refresh: [] };

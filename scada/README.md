@@ -36,12 +36,14 @@ python3 -m http.server 8000      # or any static file server
 
 ## Pages
 
-Styled after **FactoryTalk View**, with a **light / dark theme** toggle (top
-bar — light is the steel "control-room" look, dark is high-contrast for dim
-rooms). Every page has animated **SVG process mimics** built from real
-equipment symbols — drag conveyors, screw augers, bucket elevators, silos, roll
-stands, plansifters, purifiers, fans and pumps — with live material-flow
-animation. Click any **M** (motor) symbol in a mimic to open its faceplate.
+A **modern app-style UI** (iOS design language): frosted navigation bar, big
+large-titles, rounded "card" panels, a bottom tab bar, segmented controls and
+pill buttons. Motor faceplates open as **bottom sheets**. Includes a **light /
+dark theme** toggle (top bar) and is fully responsive down to phone width.
+Every page has animated **SVG process mimics** built from real equipment
+symbols — drag conveyors, screw augers, bucket elevators, silos, roll stands,
+plansifters, purifiers, fans and pumps — with live material-flow animation.
+Click any **M** (motor) symbol in a mimic to open its faceplate.
 
 | Page | What it does |
 |------|--------------|
