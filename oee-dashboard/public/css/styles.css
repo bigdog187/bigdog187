@@ -140,6 +140,7 @@ a { color: var(--accent); text-decoration: none; }
 
 /* Modal */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal-backdrop[hidden] { display: none; }
 .modal { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); width: 560px; max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column; }
 .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border); }
 .modal-head h3 { margin: 0; }

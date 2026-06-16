@@ -8,6 +8,12 @@ system runs end-to-end with no hardware.
 
 ![stack](https://img.shields.io/badge/node-22%2B-green) ![db](https://img.shields.io/badge/db-sqlite-blue)
 
+![Dashboard](docs/dashboard.png)
+
+*Live machine view: OEE gauge with target, Availability/Performance/Quality, feed-rate trend, status timeline and production stats. Below — onboarding a machine with Allen Bradley EtherNet/IP tag mapping:*
+
+![Add machine — Allen Bradley](docs/add-machine-ab.png)
+
 ## What it does
 
 You feed each machine these signals (from a PLC or any source):
