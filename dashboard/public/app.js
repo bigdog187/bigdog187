@@ -355,8 +355,167 @@ async function pollBuild() {
 }
 setInterval(pollBuild, 1500);
 
+// ── View switching (Dashboard / Routines) ─────────────────────
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+    const view = tab.dataset.view;
+    $('#dashboard-view').hidden = view !== 'dashboard';
+    $('#routines-view').hidden = view !== 'routines';
+    if (view === 'routines') loadRoutines();
+  });
+});
+
+// ── Routines ──────────────────────────────────────────────────
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const ACTION_LABEL = { claude: 'Claude', snapshot: 'Snapshot', script: 'Script' };
+
+function describeSchedule(s) {
+  if (!s || s.type === 'manual') return 'Manual only';
+  if (s.type === 'interval') return `Every ${s.minutes} min`;
+  if (s.type === 'daily') return `Daily at ${s.time}`;
+  if (s.type === 'weekly') return `${DAY_NAMES[s.day] ?? '?'} at ${s.time}`;
+  return 'Custom';
+}
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadRoutines() {
+  const list = await api.get('/api/routines');
+  const wrap = $('#routines-list');
+  wrap.innerHTML = '';
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">No routines yet. Click “+ New routine” to create one.</div>';
+    return;
+  }
+  for (const r of list) wrap.appendChild(routineCard(r));
+}
+
+function routineCard(r) {
+  const el = document.createElement('div');
+  el.className = 'routine' + (r.enabled ? '' : ' disabled');
+  const status = r.lastStatus
+    ? `<span class="routine-status ${r.lastStatus}">${r.lastStatus === 'ok' ? 'OK' : 'Error'}</span>`
+    : '';
+  el.innerHTML = `
+    <div class="routine-main">
+      <div class="routine-name">${r.name} ${status}</div>
+      <div class="routine-meta">
+        <span class="tag">${ACTION_LABEL[r.action?.type] || r.action?.type || '?'}</span>
+        <span>⏱ ${describeSchedule(r.schedule)}</span>
+        <span>Next: ${r.enabled ? fmtTime(r.nextRun) : 'paused'}</span>
+        <span>Last: ${fmtTime(r.lastRun)}</span>
+      </div>
+    </div>
+    <div class="routine-actions">
+      <label class="switch"><input type="checkbox" ${r.enabled ? 'checked' : ''} data-toggle="${r.id}"><span class="slider"></span></label>
+      <button class="btn small" data-run="${r.id}">Run now</button>
+      <button class="btn ghost small" data-output="${r.id}">Output</button>
+      <button class="btn ghost small" data-edit="${r.id}">Edit</button>
+      <button class="btn ghost small" data-del="${r.id}">Delete</button>
+    </div>`;
+
+  el.querySelector('[data-toggle]').addEventListener('change', async () => {
+    await api.send(`/api/routines/${r.id}/toggle`, 'POST');
+    loadRoutines();
+  });
+  el.querySelector('[data-run]').addEventListener('click', async (e) => {
+    e.target.textContent = '…'; e.target.disabled = true;
+    const rec = await api.send(`/api/routines/${r.id}/run`, 'POST');
+    showOutput(r.name, rec.ok ? rec.output : 'ERROR: ' + rec.error);
+    loadRoutines();
+  });
+  el.querySelector('[data-output]').addEventListener('click', () =>
+    showOutput(r.name, r.lastOutput || '(this routine has not run yet)'));
+  el.querySelector('[data-edit]').addEventListener('click', () => openRoutineDialog(r));
+  el.querySelector('[data-del]').addEventListener('click', async () => {
+    if (!confirm(`Delete routine "${r.name}"?`)) return;
+    await api.send(`/api/routines/${r.id}`, 'DELETE');
+    loadRoutines();
+  });
+  return el;
+}
+
+function showOutput(title, text) {
+  $('#output-title').textContent = `Output — ${title}`;
+  $('#output-body').textContent = text;
+  $('#output-panel').hidden = false;
+  $('#output-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+$('#output-close').addEventListener('click', () => ($('#output-panel').hidden = true));
+
+// Routine editor dialog
+const routineDialog = $('#routine-dialog');
+let editingId = null;
+
+function syncRoutineForm() {
+  const at = $('#r-action-type').value;
+  $('#r-prompt-row').hidden = at !== 'claude';
+  $('#r-source-row').hidden = at !== 'snapshot';
+  $('#r-code-row').hidden = at !== 'script';
+  const st = $('#r-sched-type').value;
+  $('#r-minutes-row').hidden = st !== 'interval';
+  $('#r-day-row').hidden = st !== 'weekly';
+  $('#r-time-row').hidden = st !== 'daily' && st !== 'weekly';
+}
+
+function setupRoutineForm() {
+  const src = $('#r-source');
+  src.innerHTML = Object.keys({ metrics: 1, jobs: 1, clients: 1, invoices: 1, schedule: 1, timesheets: 1,
+    jobsByStatus: 1, revenueByClient: 1, hoursByStaff: 1, invoicesByStatus: 1 })
+    .map((s) => `<option value="${s}">${s}</option>`).join('');
+  $('#r-action-type').addEventListener('change', syncRoutineForm);
+  $('#r-sched-type').addEventListener('change', syncRoutineForm);
+}
+
+function openRoutineDialog(r) {
+  editingId = r?.id || null;
+  $('#routine-form-title').textContent = r ? 'Edit routine' : 'New routine';
+  const f = $('#routine-form');
+  f.name.value = r?.name || '';
+  f.actionType.value = r?.action?.type || 'claude';
+  f.prompt.value = r?.action?.prompt || '';
+  f.code.value = r?.action?.code || '';
+  if (r?.action?.source) f.source.value = r.action.source;
+  const s = r?.schedule || { type: 'interval', minutes: 60 };
+  f.scheduleType.value = s.type || 'interval';
+  f.minutes.value = s.minutes || 60;
+  if (s.time) f.time.value = s.time;
+  if (s.day != null) f.day.value = String(s.day);
+  f.enabled.checked = r ? !!r.enabled : true;
+  syncRoutineForm();
+  routineDialog.showModal();
+}
+
+$('#btn-new-routine').addEventListener('click', () => openRoutineDialog(null));
+
+$('#routine-form').addEventListener('submit', async (e) => {
+  if (e.submitter?.value !== 'ok') return;
+  const f = new FormData(e.target);
+  const actionType = f.get('actionType');
+  const action = { type: actionType };
+  if (actionType === 'claude') action.prompt = f.get('prompt');
+  else if (actionType === 'snapshot') action.source = f.get('source');
+  else action.code = f.get('code');
+
+  const st = f.get('scheduleType');
+  const schedule = { type: st };
+  if (st === 'interval') schedule.minutes = Number(f.get('minutes')) || 60;
+  if (st === 'daily') schedule.time = f.get('time');
+  if (st === 'weekly') { schedule.day = Number(f.get('day')); schedule.time = f.get('time'); }
+
+  const body = { name: f.get('name'), action, schedule, enabled: f.get('enabled') === 'on' };
+  if (editingId) await api.send(`/api/routines/${editingId}`, 'PUT', body);
+  else await api.send('/api/routines', 'POST', body);
+  loadRoutines();
+});
+
 // ── Init ──────────────────────────────────────────────────────
 setupAddForm();
+setupRoutineForm();
 loadStatus();
 loadDashboard();
 pollBuild();

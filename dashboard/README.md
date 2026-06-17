@@ -108,6 +108,41 @@ assistant (e.g. *"add a donut chart of jobs by status"*).
 
 ---
 
+## Routines (scheduled scripts)
+
+The **Routines** tab lets you run tasks on a recurring schedule. The scheduler
+runs inside the server (poll every 30s) — so routines fire while `npm run dev`
+or `npm start` is running.
+
+**Routine types**
+- **Ask Claude** — runs a saved instruction through Claude + the AroFlo tools
+  and stores the answer (e.g. *"summarise today's schedule and flag overdue
+  jobs"*). Works with canned output in mock mode.
+- **Data snapshot** — captures a data source (metrics, jobs, …) to the run log,
+  useful for point-in-time records.
+- **Script** — your own JavaScript, run server-side. The script is `async` and
+  gets: `aroflo` (the data client, e.g. `await aroflo.jobs()`), `sources` (the
+  named feeds), `log(...)` (append to output), and `result(value)` (set a
+  return value). Example:
+  ```js
+  const jobs = await aroflo.jobs();
+  const overdue = jobs.filter(j => j.overdue);
+  log(`${overdue.length} overdue`);
+  result(overdue.map(j => j.id));
+  ```
+
+**Schedules:** every N minutes, daily at a time, weekly on a day, or manual
+(run on demand). Each routine has an enable switch, **Run now**, **Output**
+(last result), Edit and Delete. Run history is kept in `data/routine-runs.json`.
+
+> **Trust note on Script routines:** scripts execute on the server with access
+> to your AroFlo data. There is no network/`require`/`process` access from a
+> script, but only add scripts you trust — same as you would a cron job.
+> Definitions live in `data/routines.json` (created on first edit; the shipped
+> `routines.default.json` seeds a few **disabled** examples).
+
+---
+
 ## Deploying (when ready)
 
 It's a standard Node app — run `npm start` on any host that runs Node 18+

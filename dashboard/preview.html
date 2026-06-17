@@ -84,6 +84,41 @@
     .empty { color: var(--gray2); font-size: 0.85rem; padding: 2rem; text-align: center; grid-column: 1 / -1; border: 1px dashed var(--line); }
     .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--gray2); border-top-color: var(--white); border-radius: 50%; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .nav-tabs { display: flex; gap: 0.25rem; margin-left: 2rem; flex: 1; }
+    .tab { background: none; border: none; color: var(--gray); font-family: var(--font); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.5rem 0.9rem; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.15s; }
+    .tab:hover { color: var(--white); }
+    .tab.active { color: var(--white); border-bottom-color: var(--white); }
+    .routines-view { padding: 1.5rem; max-width: 1100px; }
+    .routines-intro { color: var(--gray); font-size: 0.85rem; margin: -0.5rem 0 1.5rem; max-width: 720px; line-height: 1.5; }
+    .routines-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .routine { background: var(--panel); border: 1px solid var(--line); padding: 1rem 1.25rem; display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: center; }
+    .routine.disabled { opacity: 0.55; }
+    .routine-main { min-width: 0; }
+    .routine-name { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+    .routine-meta { color: var(--gray); font-size: 0.72rem; margin-top: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
+    .routine-meta .tag { text-transform: uppercase; letter-spacing: 0.08em; }
+    .routine-status { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--line); }
+    .routine-status.ok { color: #4caf72; border-color: #2c5e42; }
+    .routine-status.error { color: #c45b5b; border-color: #5e2c2c; }
+    .routine-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .switch { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch .slider { position: absolute; inset: 0; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: 0.2s; }
+    .switch .slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 2px; top: 2px; background: var(--gray); border-radius: 50%; transition: 0.2s; }
+    .switch input:checked + .slider { background: #143d28; border-color: #2c5e42; }
+    .switch input:checked + .slider::before { transform: translateX(18px); background: #4caf72; }
+    .output-panel { margin-top: 1.5rem; border: 1px solid var(--line); background: var(--panel); }
+    .output-head { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); }
+    .output-head h3 { font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.05em; font-size: 1rem; }
+    .output-panel pre { padding: 1rem; overflow: auto; max-height: 360px; font-size: 0.78rem; line-height: 1.5; color: #ddd; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    #routine-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; max-width: 480px; }
+    #routine-form h3 { font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.05em; }
+    #routine-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray); }
+    #routine-form label.checkbox { flex-direction: row; align-items: center; gap: 0.5rem; text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--white); }
+    #routine-form input, #routine-form select, #routine-form textarea { background: var(--panel2); border: 1px solid var(--line); color: var(--white); padding: 0.5rem 0.6rem; font-family: var(--font); font-size: 0.85rem; text-transform: none; letter-spacing: 0; }
+    #routine-form textarea { font-family: ui-monospace, 'SF Mono', Menlo, monospace; resize: vertical; }
+    #routine-form label code { background: var(--black); padding: 0 0.25rem; font-size: 0.9em; text-transform: none; }
+    #routine-dialog { max-width: 520px; }
     .preview-note { background: var(--warn-bg); border-bottom: 1px solid var(--line); color: var(--warn); font-size: 0.72rem; text-align: center; padding: 0.4rem; letter-spacing: 0.04em; }
   </style>
 </head>
@@ -91,13 +126,17 @@
   <div class="preview-note">PREVIEW — standalone file with sample data. No server, no live AroFlo/Claude. Layout changes save in this browser only.</div>
   <header class="topbar">
     <div class="brand">WEILEY <span>OPERATIONS</span></div>
+    <nav class="nav-tabs">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="routines">Routines</button>
+    </nav>
     <div class="status" id="status">
       <span class="dot" id="dot-claude"></span> Claude
       <span class="dot" id="dot-aroflo"></span> AroFlo
     </div>
   </header>
 
-  <main class="layout">
+  <main class="layout" id="dashboard-view">
     <section class="board-wrap">
       <div class="board-head">
         <h1 id="board-title">Dashboard</h1>
@@ -135,6 +174,63 @@
       </form>
     </aside>
   </main>
+
+  <main class="routines-view" id="routines-view" hidden>
+    <div class="board-head">
+      <h1>Routines &amp; Scheduled Scripts</h1>
+      <div class="board-actions">
+        <button id="btn-new-routine" class="btn">+ New routine</button>
+      </div>
+    </div>
+    <p class="routines-intro">Run scripts and tasks on a recurring schedule — a Claude prompt over your AroFlo data, a data snapshot, or your own JavaScript. <strong>In this preview</strong>, schedules tick only while this page is open and scripts run in your browser against the sample data.</p>
+    <div id="routines-list" class="routines-list"></div>
+    <div class="output-panel" id="output-panel" hidden>
+      <div class="output-head"><h3 id="output-title">Output</h3><button class="btn ghost small" id="output-close">Close</button></div>
+      <pre id="output-body"></pre>
+    </div>
+  </main>
+
+  <dialog id="routine-dialog">
+    <form method="dialog" id="routine-form">
+      <h3 id="routine-form-title">New routine</h3>
+      <label>Name <input name="name" required placeholder="e.g. Morning briefing" /></label>
+      <label>What it does
+        <select name="actionType" id="r-action-type">
+          <option value="claude">Ask Claude (uses AroFlo data)</option>
+          <option value="snapshot">Data snapshot</option>
+          <option value="script">Run a script (JavaScript)</option>
+        </select>
+      </label>
+      <label id="r-prompt-row">Instruction for Claude
+        <textarea name="prompt" rows="3" placeholder="e.g. Summarise today's schedule and flag overdue jobs."></textarea>
+      </label>
+      <label id="r-source-row" hidden>Data source <select name="source" id="r-source"></select></label>
+      <label id="r-code-row" hidden>Script (async; use <code>aroflo</code>, <code>log()</code>, <code>result()</code>)
+        <textarea name="code" rows="6" spellcheck="false" placeholder="const jobs = await aroflo.jobs();&#10;log(jobs.length + ' jobs');&#10;result(jobs.filter(j =&gt; j.overdue).length);"></textarea>
+      </label>
+      <label>Schedule
+        <select name="scheduleType" id="r-sched-type">
+          <option value="interval">Every N minutes</option>
+          <option value="daily">Daily at a time</option>
+          <option value="weekly">Weekly on a day</option>
+          <option value="manual">Manual only (run on demand)</option>
+        </select>
+      </label>
+      <label id="r-minutes-row">Minutes <input name="minutes" type="number" min="1" value="60" /></label>
+      <label id="r-day-row" hidden>Day
+        <select name="day" id="r-day">
+          <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+          <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+        </select>
+      </label>
+      <label id="r-time-row" hidden>Time <input name="time" type="time" value="07:00" /></label>
+      <label class="checkbox"><input type="checkbox" name="enabled" checked /> Enabled</label>
+      <div class="dialog-actions">
+        <button value="cancel" class="btn ghost">Cancel</button>
+        <button value="ok" class="btn" id="routine-save">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="add-dialog">
     <form method="dialog" id="add-form">
@@ -448,7 +544,143 @@
   $('#dot-claude').className = 'dot mock';
   $('#dot-aroflo').className = 'dot mock';
   window.addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(renderGrid, 200); });
+  // ── Routines (preview: runs in-browser against sample data) ──
+  const arofloLike = {
+    jobs: async () => MOCK.jobs, clients: async () => MOCK.clients, invoices: async () => MOCK.invoices,
+    timesheets: async () => MOCK.timesheets, schedule: async () => MOCK.schedule, metrics: async () => metrics(),
+    jobsByStatus: async () => SOURCES.jobsByStatus(), revenueByClient: async () => SOURCES.revenueByClient(),
+    hoursByStaff: async () => SOURCES.hoursByStaff(), invoicesByStatus: async () => SOURCES.invoicesByStatus()
+  };
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const ACTION_LABEL = { claude: 'Claude', snapshot: 'Snapshot', script: 'Script' };
+  const R_KEY = 'weiley-routines';
+  const R_DEFAULT = [
+    { id: 'r-morning', name: 'Morning ops briefing', enabled: false, action: { type: 'claude', prompt: "Give me a short morning briefing: jobs scheduled today, who's on what, and flag overdue jobs or invoices." }, schedule: { type: 'daily', time: '07:00' }, lastRun: null, lastStatus: null, lastOutput: null, nextRun: null },
+    { id: 'r-snap', name: 'Hourly metrics snapshot', enabled: false, action: { type: 'snapshot', source: 'metrics' }, schedule: { type: 'interval', minutes: 60 }, lastRun: null, lastStatus: null, lastOutput: null, nextRun: null },
+    { id: 'r-script', name: 'Flag big overdue jobs (script)', enabled: false, action: { type: 'script', code: "const jobs = await aroflo.jobs();\nconst overdue = jobs.filter(j => j.overdue);\nlog(`${overdue.length} overdue job(s):`);\nfor (const j of overdue) log(`- ${j.id} ${j.title} ($${j.value})`);\nresult({ overdue: overdue.length, value: overdue.reduce((s,j)=>s+(j.value||0),0) });" }, schedule: { type: 'weekly', day: 1, time: '08:00' }, lastRun: null, lastStatus: null, lastOutput: null, nextRun: null }
+  ];
+  const rstore = {
+    get() { try { return JSON.parse(localStorage.getItem(R_KEY)) || structuredClone(R_DEFAULT); } catch { return structuredClone(R_DEFAULT); } },
+    save(l) { localStorage.setItem(R_KEY, JSON.stringify(l)); }
+  };
+  function computeNextRun(s, from = Date.now()) {
+    if (!s || s.type === 'manual') return null;
+    if (s.type === 'interval') return from + Math.max(1, Number(s.minutes) || 60) * 60000;
+    const [h, m] = String(s.time || '08:00').split(':').map(Number);
+    const next = new Date(from); next.setHours(h || 0, m || 0, 0, 0);
+    if (s.type === 'daily') { if (next.getTime() <= from) next.setDate(next.getDate() + 1); return next.getTime(); }
+    if (s.type === 'weekly') { let d = (Number(s.day) - next.getDay() + 7) % 7; if (d === 0 && next.getTime() <= from) d = 7; next.setDate(next.getDate() + d); return next.getTime(); }
+    return null;
+  }
+  const rDescribe = s => !s || s.type === 'manual' ? 'Manual only' : s.type === 'interval' ? `Every ${s.minutes} min` : s.type === 'daily' ? `Daily at ${s.time}` : s.type === 'weekly' ? `${DAY_NAMES[s.day] ?? '?'} at ${s.time}` : 'Custom';
+  const rTime = iso => iso ? new Date(iso).toLocaleString('en-AU', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  async function execRoutine(r) {
+    if (r.action.type === 'claude') return mockAnswer(r.action.prompt || '');
+    if (r.action.type === 'snapshot') return JSON.stringify(SOURCES[r.action.source](), null, 2);
+    const logs = []; let resultVal;
+    const log = (...a) => logs.push(a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' '));
+    const fn = new AsyncFunction('aroflo', 'sources', 'log', 'result', r.action.code || '');
+    await fn(arofloLike, SOURCES, log, v => { resultVal = v; });
+    let out = logs.join('\n');
+    if (resultVal !== undefined) out += (out ? '\n' : '') + '→ ' + (typeof resultVal === 'object' ? JSON.stringify(resultVal, null, 2) : String(resultVal));
+    return out || '(no output)';
+  }
+  async function runRoutine(r, trigger) {
+    const list = rstore.get(); const t = list.find(x => x.id === r.id); if (!t) return;
+    try { t.lastOutput = await execRoutine(t); t.lastStatus = 'ok'; }
+    catch (e) { t.lastOutput = 'ERROR: ' + (e.message || e); t.lastStatus = 'error'; }
+    t.lastRun = new Date().toISOString();
+    if (trigger === 'schedule' || !t.nextRun) t.nextRun = computeNextRun(t.schedule);
+    rstore.save(list); return t;
+  }
+
+  function loadRoutines() {
+    const list = rstore.get(); const wrap = $('#routines-list'); wrap.innerHTML = '';
+    if (!list.length) { wrap.innerHTML = '<div class="empty">No routines yet. Click “+ New routine”.</div>'; return; }
+    for (const r of list) wrap.appendChild(routineCard(r));
+  }
+  function routineCard(r) {
+    const el = document.createElement('div');
+    el.className = 'routine' + (r.enabled ? '' : ' disabled');
+    const st = r.lastStatus ? `<span class="routine-status ${r.lastStatus}">${r.lastStatus === 'ok' ? 'OK' : 'Error'}</span>` : '';
+    el.innerHTML = `<div class="routine-main"><div class="routine-name">${r.name} ${st}</div>
+      <div class="routine-meta"><span class="tag">${ACTION_LABEL[r.action.type]}</span><span>⏱ ${rDescribe(r.schedule)}</span><span>Next: ${r.enabled ? rTime(r.nextRun) : 'paused'}</span><span>Last: ${rTime(r.lastRun)}</span></div></div>
+      <div class="routine-actions">
+        <label class="switch"><input type="checkbox" ${r.enabled ? 'checked' : ''} data-toggle><span class="slider"></span></label>
+        <button class="btn small" data-run>Run now</button>
+        <button class="btn ghost small" data-output>Output</button>
+        <button class="btn ghost small" data-edit>Edit</button>
+        <button class="btn ghost small" data-del>Delete</button></div>`;
+    el.querySelector('[data-toggle]').addEventListener('change', () => { const l = rstore.get(); const t = l.find(x => x.id === r.id); t.enabled = !t.enabled; t.nextRun = t.enabled ? computeNextRun(t.schedule) : null; rstore.save(l); loadRoutines(); });
+    el.querySelector('[data-run]').addEventListener('click', async e => { e.target.textContent = '…'; e.target.disabled = true; const t = await runRoutine(r, 'manual'); showOutput(r.name, t.lastOutput); loadRoutines(); });
+    el.querySelector('[data-output]').addEventListener('click', () => showOutput(r.name, r.lastOutput || '(this routine has not run yet)'));
+    el.querySelector('[data-edit]').addEventListener('click', () => openRoutineDialog(r));
+    el.querySelector('[data-del]').addEventListener('click', () => { if (!confirm(`Delete routine "${r.name}"?`)) return; rstore.save(rstore.get().filter(x => x.id !== r.id)); loadRoutines(); });
+    return el;
+  }
+  function showOutput(title, text) { $('#output-title').textContent = `Output — ${title}`; $('#output-body').textContent = text; $('#output-panel').hidden = false; $('#output-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  $('#output-close').addEventListener('click', () => $('#output-panel').hidden = true);
+
+  const routineDialog = $('#routine-dialog'); let editingId = null;
+  function syncRoutineForm() {
+    const at = $('#r-action-type').value;
+    $('#r-prompt-row').hidden = at !== 'claude'; $('#r-source-row').hidden = at !== 'snapshot'; $('#r-code-row').hidden = at !== 'script';
+    const s = $('#r-sched-type').value;
+    $('#r-minutes-row').hidden = s !== 'interval'; $('#r-day-row').hidden = s !== 'weekly'; $('#r-time-row').hidden = s !== 'daily' && s !== 'weekly';
+  }
+  function setupRoutineForm() {
+    $('#r-source').innerHTML = ['metrics', 'jobs', 'clients', 'invoices', 'schedule', 'timesheets', 'jobsByStatus', 'revenueByClient', 'hoursByStaff', 'invoicesByStatus'].map(s => `<option value="${s}">${s}</option>`).join('');
+    $('#r-action-type').addEventListener('change', syncRoutineForm); $('#r-sched-type').addEventListener('change', syncRoutineForm);
+  }
+  function openRoutineDialog(r) {
+    editingId = r?.id || null; $('#routine-form-title').textContent = r ? 'Edit routine' : 'New routine';
+    const f = $('#routine-form');
+    f.name.value = r?.name || ''; f.actionType.value = r?.action?.type || 'claude'; f.prompt.value = r?.action?.prompt || ''; f.code.value = r?.action?.code || '';
+    if (r?.action?.source) f.source.value = r.action.source;
+    const s = r?.schedule || { type: 'interval', minutes: 60 };
+    f.scheduleType.value = s.type || 'interval'; f.minutes.value = s.minutes || 60; if (s.time) f.time.value = s.time; if (s.day != null) f.day.value = String(s.day);
+    f.enabled.checked = r ? !!r.enabled : true; syncRoutineForm(); routineDialog.showModal();
+  }
+  $('#btn-new-routine').addEventListener('click', () => openRoutineDialog(null));
+  $('#routine-form').addEventListener('submit', e => {
+    if (e.submitter?.value !== 'ok') return;
+    const f = new FormData(e.target), at = f.get('actionType');
+    const action = { type: at };
+    if (at === 'claude') action.prompt = f.get('prompt'); else if (at === 'snapshot') action.source = f.get('source'); else action.code = f.get('code');
+    const st = f.get('scheduleType'), schedule = { type: st };
+    if (st === 'interval') schedule.minutes = Number(f.get('minutes')) || 60;
+    if (st === 'daily') schedule.time = f.get('time');
+    if (st === 'weekly') { schedule.day = Number(f.get('day')); schedule.time = f.get('time'); }
+    const enabled = f.get('enabled') === 'on';
+    const list = rstore.get();
+    if (editingId) { const t = list.find(x => x.id === editingId); Object.assign(t, { name: f.get('name'), action, schedule, enabled }); t.nextRun = enabled ? computeNextRun(schedule) : null; }
+    else list.push({ id: 'r-' + Math.random().toString(36).slice(2, 8), name: f.get('name'), action, schedule, enabled, lastRun: null, lastStatus: null, lastOutput: null, nextRun: enabled ? computeNextRun(schedule) : null });
+    rstore.save(list); loadRoutines();
+  });
+
+  // Preview scheduler — ticks while the page is open.
+  setInterval(() => {
+    const now = Date.now(); const list = rstore.get(); let changed = false;
+    for (const r of list) {
+      if (!r.enabled || !r.schedule || r.schedule.type === 'manual') continue;
+      if (!r.nextRun) { r.nextRun = computeNextRun(r.schedule, now); changed = true; continue; }
+      if (now >= r.nextRun) { runRoutine(r, 'schedule').then(() => { if (!$('#routines-view').hidden) loadRoutines(); }); }
+    }
+    if (changed) rstore.save(list);
+  }, 15000);
+
+  // ── Tabs ──────────────────────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+    const v = tab.dataset.view;
+    $('#dashboard-view').hidden = v !== 'dashboard'; $('#routines-view').hidden = v !== 'routines';
+    if (v === 'routines') loadRoutines();
+  }));
+
   setupAddForm();
+  setupRoutineForm();
   renderGrid();
   </script>
 </body>

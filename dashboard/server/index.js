@@ -4,6 +4,8 @@ import { config, statusSummary, ROOT } from './config.js';
 import { aroflo } from './aroflo.js';
 import { dashboardStore } from './dashboard-store.js';
 import { chat } from './claude.js';
+import { SOURCES } from './sources.js';
+import { routines } from './routines.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -39,20 +41,6 @@ app.delete('/api/dashboard/widgets/:id', (req, res) => {
 app.post('/api/dashboard/reset', (_req, res) => res.json(dashboardStore.reset()));
 
 // ── AroFlo data (used by widgets) ─────────────────────────────
-const SOURCES = {
-  metrics: () => aroflo.metrics(),
-  jobs: () => aroflo.jobs(),
-  clients: () => aroflo.clients(),
-  invoices: () => aroflo.invoices(),
-  schedule: () => aroflo.schedule(),
-  timesheets: () => aroflo.timesheets(),
-  // Aggregations for chart widgets
-  jobsByStatus: () => aroflo.jobsByStatus(),
-  revenueByClient: () => aroflo.revenueByClient(),
-  hoursByStaff: () => aroflo.hoursByStaff(),
-  invoicesByStatus: () => aroflo.invoicesByStatus(),
-};
-
 app.get('/api/data/:source', async (req, res) => {
   const fn = SOURCES[req.params.source];
   if (!fn) return res.status(404).json({ error: 'Unknown source' });
@@ -86,9 +74,33 @@ app.post('/api/chat/reset', (_req, res) => {
   res.json({ ok: true });
 });
 
+// ── Routines (scheduled scripts) ──────────────────────────────
+app.get('/api/routines', (_req, res) => res.json(routines.list()));
+app.post('/api/routines', (req, res) => res.json(routines.create(req.body)));
+app.put('/api/routines/:id', (req, res) => {
+  const r = routines.update(req.params.id, req.body);
+  if (!r) return res.status(404).json({ error: 'Not found' });
+  res.json(r);
+});
+app.delete('/api/routines/:id', (req, res) => res.json({ removed: routines.remove(req.params.id) }));
+app.post('/api/routines/:id/toggle', (req, res) => {
+  const r = routines.toggle(req.params.id);
+  if (!r) return res.status(404).json({ error: 'Not found' });
+  res.json(r);
+});
+app.post('/api/routines/:id/run', async (req, res) => {
+  const record = await routines.runNow(req.params.id);
+  if (!record) return res.status(404).json({ error: 'Not found' });
+  res.json(record);
+});
+app.get('/api/routines/:id/runs', (req, res) => res.json(routines.runs(req.params.id)));
+app.get('/api/runs', (_req, res) => res.json(routines.runs()));
+
 app.listen(config.port, () => {
   const s = statusSummary();
   console.log(`\n  Weiley AroFlo Dashboard`);
   console.log(`  ▸ http://localhost:${config.port}`);
-  console.log(`  ▸ Claude: ${s.claude.toUpperCase()}   AroFlo: ${s.aroflo.toUpperCase()}   Model: ${s.model}\n`);
+  console.log(`  ▸ Claude: ${s.claude.toUpperCase()}   AroFlo: ${s.aroflo.toUpperCase()}   Model: ${s.model}`);
+  routines.start();
+  console.log(`  ▸ Routine scheduler started (${routines.list().length} routines)\n`);
 });

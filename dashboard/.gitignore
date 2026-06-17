@@ -2,3 +2,8 @@ node_modules/
 .env
 *.log
 .DS_Store
+
+# Runtime data (created as you use the app — keep the *.default.json seeds)
+data/dashboard.json
+data/routines.json
+data/routine-runs.json

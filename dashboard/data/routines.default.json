@@ -1,0 +1,41 @@
+[
+  {
+    "id": "r-morning",
+    "name": "Morning ops briefing",
+    "enabled": false,
+    "action": {
+      "type": "claude",
+      "prompt": "Give me a short morning briefing: how many jobs are scheduled today, who is on what, and flag any overdue jobs or overdue invoices that need chasing."
+    },
+    "schedule": { "type": "daily", "time": "07:00" },
+    "lastRun": null,
+    "lastStatus": null,
+    "lastOutput": null,
+    "nextRun": null
+  },
+  {
+    "id": "r-metrics-snap",
+    "name": "Hourly metrics snapshot",
+    "enabled": false,
+    "action": { "type": "snapshot", "source": "metrics" },
+    "schedule": { "type": "interval", "minutes": 60 },
+    "lastRun": null,
+    "lastStatus": null,
+    "lastOutput": null,
+    "nextRun": null
+  },
+  {
+    "id": "r-overdue-script",
+    "name": "Flag big overdue jobs (script)",
+    "enabled": false,
+    "action": {
+      "type": "script",
+      "code": "const jobs = await aroflo.jobs();\nconst overdue = jobs.filter(j => j.overdue);\nlog(`${overdue.length} overdue job(s):`);\nfor (const j of overdue) log(`- ${j.id} ${j.title} ($${j.value})`);\nresult({ overdue: overdue.length, value: overdue.reduce((s,j)=>s+(j.value||0),0) });"
+    },
+    "schedule": { "type": "weekly", "day": 1, "time": "08:00" },
+    "lastRun": null,
+    "lastStatus": null,
+    "lastOutput": null,
+    "nextRun": null
+  }
+]

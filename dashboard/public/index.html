@@ -12,13 +12,17 @@
 <body>
   <header class="topbar">
     <div class="brand">WEILEY <span>OPERATIONS</span></div>
+    <nav class="nav-tabs">
+      <button class="tab active" data-view="dashboard">Dashboard</button>
+      <button class="tab" data-view="routines">Routines</button>
+    </nav>
     <div class="status" id="status">
       <span class="dot" id="dot-claude"></span> Claude
       <span class="dot" id="dot-aroflo"></span> AroFlo
     </div>
   </header>
 
-  <main class="layout">
+  <main class="layout" id="dashboard-view">
     <!-- Dashboard -->
     <section class="board-wrap">
       <div class="board-head">
@@ -57,6 +61,78 @@
       </form>
     </aside>
   </main>
+
+  <!-- Routines view -->
+  <main class="routines-view" id="routines-view" hidden>
+    <div class="board-head">
+      <h1>Routines &amp; Scheduled Scripts</h1>
+      <div class="board-actions">
+        <button id="btn-new-routine" class="btn">+ New routine</button>
+      </div>
+    </div>
+    <p class="routines-intro">Run scripts and tasks on a recurring schedule — a Claude prompt over your AroFlo data, a data snapshot, or your own JavaScript. Scheduler runs while the server is up.</p>
+    <div id="routines-list" class="routines-list"></div>
+
+    <div class="output-panel" id="output-panel" hidden>
+      <div class="output-head">
+        <h3 id="output-title">Output</h3>
+        <button class="btn ghost small" id="output-close">Close</button>
+      </div>
+      <pre id="output-body"></pre>
+    </div>
+  </main>
+
+  <!-- Routine editor dialog -->
+  <dialog id="routine-dialog">
+    <form method="dialog" id="routine-form">
+      <h3 id="routine-form-title">New routine</h3>
+      <label>Name <input name="name" required placeholder="e.g. Morning briefing" /></label>
+
+      <label>What it does
+        <select name="actionType" id="r-action-type">
+          <option value="claude">Ask Claude (uses AroFlo data)</option>
+          <option value="snapshot">Data snapshot</option>
+          <option value="script">Run a script (JavaScript)</option>
+        </select>
+      </label>
+
+      <label id="r-prompt-row">Instruction for Claude
+        <textarea name="prompt" rows="3" placeholder="e.g. Summarise today's schedule and flag overdue jobs."></textarea>
+      </label>
+      <label id="r-source-row" hidden>Data source
+        <select name="source" id="r-source"></select>
+      </label>
+      <label id="r-code-row" hidden>Script (async; use <code>aroflo</code>, <code>log()</code>, <code>result()</code>)
+        <textarea name="code" rows="6" spellcheck="false" placeholder="const jobs = await aroflo.jobs();&#10;log(jobs.length + ' jobs');&#10;result(jobs.filter(j =&gt; j.overdue).length);"></textarea>
+      </label>
+
+      <label>Schedule
+        <select name="scheduleType" id="r-sched-type">
+          <option value="interval">Every N minutes</option>
+          <option value="daily">Daily at a time</option>
+          <option value="weekly">Weekly on a day</option>
+          <option value="manual">Manual only (run on demand)</option>
+        </select>
+      </label>
+      <label id="r-minutes-row">Minutes <input name="minutes" type="number" min="1" value="60" /></label>
+      <label id="r-day-row" hidden>Day
+        <select name="day" id="r-day">
+          <option value="1">Monday</option><option value="2">Tuesday</option>
+          <option value="3">Wednesday</option><option value="4">Thursday</option>
+          <option value="5">Friday</option><option value="6">Saturday</option>
+          <option value="0">Sunday</option>
+        </select>
+      </label>
+      <label id="r-time-row" hidden>Time <input name="time" type="time" value="07:00" /></label>
+
+      <label class="checkbox"><input type="checkbox" name="enabled" checked /> Enabled</label>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn ghost">Cancel</button>
+        <button value="ok" class="btn" id="routine-save">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Add-widget dialog -->
   <dialog id="add-dialog">

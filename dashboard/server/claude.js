@@ -88,6 +88,27 @@ export async function chat({ message, history = [], emit }) {
   return { history: messages };
 }
 
+/**
+ * Run a one-shot prompt (no prior history) and return the final text plus the
+ * tools that were called. Used by scheduled "Claude prompt" routines.
+ */
+export async function runPrompt(message) {
+  const parts = [];
+  const toolsUsed = [];
+  let error = null;
+  await chat({
+    message,
+    history: [],
+    emit: (e) => {
+      if (e.type === 'text') parts.push(e.text);
+      else if (e.type === 'tool') toolsUsed.push(e.name);
+      else if (e.type === 'error') error = e.message;
+    },
+  });
+  if (error) throw new Error(error);
+  return { text: parts.join('\n\n').trim(), toolsUsed };
+}
+
 // ── Mock chat (no API key) ────────────────────────────────────
 // Gives believable behaviour so the whole app works before keys are added.
 async function mockChat({ message, emit }) {
