@@ -520,6 +520,23 @@ html[data-theme="light"] .mim-readout .ro-box { fill: #11161f; }
 .mim-arrow { fill: var(--mim-pipe); }
 .mim-arrow.active { fill: var(--grain); }
 
+/* technical: equipment tags, instrument balloons, flow arrowheads */
+.eq-tagno { fill: var(--txt); font: 700 11px var(--mono); }
+.eq-name  { fill: var(--txt-dim); font: 10px var(--mono); }
+.mim-title { fill: var(--txt); font: 700 12px var(--sans); letter-spacing: .4px; }
+.mim-note  { fill: var(--txt-mute); font: 10px var(--mono); }
+.mim-streamlbl { fill: var(--txt-mute); font: 600 9.5px var(--mono); }
+
+.inst .ib   { fill: var(--mim-bg); stroke: var(--mim-eq-stroke); stroke-width: 1.4; }
+.inst .il   { stroke: var(--mim-eq-stroke); stroke-width: 1; stroke-dasharray: 3 3; }
+.inst .idiv { stroke: var(--mim-eq-stroke); stroke-width: 1; }
+.inst .if   { fill: var(--txt-dim); font: 700 8px var(--mono); text-anchor: middle; }
+.inst .in   { fill: var(--txt-mute); font: 700 7.5px var(--mono); text-anchor: middle; }
+
+.mim-arrowhead { fill: var(--mim-pipe); }
+.mim-arrowhead.active { fill: var(--grain); }
+.mim-arrowhead.water.active { fill: var(--water); }
+
 .mimic-legend { display: flex; gap: 16px; flex-wrap: wrap; padding: 10px 14px; font-size: 11px; color: var(--txt-dim); border-top: 1px solid var(--line); background: var(--bg-2); }
 .mimic-legend .li { display: inline-flex; align-items: center; gap: 6px; }
 .mimic-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
