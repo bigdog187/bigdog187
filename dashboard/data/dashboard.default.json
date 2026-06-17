@@ -7,6 +7,8 @@
     { "id": "w-owed",     "type": "metric", "title": "Outstanding ($)",  "source": "metrics", "field": "unpaidTotal", "format": "money", "tone": "warn" },
     { "id": "w-hours",    "type": "metric", "title": "Hours This Week",   "source": "metrics", "field": "hoursThisWeek" },
     { "id": "w-clients",  "type": "metric", "title": "Active Clients",    "source": "metrics", "field": "activeClients" },
+    { "id": "w-status",   "type": "chart",  "title": "Jobs by Status",    "source": "jobsByStatus",  "chartType": "donut" },
+    { "id": "w-rev",      "type": "chart",  "title": "Revenue by Client", "source": "revenueByClient", "chartType": "bar" },
     { "id": "w-jobs",     "type": "table",  "title": "Active Jobs",       "source": "jobs",     "columns": ["id", "title", "client", "status", "assignedTo", "due"] },
     { "id": "w-sched",    "type": "table",  "title": "Today's Schedule",  "source": "schedule", "columns": ["time", "staff", "title", "client"] }
   ]

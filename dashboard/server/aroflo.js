@@ -134,4 +134,50 @@ export const aroflo = {
       activeClients: (await this.clients()).length,
     };
   },
+
+  // ── Aggregations for chart widgets ──────────────────────────
+  // Each returns [{ label, value }] so a single chart renderer handles them all.
+  async jobsByStatus() {
+    const jobs = await this.jobs();
+    const counts = {};
+    for (const j of jobs) {
+      const s = j.status || 'Unknown';
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return Object.entries(counts).map(([label, value]) => ({ label, value }));
+  },
+
+  async revenueByClient() {
+    const jobs = await this.jobs();
+    const totals = {};
+    for (const j of jobs) {
+      const c = j.client || 'Unknown';
+      totals[c] = (totals[c] || 0) + (Number(j.value) || 0);
+    }
+    return Object.entries(totals)
+      .map(([label, value]) => ({ label, value: Math.round(value) }))
+      .sort((a, b) => b.value - a.value);
+  },
+
+  async hoursByStaff() {
+    const timesheets = await this.timesheets();
+    const totals = {};
+    for (const t of timesheets) {
+      const s = t.staff || 'Unknown';
+      totals[s] = (totals[s] || 0) + (Number(t.hours) || 0);
+    }
+    return Object.entries(totals)
+      .map(([label, value]) => ({ label, value: Math.round(value * 10) / 10 }))
+      .sort((a, b) => b.value - a.value);
+  },
+
+  async invoicesByStatus() {
+    const invoices = await this.invoices();
+    const totals = {};
+    for (const i of invoices) {
+      const s = i.status || 'Unknown';
+      totals[s] = (totals[s] || 0) + (Number(i.amount) || 0);
+    }
+    return Object.entries(totals).map(([label, value]) => ({ label, value: Math.round(value) }));
+  },
 };

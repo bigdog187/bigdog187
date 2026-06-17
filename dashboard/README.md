@@ -99,6 +99,12 @@ dashboard/
   `activeClients`). Optional `format: "money"` and `tone: "warn"`.
 - **table** — a list from `source`: `jobs | clients | invoices | schedule |
   timesheets`, with a chosen set of `columns`.
+- **chart** — a bar or donut (`chartType: "bar" | "donut"`) from an aggregated
+  `source`: `jobsByStatus | revenueByClient | hoursByStaff | invoicesByStatus`.
+  Rendered on a plain canvas — no charting library.
+
+All three can be added from the UI (**+ Add widget**) or by asking the
+assistant (e.g. *"add a donut chart of jobs by status"*).
 
 ---
 

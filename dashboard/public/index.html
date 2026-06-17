@@ -45,6 +45,12 @@
           <em>"add a widget showing unpaid invoices"</em>.</p>
         </div>
       </div>
+      <div class="chips" id="chips">
+        <button class="chip" type="button">What's overdue?</button>
+        <button class="chip" type="button">Who's owing us money?</button>
+        <button class="chip" type="button">Hours logged this week</button>
+        <button class="chip" type="button">Add a chart of jobs by status</button>
+      </div>
       <form id="chat-form" class="chat-form">
         <input id="chat-input" type="text" placeholder="Type a question…" autocomplete="off" />
         <button class="btn" type="submit">Send</button>
@@ -61,6 +67,7 @@
         <select name="type" id="add-type">
           <option value="metric">Metric (single number)</option>
           <option value="table">Table (list)</option>
+          <option value="chart">Chart</option>
         </select>
       </label>
       <label>Data source
@@ -68,6 +75,12 @@
       </label>
       <label id="field-row">Metric field
         <select name="field" id="add-field"></select>
+      </label>
+      <label id="charttype-row">Chart style
+        <select name="chartType" id="add-charttype">
+          <option value="bar">Bar</option>
+          <option value="donut">Donut</option>
+        </select>
       </label>
       <div class="dialog-actions">
         <button value="cancel" class="btn ghost">Cancel</button>

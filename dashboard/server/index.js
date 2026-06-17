@@ -46,6 +46,11 @@ const SOURCES = {
   invoices: () => aroflo.invoices(),
   schedule: () => aroflo.schedule(),
   timesheets: () => aroflo.timesheets(),
+  // Aggregations for chart widgets
+  jobsByStatus: () => aroflo.jobsByStatus(),
+  revenueByClient: () => aroflo.revenueByClient(),
+  hoursByStaff: () => aroflo.hoursByStaff(),
+  invoicesByStatus: () => aroflo.invoicesByStatus(),
 };
 
 app.get('/api/data/:source', async (req, res) => {

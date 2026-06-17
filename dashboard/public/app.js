@@ -22,6 +22,13 @@ const SOURCE_COLUMNS = {
   schedule: ['time', 'staff', 'title', 'client'],
   timesheets: ['staff', 'date', 'job', 'hours'],
 };
+const CHART_SOURCES = {
+  jobsByStatus: 'Jobs by Status',
+  revenueByClient: 'Revenue by Client',
+  hoursByStaff: 'Hours by Staff',
+  invoicesByStatus: 'Invoices by Status',
+};
+const CHART_PALETTE = ['#ffffff', '#9b9b9b', '#e0a23b', '#4caf72', '#6a6a6a', '#c45b5b', '#5b8fc4', '#b58fd6'];
 
 function fmtMoney(n) { return '$' + Number(n).toLocaleString('en-AU'); }
 function fmtCell(key, val) {
@@ -68,7 +75,8 @@ async function renderGrid() {
 
 async function renderWidget(w) {
   const el = document.createElement('div');
-  el.className = 'widget' + (w.type === 'table' ? ' span2' : '');
+  const wide = w.type === 'table' || (w.type === 'chart' && w.chartType !== 'donut');
+  el.className = 'widget' + (wide ? ' span2' : '');
   el.dataset.id = w.id;
   el.draggable = true;
 
@@ -85,6 +93,14 @@ async function renderWidget(w) {
       let val = data[w.field];
       if (w.format === 'money') val = fmtMoney(val);
       body = `<div class="metric-value ${w.tone === 'warn' ? 'warn' : ''}">${val ?? '—'}</div>`;
+    } else if (w.type === 'chart') {
+      const rows = await getSourceData(w.source);
+      el.innerHTML = head + '<div class="chart-wrap"></div>';
+      wireDrag(el);
+      el.querySelector('[data-x]').addEventListener('click', () => removeWidget(w.id));
+      // Defer canvas draw until the element is in the DOM and sized.
+      requestAnimationFrame(() => drawChart(el.querySelector('.chart-wrap'), w, rows));
+      return el;
     } else {
       const rows = await getSourceData(w.source);
       const cols = w.columns || SOURCE_COLUMNS[w.source] || Object.keys(rows[0] || {});
@@ -106,6 +122,70 @@ async function renderWidget(w) {
 async function removeWidget(id) {
   await api.send(`/api/dashboard/widgets/${id}`, 'DELETE');
   await loadDashboard();
+}
+
+// ── Chart rendering (canvas, no libraries) ────────────────────
+function drawChart(container, w, rows) {
+  rows = (rows || []).filter((r) => r && r.label != null);
+  const isMoney = /revenue|invoices/i.test(w.source);
+  const dpr = window.devicePixelRatio || 1;
+  const cw = container.clientWidth || 300;
+  const ch = w.chartType === 'donut' ? 180 : Math.max(120, rows.length * 30 + 20);
+  const cv = document.createElement('canvas');
+  cv.width = cw * dpr; cv.height = ch * dpr;
+  cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
+  container.innerHTML = '';
+  container.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.font = '11px Barlow, sans-serif';
+  if (!rows.length) { ctx.fillStyle = '#6a6a6a'; ctx.fillText('No data', 8, 20); return; }
+  const fmt = (v) => (isMoney ? fmtMoney(v) : String(v));
+
+  if (w.chartType === 'donut') {
+    const total = rows.reduce((s, r) => s + r.value, 0) || 1;
+    const cx = ch / 2 + 4, cy = ch / 2, r = ch / 2 - 14, inner = r * 0.6;
+    let a0 = -Math.PI / 2;
+    rows.forEach((row, i) => {
+      const a1 = a0 + (row.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, a0, a1);
+      ctx.closePath();
+      ctx.fillStyle = CHART_PALETTE[i % CHART_PALETTE.length];
+      ctx.fill();
+      a0 = a1;
+    });
+    ctx.fillStyle = '#0b0b0b';
+    ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2); ctx.fill();
+    // Legend
+    let ly = 18;
+    const lx = ch + 14;
+    rows.forEach((row, i) => {
+      ctx.fillStyle = CHART_PALETTE[i % CHART_PALETTE.length];
+      ctx.fillRect(lx, ly - 8, 9, 9);
+      ctx.fillStyle = '#ddd';
+      ctx.fillText(`${row.label} — ${fmt(row.value)}`, lx + 14, ly);
+      ly += 18;
+    });
+    return;
+  }
+
+  // Horizontal bar chart
+  const max = Math.max(...rows.map((r) => r.value)) || 1;
+  const labelW = 110, padR = 60, gap = 8;
+  const barW = cw - labelW - padR;
+  const barH = (ch - 16 - gap * rows.length) / rows.length;
+  rows.forEach((row, i) => {
+    const y = 8 + i * (barH + gap);
+    ctx.fillStyle = '#9b9b9b';
+    ctx.fillText(String(row.label).slice(0, 16), 4, y + barH / 2 + 4);
+    ctx.fillStyle = CHART_PALETTE[i % CHART_PALETTE.length];
+    const len = Math.max(2, (row.value / max) * barW);
+    ctx.fillRect(labelW, y, len, barH);
+    ctx.fillStyle = '#ddd';
+    ctx.fillText(fmt(row.value), labelW + len + 6, y + barH / 2 + 4);
+  });
 }
 
 // ── Drag to reorder ───────────────────────────────────────────
@@ -134,17 +214,22 @@ function wireDrag(el) {
 const dialog = $('#add-dialog');
 function setupAddForm() {
   const sourceSel = $('#add-source');
-  sourceSel.innerHTML = ['metrics', 'jobs', 'clients', 'invoices', 'schedule', 'timesheets']
-    .map((s) => `<option value="${s}">${s}</option>`).join('');
   const fieldSel = $('#add-field');
   fieldSel.innerHTML = Object.entries(METRIC_FIELDS)
     .map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
 
+  const tableSources = ['jobs', 'clients', 'invoices', 'schedule', 'timesheets'];
+  const fillSources = (opts) =>
+    (sourceSel.innerHTML = opts.map(([k, v]) => `<option value="${k}">${v}</option>`).join(''));
+
   const typeSel = $('#add-type');
   const toggle = () => {
-    const isMetric = typeSel.value === 'metric';
-    $('#field-row').style.display = isMetric ? '' : 'none';
-    sourceSel.value = isMetric ? 'metrics' : 'jobs';
+    const type = typeSel.value;
+    $('#field-row').style.display = type === 'metric' ? '' : 'none';
+    $('#charttype-row').style.display = type === 'chart' ? '' : 'none';
+    if (type === 'metric') fillSources([['metrics', 'metrics']]);
+    else if (type === 'chart') fillSources(Object.entries(CHART_SOURCES));
+    else fillSources(tableSources.map((s) => [s, s]));
   };
   typeSel.addEventListener('change', toggle);
   toggle();
@@ -162,6 +247,8 @@ $('#add-form').addEventListener('submit', async (e) => {
   if (type === 'metric') {
     widget.field = f.get('field');
     if (widget.field === 'unpaidTotal') widget.format = 'money';
+  } else if (type === 'chart') {
+    widget.chartType = f.get('chartType');
   }
   await api.send('/api/dashboard/widgets', 'POST', widget);
   e.target.reset();
@@ -235,6 +322,13 @@ $('#chat-form').addEventListener('submit', async (e) => {
   }
   if (!answered) thinking.innerHTML = '<span class="tool-note">(no response)</span>';
   messages.scrollTop = messages.scrollHeight;
+});
+
+$('#chips').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  $('#chat-input').value = chip.textContent;
+  $('#chat-form').requestSubmit();
 });
 
 $('#btn-clear').addEventListener('click', async () => {

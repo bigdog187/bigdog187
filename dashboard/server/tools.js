@@ -83,18 +83,25 @@ export const tools = {
     schema: {
       name: 'add_widget',
       description:
-        'Add a widget to the dashboard. Use "metric" for a single number (set source="metrics" and a field like openJobs, overdueJobs, unpaidInvoices, unpaidTotal, hoursThisWeek, activeClients). Use "table" for a list (set source to jobs|clients|invoices|schedule|timesheets and choose columns).',
+        'Add a widget to the dashboard. ' +
+        'Use "metric" for a single number (source="metrics", field = openJobs|overdueJobs|unpaidInvoices|unpaidTotal|hoursThisWeek|activeClients). ' +
+        'Use "table" for a list (source = jobs|clients|invoices|schedule|timesheets, choose columns). ' +
+        'Use "chart" for a visual (source = jobsByStatus|revenueByClient|hoursByStaff|invoicesByStatus, chartType = bar|donut).',
       input_schema: {
         type: 'object',
         properties: {
-          type: { type: 'string', enum: ['metric', 'table'] },
+          type: { type: 'string', enum: ['metric', 'table', 'chart'] },
           title: { type: 'string' },
           source: {
             type: 'string',
-            enum: ['metrics', 'jobs', 'clients', 'invoices', 'schedule', 'timesheets'],
+            enum: [
+              'metrics', 'jobs', 'clients', 'invoices', 'schedule', 'timesheets',
+              'jobsByStatus', 'revenueByClient', 'hoursByStaff', 'invoicesByStatus',
+            ],
           },
           field: { type: 'string', description: 'For metric widgets: which metric field to show.' },
           columns: { type: 'array', items: { type: 'string' }, description: 'For table widgets.' },
+          chartType: { type: 'string', enum: ['bar', 'donut'], description: 'For chart widgets.' },
           format: { type: 'string', enum: ['money', 'number'], description: 'Optional metric format.' },
           tone: { type: 'string', enum: ['default', 'warn'], description: 'Optional emphasis colour.' },
         },

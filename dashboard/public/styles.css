@@ -87,6 +87,13 @@ td { color: #ddd; }
 .msg .tool-note { font-size: 0.68rem; color: var(--gray2); letter-spacing: 0.05em; font-style: italic; }
 .msg code { background: var(--panel2); padding: 0.05rem 0.3rem; font-size: 0.8em; }
 .msg strong { color: var(--white); }
+.chart-wrap { margin-top: 0.25rem; }
+.chart-wrap canvas { display: block; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.75rem 1.25rem 0; }
+.chip { font-size: 0.68rem; color: var(--gray); border: 1px solid var(--line); background: var(--panel2); padding: 0.3rem 0.6rem; border-radius: 999px; cursor: pointer; transition: 0.15s; }
+.chip:hover { border-color: var(--gray); color: var(--white); }
+
 .chat-form { display: flex; gap: 0.5rem; padding: 1rem 1.25rem; border-top: 1px solid var(--line); }
 .chat-form input { flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--white); padding: 0.6rem 0.75rem; font-family: var(--font); font-size: 0.85rem; }
 .chat-form input:focus { outline: none; border-color: var(--gray); }
