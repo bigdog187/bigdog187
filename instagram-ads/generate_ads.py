@@ -2,9 +2,8 @@
 """
 Instagram ad generator for Weiley Electrical (wyelec.com.au).
 
-Produces a full set of 1080x1080 PNG ad creatives (plus source SVGs), built
-exhaustively from the company's website content across every page:
-home, about, industrial, commercial, compliance and contact.
+Full set of 1080x1080 PNG ad creatives (plus source SVGs), built from the
+company's website content across every page. Palette: red / white / blue.
 
 Run:  python3 generate_ads.py
 """
@@ -14,16 +13,16 @@ import html
 import cairosvg
 
 # ----------------------------------------------------------------------------
-# Brand system
+# Brand system  —  red / white / blue
 # ----------------------------------------------------------------------------
-NAVY      = "#0B2138"   # deep brand navy
-NAVY_2    = "#102B49"   # lighter navy for gradient
-NAVY_3    = "#0A1B2E"   # near-black navy
-AMBER     = "#FFC21A"   # electric amber / yellow accent
-AMBER_2   = "#FFD24D"
+BLUE      = "#0B2E6B"   # primary brand blue
+BLUE_2    = "#123E86"   # lighter blue for gradient
+BLUE_3    = "#08214E"   # deep navy-blue
+RED       = "#E23636"   # accent red
+RED_2     = "#F2554F"   # lighter red for gradient
 WHITE     = "#FFFFFF"
-MIST      = "#C9D6E5"   # muted blue-grey text
-LINE      = "#1C3A5C"   # subtle circuit line colour
+MIST      = "#C7D6F2"   # muted light blue-grey text
+LINE      = "#1C407F"   # subtle circuit line colour
 
 FONT = "DejaVu Sans, Liberation Sans, sans-serif"
 
@@ -38,7 +37,7 @@ def esc(s):
 # ----------------------------------------------------------------------------
 # Reusable SVG pieces
 # ----------------------------------------------------------------------------
-def bolt(cx, cy, scale=1.0, fill=AMBER, opacity=1.0):
+def bolt(cx, cy, scale=1.0, fill=RED, opacity=1.0):
     """A lightning-bolt mark centred roughly on (cx, cy)."""
     return (
         f'<g transform="translate({cx},{cy}) scale({scale}) translate(-50,-75)">'
@@ -54,49 +53,48 @@ def circuit_bg(seed_lines):
     return "".join(parts)
 
 
-def logo_lockup(x, y, scale=1.0, on_dark=True):
-    """Weiley Electrical wordmark with bolt badge. Anchored top-left at (x,y)."""
-    txt = WHITE if on_dark else NAVY
-    sub = AMBER if on_dark else NAVY
+def logo_lockup(x, y, scale=1.0, badge=WHITE, mark=RED, word=WHITE, sub=RED):
+    """Weiley Electrical wordmark with bolt badge. Anchored top-left at (x,y).
+    Colours are parametrised so the lockup reads on blue, red or white."""
     s = scale
-    badge = (
+    badge_svg = (
         f'<g transform="translate({x},{y})">'
-        f'<rect x="0" y="0" width="{72*s}" height="{72*s}" rx="{16*s}" fill="{AMBER}"/>'
-        f'{bolt(36*s, 36*s, scale=0.42*s, fill=NAVY)}'
+        f'<rect x="0" y="0" width="{72*s}" height="{72*s}" rx="{16*s}" fill="{badge}"/>'
+        f'{bolt(36*s, 36*s, scale=0.42*s, fill=mark)}'
         f'</g>'
     )
     words = (
         f'<g transform="translate({x + 88*s},{y})">'
         f'<text x="0" y="{30*s}" font-family="{FONT}" font-size="{30*s}" '
-        f'font-weight="bold" letter-spacing="{1.5*s}" fill="{txt}">WEILEY</text>'
+        f'font-weight="bold" letter-spacing="{1.5*s}" fill="{word}">WEILEY</text>'
         f'<text x="0" y="{62*s}" font-family="{FONT}" font-size="{20*s}" '
         f'font-weight="bold" letter-spacing="{7.6*s}" fill="{sub}">ELECTRICAL</text>'
         f'</g>'
     )
-    return badge + words
+    return badge_svg + words
 
 
 def footer(line=None, phone="02 6884 9292"):
     line = line or "wyelec.com.au"
     y = 1012
     return (
-        f'<rect x="0" y="980" width="{SIZE}" height="100" fill="{NAVY_3}"/>'
-        f'<rect x="0" y="980" width="{SIZE}" height="4" fill="{AMBER}"/>'
+        f'<rect x="0" y="980" width="{SIZE}" height="100" fill="{BLUE_3}"/>'
+        f'<rect x="0" y="980" width="{SIZE}" height="4" fill="{RED}"/>'
         f'<text x="64" y="{y+18}" font-family="{FONT}" font-size="30" font-weight="bold" '
         f'fill="{WHITE}">{esc(line)}</text>'
         f'<text x="{SIZE-64}" y="{y+18}" text-anchor="end" font-family="{FONT}" '
-        f'font-size="30" font-weight="bold" fill="{AMBER}">{esc(phone)}</text>'
+        f'font-size="30" font-weight="bold" fill="{RED}">{esc(phone)}</text>'
     )
 
 
 def defs():
     return (
         '<defs>'
-        f'<linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">'
-        f'<stop offset="0" stop-color="{NAVY_2}"/><stop offset="1" stop-color="{NAVY_3}"/>'
+        f'<linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0" stop-color="{BLUE_2}"/><stop offset="1" stop-color="{BLUE_3}"/>'
         f'</linearGradient>'
-        f'<linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">'
-        f'<stop offset="0" stop-color="{AMBER_2}"/><stop offset="1" stop-color="{AMBER}"/>'
+        f'<linearGradient id="red" x1="0" y1="0" x2="1" y2="1">'
+        f'<stop offset="0" stop-color="{RED_2}"/><stop offset="1" stop-color="{RED}"/>'
         f'</linearGradient>'
         '</defs>'
     )
@@ -109,7 +107,7 @@ def frame(inner):
     )
 
 
-def pill(x, y, text, fill=AMBER, txt=NAVY, fs=24, pad=26):
+def pill(x, y, text, fill=RED, txt=WHITE, fs=24, pad=26):
     w = len(text) * fs * 0.66 + len(text) * 1.6 + pad * 2
     return (
         f'<g><rect x="{x}" y="{y}" width="{w:.0f}" height="{fs+pad}" rx="{(fs+pad)/2}" '
@@ -120,13 +118,13 @@ def pill(x, y, text, fill=AMBER, txt=NAVY, fs=24, pad=26):
     )
 
 
-def check_row(x, y, text, fs=30, r=18):
+def check_row(x, y, text, fs=30, r=18, txt=WHITE):
     return (
-        f'<circle cx="{x+r-2}" cy="{y-8}" r="{r}" fill="{AMBER}"/>'
-        f'<path d="M{x+r-10},{y-8} l6,7 l12,-15" fill="none" stroke="{NAVY}" '
+        f'<circle cx="{x+r-2}" cy="{y-8}" r="{r}" fill="{RED}"/>'
+        f'<path d="M{x+r-10},{y-8} l6,7 l12,-15" fill="none" stroke="{WHITE}" '
         f'stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>'
-        f'<text x="{x+r+18}" y="{y+2}" font-family="{FONT}" font-size="{fs}" '
-        f'fill="{WHITE}">{esc(text)}</text>'
+        f'<text x="{x+r+20}" y="{y+2}" font-family="{FONT}" font-size="{fs}" '
+        f'fill="{txt}">{esc(text)}</text>'
     )
 
 
@@ -134,7 +132,7 @@ def chip(x, y, text, fs=30):
     w = len(text) * fs * 0.60 + 56
     svg = (
         f'<g><rect x="{x}" y="{y}" width="{w:.0f}" height="{fs+30}" rx="{(fs+30)/2}" '
-        f'fill="none" stroke="{AMBER}" stroke-width="2"/>'
+        f'fill="none" stroke="{RED}" stroke-width="2.5"/>'
         f'<text x="{x+w/2:.0f}" y="{y+(fs+30)/2+fs*0.34:.0f}" text-anchor="middle" '
         f'font-family="{FONT}" font-size="{fs}" font-weight="bold" fill="{WHITE}">'
         f'{esc(text)}</text></g>'
@@ -166,19 +164,19 @@ def ad_hero():
     traces = ["M0,300 H180 V200", "M180,200 H320", "M0,760 H140 V860",
               "M1080,420 H940 V520", "M1080,700 H880"]
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
         f'{circuit_bg(traces)}'
-        f'{bolt(835, 560, scale=5.4, fill=AMBER, opacity=0.10)}'
-        f'{bolt(835, 560, scale=4.0, fill=AMBER, opacity=1.0)}'
+        f'{bolt(835, 560, scale=5.4, fill=WHITE, opacity=0.08)}'
+        f'{bolt(835, 560, scale=4.0, fill=RED, opacity=1.0)}'
         f'{logo_lockup(64, 70, scale=1.18)}'
         f'<g transform="translate(64,250)">'
-        f'<rect x="0" y="0" width="250" height="46" rx="23" fill="none" stroke="{AMBER}" stroke-width="2"/>'
+        f'<rect x="0" y="0" width="250" height="46" rx="23" fill="none" stroke="{RED}" stroke-width="2.5"/>'
         f'<text x="125" y="31" text-anchor="middle" font-family="{FONT}" font-size="22" '
-        f'font-weight="bold" letter-spacing="2" fill="{AMBER}">EST. 1986  &#8226;  40+ YEARS</text></g>'
+        f'font-weight="bold" letter-spacing="2" fill="{WHITE}">EST. 1986  &#8226;  40+ YEARS</text></g>'
         f'<text x="64" y="430" font-family="{FONT}" font-size="78" font-weight="bold" fill="{WHITE}">KEEPING</text>'
         f'<text x="64" y="512" font-family="{FONT}" font-size="78" font-weight="bold" fill="{WHITE}">CENTRAL WEST</text>'
-        f'<text x="64" y="594" font-family="{FONT}" font-size="78" font-weight="bold" fill="{AMBER}">BUSINESSES</text>'
-        f'<text x="64" y="676" font-family="{FONT}" font-size="78" font-weight="bold" fill="{AMBER}">POWERED</text>'
+        f'<text x="64" y="594" font-family="{FONT}" font-size="78" font-weight="bold" fill="{RED}">BUSINESSES</text>'
+        f'<text x="64" y="676" font-family="{FONT}" font-size="78" font-weight="bold" fill="{RED}">POWERED</text>'
         f'<text x="66" y="748" font-family="{FONT}" font-size="30" fill="{MIST}">'
         f'Industrial &#8226; Commercial &#8226; Compliance</text>'
         f'<text x="66" y="794" font-family="{FONT}" font-size="30" fill="{MIST}">'
@@ -196,13 +194,13 @@ def ad_hero():
 def ad_industrial():
     col1, col2 = 72, 600
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
-        f'<path d="M0,0 L1080,0 L1080,250 L0,310 Z" fill="url(#amber)"/>'
-        f'<path d="M0,310 L1080,250 L1080,262 L0,322 Z" fill="{NAVY_3}" opacity="0.25"/>'
-        f'{bolt(915, 150, scale=2.0, fill=NAVY, opacity=0.14)}'
-        f'{logo_lockup(64, 56, scale=1.0, on_dark=False)}'
-        f'<text x="64" y="232" font-family="{FONT}" font-size="50" font-weight="bold" fill="{NAVY}">INDUSTRIAL ELECTRICAL</text>'
-        f'<text x="66" y="380" font-family="{FONT}" font-size="30" font-weight="bold" fill="{AMBER}">Four decades keeping plants &amp; machinery running</text>'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
+        f'<path d="M0,0 L1080,0 L1080,250 L0,310 Z" fill="url(#red)"/>'
+        f'<path d="M0,310 L1080,250 L1080,262 L0,322 Z" fill="{BLUE_3}" opacity="0.25"/>'
+        f'{bolt(915, 150, scale=2.0, fill=WHITE, opacity=0.16)}'
+        f'{logo_lockup(64, 56, scale=1.0, badge=WHITE, mark=RED, word=WHITE, sub=WHITE)}'
+        f'<text x="64" y="232" font-family="{FONT}" font-size="50" font-weight="bold" fill="{WHITE}">INDUSTRIAL ELECTRICAL</text>'
+        f'<text x="66" y="380" font-family="{FONT}" font-size="30" font-weight="bold" fill="{RED}">Four decades keeping plants &amp; machinery running</text>'
         f'{check_row(col1, 470, "PLC, SCADA & HMI systems", fs=25)}'
         f'{check_row(col2, 470, "Control panel design & build", fs=25)}'
         f'{check_row(col1, 540, "Machinery wiring & automation", fs=25)}'
@@ -225,13 +223,13 @@ def ad_industrial():
 def ad_commercial():
     col1, col2 = 72, 600
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
-        f'<rect x="0" y="0" width="{SIZE}" height="22" fill="{AMBER}"/>'
-        f'{bolt(890, 760, scale=4.4, fill=AMBER, opacity=0.08)}'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
+        f'<rect x="0" y="0" width="{SIZE}" height="22" fill="{RED}"/>'
+        f'{bolt(890, 760, scale=4.4, fill=WHITE, opacity=0.06)}'
         f'{logo_lockup(64, 70, scale=1.0)}'
         f'{kicker(64, 200, "COMMERCIAL ELECTRICAL", fs=24)}'
         f'<text x="64" y="320" font-family="{FONT}" font-size="58" font-weight="bold" fill="{WHITE}">Fit-outs, repairs &amp;</text>'
-        f'<text x="64" y="386" font-family="{FONT}" font-size="58" font-weight="bold" fill="{AMBER}">maintenance</text>'
+        f'<text x="64" y="386" font-family="{FONT}" font-size="58" font-weight="bold" fill="{RED}">maintenance</text>'
         f'<text x="66" y="442" font-family="{FONT}" font-size="28" fill="{MIST}">Fast, reliable service that keeps your doors open.</text>'
         f'{check_row(col1, 540, "Switchboards & lighting", fs=25)}'
         f'{check_row(col2, 540, "Power & machinery wiring", fs=25)}'
@@ -252,13 +250,13 @@ def ad_commercial():
 # ----------------------------------------------------------------------------
 def ad_compliance():
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
-        f'<rect x="0" y="0" width="22" height="{SIZE}" fill="{AMBER}"/>'
-        f'{bolt(880, 720, scale=4.6, fill=AMBER, opacity=0.08)}'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
+        f'<rect x="0" y="0" width="22" height="{SIZE}" fill="{RED}"/>'
+        f'{bolt(880, 720, scale=4.6, fill=WHITE, opacity=0.06)}'
         f'{logo_lockup(64, 70, scale=1.0)}'
         f'{kicker(64, 200, "COMPLIANCE & SAFETY", fs=24)}'
         f'<text x="64" y="332" font-family="{FONT}" font-size="70" font-weight="bold" fill="{WHITE}">STAY SAFE.</text>'
-        f'<text x="64" y="410" font-family="{FONT}" font-size="70" font-weight="bold" fill="{AMBER}">STAY COMPLIANT.</text>'
+        f'<text x="64" y="410" font-family="{FONT}" font-size="70" font-weight="bold" fill="{RED}">STAY COMPLIANT.</text>'
         f'<text x="66" y="466" font-family="{FONT}" font-size="28" fill="{MIST}">Audit-ready to current Australian standards.</text>'
         f'{check_row(72, 548, "RCD (safety switch) testing & install", fs=29)}'
         f'{check_row(72, 610, "Test & Tag of equipment", fs=29)}'
@@ -283,12 +281,12 @@ def ad_industries():
     items = ["Retail stores", "Workshops", "Warehouses", "Offices",
              "Hospitality", "Agriculture", "Industrial plants", "Education"]
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
-        f'{bolt(150, 880, scale=4.2, fill=AMBER, opacity=0.07)}'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
+        f'{bolt(150, 880, scale=4.2, fill=WHITE, opacity=0.05)}'
         f'{logo_lockup(64, 70, scale=1.0)}'
         f'{kicker(64, 200, "WHO WE WORK WITH", fs=24)}'
         f'<text x="64" y="332" font-family="{FONT}" font-size="66" font-weight="bold" fill="{WHITE}">Trusted across the</text>'
-        f'<text x="64" y="406" font-family="{FONT}" font-size="66" font-weight="bold" fill="{AMBER}">Central West</text>'
+        f'<text x="64" y="406" font-family="{FONT}" font-size="66" font-weight="bold" fill="{RED}">Central West</text>'
         f'<text x="66" y="462" font-family="{FONT}" font-size="28" fill="{MIST}">From the factory floor to the shopfront &#8212; we power them all.</text>'
         f'{chip_cloud(items, x0=64, y0=540, x_max=1016, fs=32, gap=20, vgap=24)}'
         f'{footer()}'
@@ -301,10 +299,10 @@ def ad_industries():
 # ----------------------------------------------------------------------------
 def stat_card(x, y, big, small, w=296):
     return (
-        f'<g><rect x="{x}" y="{y}" width="{w}" height="150" rx="18" fill="{NAVY_3}"/>'
-        f'<rect x="{x}" y="{y}" width="{w}" height="6" rx="3" fill="{AMBER}"/>'
+        f'<g><rect x="{x}" y="{y}" width="{w}" height="150" rx="18" fill="{BLUE_3}"/>'
+        f'<rect x="{x}" y="{y}" width="{w}" height="6" rx="3" fill="{RED}"/>'
         f'<text x="{x+w/2:.0f}" y="{y+86}" text-anchor="middle" font-family="{FONT}" '
-        f'font-size="58" font-weight="bold" fill="{AMBER}">{esc(big)}</text>'
+        f'font-size="58" font-weight="bold" fill="{RED}">{esc(big)}</text>'
         f'<text x="{x+w/2:.0f}" y="{y+124}" text-anchor="middle" font-family="{FONT}" '
         f'font-size="22" font-weight="bold" letter-spacing="1" fill="{WHITE}">{esc(small)}</text></g>'
     )
@@ -312,11 +310,11 @@ def stat_card(x, y, big, small, w=296):
 
 def ad_why():
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#navy)"/>'
-        f'{bolt(900, 250, scale=3.0, fill=AMBER, opacity=0.07)}'
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#blue)"/>'
+        f'{bolt(900, 250, scale=3.0, fill=WHITE, opacity=0.05)}'
         f'{logo_lockup(64, 70, scale=1.0)}'
         f'<text x="64" y="250" font-family="{FONT}" font-size="64" font-weight="bold" fill="{WHITE}">WHY CHOOSE</text>'
-        f'<text x="64" y="320" font-family="{FONT}" font-size="64" font-weight="bold" fill="{AMBER}">WEILEY ELECTRICAL?</text>'
+        f'<text x="64" y="320" font-family="{FONT}" font-size="64" font-weight="bold" fill="{RED}">WEILEY ELECTRICAL?</text>'
         f'{stat_card(64, 372, "40+", "YEARS EXPERIENCE")}'
         f'{stat_card(392, 372, "1986", "ESTABLISHED")}'
         f'{stat_card(720, 372, "ISO", "9001 & 45001")}'
@@ -335,17 +333,16 @@ def ad_why():
 # ----------------------------------------------------------------------------
 def ad_quote():
     inner = (
-        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#amber)"/>'
-        f'<path d="M0,560 L1080,470 L1080,1080 L0,1080 Z" fill="url(#navy)"/>'
-        f'{bolt(190, 250, scale=2.2, fill=NAVY, opacity=0.13)}'
-        f'{bolt(900, 800, scale=3.2, fill=AMBER, opacity=0.10)}'
-        f'{logo_lockup(64, 64, scale=1.05, on_dark=False)}'
-        f'<text x="64" y="290" font-family="{FONT}" font-size="38" font-weight="bold" fill="{NAVY}">COMMERCIAL &amp; INDUSTRIAL ELECTRICAL</text>'
-        f'<text x="60" y="430" font-family="{FONT}" font-size="150" font-weight="bold" fill="{NAVY}">FREE</text>'
-        f'<text x="60" y="520" font-family="{FONT}" font-size="78" font-weight="bold" fill="{NAVY}">QUOTES</text>'
-        # contact block on navy
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#red)"/>'
+        f'<path d="M0,560 L1080,470 L1080,1080 L0,1080 Z" fill="url(#blue)"/>'
+        f'{bolt(190, 250, scale=2.2, fill=WHITE, opacity=0.12)}'
+        f'{bolt(900, 800, scale=3.2, fill=WHITE, opacity=0.06)}'
+        f'{logo_lockup(64, 64, scale=1.05, badge=WHITE, mark=BLUE, word=WHITE, sub=WHITE)}'
+        f'<text x="64" y="290" font-family="{FONT}" font-size="38" font-weight="bold" fill="{WHITE}">COMMERCIAL &amp; INDUSTRIAL ELECTRICAL</text>'
+        f'<text x="60" y="430" font-family="{FONT}" font-size="150" font-weight="bold" fill="{WHITE}">FREE</text>'
+        f'<text x="60" y="520" font-family="{FONT}" font-size="78" font-weight="bold" fill="{WHITE}">QUOTES</text>'
         f'<text x="64" y="640" font-family="{FONT}" font-size="34" font-weight="bold" fill="{WHITE}">Call our Dubbo team today</text>'
-        f'<text x="60" y="712" font-family="{FONT}" font-size="60" font-weight="bold" fill="{AMBER}">02 6884 9292</text>'
+        f'<text x="60" y="712" font-family="{FONT}" font-size="60" font-weight="bold" fill="{RED}">02 6884 9292</text>'
         f'<text x="64" y="772" font-family="{FONT}" font-size="28" fill="{MIST}">service@wyelec.com.au</text>'
         f'<text x="64" y="814" font-family="{FONT}" font-size="28" fill="{MIST}">Unit 9B, 55 Wheelers Lane, Dubbo NSW 2830</text>'
         f'<text x="64" y="856" font-family="{FONT}" font-size="28" fill="{MIST}">Mon&#8211;Fri 7:30am&#8211;4pm &#8226; 24/7 industrial breakdown</text>'
@@ -356,12 +353,12 @@ def ad_quote():
 
 # ----------------------------------------------------------------------------
 ADS = {
-    "01_hero_powered":      ad_hero,
-    "02_industrial":        ad_industrial,
-    "03_commercial":        ad_commercial,
-    "04_compliance":        ad_compliance,
-    "05_industries_served": ad_industries,
-    "06_why_choose_us":     ad_why,
+    "01_hero_powered":       ad_hero,
+    "02_industrial":         ad_industrial,
+    "03_commercial":         ad_commercial,
+    "04_compliance":         ad_compliance,
+    "05_industries_served":  ad_industries,
+    "06_why_choose_us":      ad_why,
     "07_free_quote_contact": ad_quote,
 }
 
