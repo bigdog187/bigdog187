@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eCert Portal — AI Certificate Builder | Weiley Electrical</title>
+  <meta name="description" content="Describe an electrical job in plain English and instantly generate a draft NSW Certificate of Compliance Electrical Work (CCEW) to review, approve and lodge.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --black:#000; --white:#fff; --gray:#9b9b9b; --gray-dark:#4a4a4a; --border:#1f1f1f;
+      --font:'Barlow','Helvetica Neue',Arial,sans-serif;
+      --font-cond:'Barlow Condensed','Arial Narrow',sans-serif;
+      --accent:#e8c33a;
+      --ok:#3ad17a; --warn:#e8c33a; --err:#e85a5a;
+    }
+    html { scroll-behavior:smooth; }
+    body { background:var(--black); color:var(--white); font-family:var(--font); overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+    ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:var(--black)} ::-webkit-scrollbar-thumb{background:var(--gray-dark)}
+    a { color:inherit; }
+
+    /* ── NAV (shared with site) ── */
+    nav { position:fixed; top:0; left:0; right:0; z-index:1000; height:72px; display:flex; align-items:center; padding:0 3rem; background:rgba(0,0,0,0.94); backdrop-filter:blur(14px); border-bottom:1px solid var(--border); }
+    .nav-inner { display:flex; align-items:center; justify-content:space-between; width:100%; max-width:1600px; margin:0 auto; gap:2rem; }
+    .nav-logo { font-family:var(--font); font-size:1rem; font-weight:800; letter-spacing:.32em; text-transform:uppercase; color:var(--white); text-decoration:none; white-space:nowrap; flex-shrink:0; }
+    .nav-logo span { font-weight:400; color:var(--gray); }
+    .nav-links { display:flex; align-items:stretch; list-style:none; }
+    .nav-item { position:relative; }
+    .nav-link { display:flex; align-items:center; gap:.35rem; font-size:.7rem; font-weight:600; letter-spacing:.18em; text-decoration:none; color:var(--white); padding:0 1rem; height:72px; text-transform:uppercase; white-space:nowrap; background:none; transition:color 0.2s; }
+    .nav-link:hover { color:var(--gray); }
+    .nav-link.active { color:var(--accent); }
+    .nav-right { display:flex; align-items:center; gap:1.5rem; flex-shrink:0; }
+    .nav-phone { font-size:.78rem; font-weight:600; letter-spacing:.08em; color:var(--white); text-decoration:none; }
+    .nav-hamburger { display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:4px; }
+    .nav-hamburger span { display:block; width:22px; height:1.5px; background:var(--white); transition:all .2s; }
+
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.6rem; font-family:var(--font); font-size:.72rem; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--white); text-decoration:none; text-align:center; border:2px solid var(--white); padding:1rem 2rem; background:transparent; cursor:pointer; transition:background .25s,color .25s,border-color .25s,opacity .2s; }
+    .btn:hover { background:var(--white); color:var(--black); }
+    .btn:disabled { opacity:.35; cursor:not-allowed; }
+    .btn.solid { background:var(--white); color:var(--black); }
+    .btn.solid:hover { background:var(--gray); border-color:var(--gray); }
+    .btn.accent { background:var(--accent); border-color:var(--accent); color:#000; }
+    .btn.accent:hover { background:#f3d563; border-color:#f3d563; color:#000; }
+    .btn.ghost { border-color:rgba(255,255,255,0.25); color:rgba(255,255,255,0.8); }
+    .btn.ghost:hover { border-color:var(--white); color:var(--white); background:transparent; }
+    .btn.sm { padding:.65rem 1.2rem; font-size:.62rem; letter-spacing:.16em; border-width:1.5px; }
+
+    /* ── HERO ── */
+    .portal-hero { padding:7rem 3rem 2.5rem; max-width:1600px; margin:0 auto; }
+    .portal-breadcrumb { font-size:.65rem; font-weight:700; letter-spacing:.28em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:1.25rem; }
+    .portal-breadcrumb a { color:inherit; text-decoration:none; }
+    .portal-breadcrumb a:hover { color:#fff; }
+    .portal-tag { display:inline-flex; align-items:center; gap:.5rem; font-size:.6rem; font-weight:700; letter-spacing:.24em; text-transform:uppercase; color:var(--accent); border:1px solid rgba(232,195,58,0.4); padding:.4rem .8rem; margin-bottom:1.25rem; }
+    .portal-tag .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+    .portal-headline { font-size:clamp(2.2rem,5vw,4rem); font-weight:800; line-height:1.02; letter-spacing:.01em; text-transform:uppercase; max-width:900px; margin-bottom:1.1rem; }
+    .portal-intro { font-size:clamp(.95rem,1.3vw,1.08rem); line-height:1.7; color:rgba(255,255,255,0.75); max-width:680px; }
+
+    /* ── STEPS BAR ── */
+    .steps { display:flex; gap:0; max-width:1600px; margin:0 auto 0; padding:0 3rem; flex-wrap:wrap; }
+    .step { display:flex; align-items:center; gap:.7rem; padding:1.1rem 1.5rem 1.1rem 0; opacity:.4; transition:opacity .3s; }
+    .step.active { opacity:1; }
+    .step-num { width:30px; height:30px; flex-shrink:0; border:1.5px solid currentColor; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-cond); font-weight:700; font-size:.95rem; }
+    .step.active .step-num { background:var(--accent); border-color:var(--accent); color:#000; }
+    .step.done .step-num { background:var(--ok); border-color:var(--ok); color:#000; }
+    .step-label { font-size:.66rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; }
+
+    /* ── MAIN GRID ── */
+    .portal-main { max-width:1600px; margin:0 auto; padding:2rem 3rem 5rem; display:grid; grid-template-columns:1fr 1fr; gap:2rem; align-items:start; }
+    .panel { border:1px solid var(--border); background:#070707; }
+    .panel-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); }
+    .panel-head h2 { font-size:.72rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; }
+    .panel-head .sub { font-size:.62rem; color:var(--gray); letter-spacing:.05em; }
+    .panel-body { padding:1.5rem; }
+
+    /* ── NL INPUT ── */
+    .nl-wrap { position:relative; }
+    textarea.nl-input { width:100%; min-height:230px; resize:vertical; background:#0c0c0c; border:1px solid var(--border); color:#fff; font-family:var(--font); font-size:.95rem; line-height:1.65; padding:1.1rem 1.2rem; transition:border-color .2s; }
+    textarea.nl-input:focus { outline:none; border-color:var(--accent); }
+    textarea.nl-input::placeholder { color:#5a5a5a; }
+    .nl-actions { display:flex; gap:.75rem; margin-top:1rem; flex-wrap:wrap; align-items:center; }
+    .nl-hint { font-size:.7rem; color:var(--gray); line-height:1.6; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border); }
+    .nl-hint strong { color:#fff; font-weight:600; }
+    .examples { margin-top:1rem; display:flex; flex-direction:column; gap:.5rem; }
+    .example-chip { text-align:left; background:#0c0c0c; border:1px solid var(--border); color:rgba(255,255,255,0.72); font-family:var(--font); font-size:.72rem; line-height:1.55; padding:.7rem .85rem; cursor:pointer; transition:border-color .2s,color .2s; }
+    .example-chip:hover { border-color:var(--accent); color:#fff; }
+    .example-chip b { color:var(--accent); font-weight:700; letter-spacing:.12em; text-transform:uppercase; font-size:.58rem; display:block; margin-bottom:.25rem; }
+
+    /* ── FORM FIELDS ── */
+    .field { margin-bottom:1.1rem; }
+    .field:last-child { margin-bottom:0; }
+    .field label { display:block; font-size:.6rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gray); margin-bottom:.45rem; }
+    .field input, .field select, .field textarea { width:100%; background:#0c0c0c; border:1px solid var(--border); color:#fff; font-family:var(--font); font-size:.85rem; padding:.7rem .8rem; transition:border-color .2s; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:var(--accent); }
+    .field textarea { min-height:80px; resize:vertical; line-height:1.55; }
+    .field.filled input, .field.filled select, .field.filled textarea { border-color:rgba(58,209,122,0.35); }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .field-note { font-size:.6rem; color:var(--gray-dark); margin-top:.3rem; letter-spacing:.03em; }
+    .ai-flag { display:inline-block; font-size:.52rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-left:.5rem; vertical-align:middle; }
+    .checks { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    .check { display:flex; align-items:center; gap:.55rem; background:#0c0c0c; border:1px solid var(--border); padding:.6rem .7rem; cursor:pointer; font-size:.74rem; transition:border-color .2s; }
+    .check:hover { border-color:rgba(255,255,255,0.3); }
+    .check input { width:16px; height:16px; accent-color:var(--accent); flex-shrink:0; }
+    .group-title { font-size:.58rem; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin:1.75rem 0 1rem; padding-bottom:.5rem; border-bottom:1px solid var(--border); }
+    .group-title:first-child { margin-top:0; }
+
+    .form-empty { text-align:center; padding:3rem 1rem; color:var(--gray); }
+    .form-empty svg { width:42px; height:42px; color:var(--gray-dark); margin-bottom:1rem; }
+    .form-empty p { font-size:.82rem; line-height:1.6; max-width:280px; margin:0 auto; }
+
+    /* ── CERTIFICATE PREVIEW ── */
+    .cert-scroll { max-height:none; }
+    .certificate { background:#fff; color:#111; font-family:var(--font); padding:2.4rem 2.4rem 2rem; font-size:12px; line-height:1.5; }
+    .cert-head { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #111; padding-bottom:1rem; margin-bottom:1.2rem; }
+    .cert-brand { font-size:15px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+    .cert-brand span { font-weight:400; color:#666; }
+    .cert-brand small { display:block; font-size:9px; font-weight:600; letter-spacing:.1em; color:#444; margin-top:.35rem; }
+    .cert-meta { text-align:right; font-size:10px; color:#444; line-height:1.7; }
+    .cert-meta b { color:#111; }
+    .cert-title { text-align:center; margin-bottom:1.4rem; }
+    .cert-title h1 { font-size:16px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#111; }
+    .cert-title p { font-size:10px; color:#555; letter-spacing:.1em; text-transform:uppercase; margin-top:.3rem; }
+    .cert-section { margin-bottom:1.1rem; }
+    .cert-section h3 { font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#fff; background:#111; padding:.35rem .6rem; margin-bottom:.55rem; }
+    .cert-grid { display:grid; grid-template-columns:1fr 1fr; gap:.15rem .8rem; }
+    .cert-row { display:flex; gap:.5rem; padding:.3rem .2rem; border-bottom:1px dotted #ccc; }
+    .cert-row .k { flex:0 0 42%; font-weight:700; color:#333; font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+    .cert-row .v { flex:1; color:#111; font-size:11px; word-break:break-word; }
+    .cert-row .v.empty { color:#bbb; font-style:italic; }
+    .cert-full { padding:.35rem .2rem; }
+    .cert-full .k { font-weight:700; color:#333; font-size:10px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:.25rem; }
+    .cert-full .v { color:#111; font-size:11px; line-height:1.55; }
+    .cert-tests { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .cert-test { font-size:10px; padding:.25rem .5rem; border:1px solid #111; border-radius:2px; display:flex; align-items:center; gap:.3rem; }
+    .cert-test.no { border-color:#ccc; color:#aaa; }
+    .cert-test .tick { font-weight:800; }
+    .cert-declaration { font-size:10px; line-height:1.6; color:#222; background:#f4f4f4; border-left:3px solid #111; padding:.7rem .8rem; margin-bottom:1.2rem; }
+    .cert-sign { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1.5rem; }
+    .cert-sign .line { border-top:1px solid #111; padding-top:.35rem; font-size:9px; color:#555; text-transform:uppercase; letter-spacing:.08em; }
+    .cert-sign .name { font-size:12px; font-weight:700; color:#111; margin-bottom:.1rem; }
+    .cert-foot { margin-top:1.5rem; padding-top:.8rem; border-top:1px solid #ddd; font-size:8.5px; color:#888; line-height:1.6; text-align:center; }
+    .cert-watermark { text-align:center; font-size:11px; font-weight:800; letter-spacing:.3em; text-transform:uppercase; color:#cda400; border:2px dashed #cda400; padding:.5rem; margin-bottom:1.2rem; }
+
+    .preview-empty { background:#0c0c0c; border:1px dashed var(--border); padding:4rem 2rem; text-align:center; color:var(--gray); }
+    .preview-empty svg { width:46px; height:46px; color:var(--gray-dark); margin-bottom:1.2rem; }
+    .preview-empty p { font-size:.84rem; line-height:1.6; }
+
+    /* ── APPROVE BAR ── */
+    .approve-bar { border:1px solid var(--border); background:#070707; margin:0 auto; max-width:1600px; }
+    .approve-inner { padding:1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; }
+    .approve-status { display:flex; align-items:center; gap:.8rem; }
+    .status-pill { font-size:.6rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; padding:.4rem .8rem; border:1px solid; }
+    .status-pill.draft { color:var(--warn); border-color:rgba(232,195,58,0.4); }
+    .status-pill.approved { color:var(--ok); border-color:rgba(58,209,122,0.4); }
+    .approve-text { font-size:.78rem; color:var(--gray); line-height:1.5; }
+    .approve-actions { display:flex; gap:.75rem; flex-wrap:wrap; }
+
+    .review-checklist { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.6rem; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--border); }
+    .rc-item { display:flex; align-items:flex-start; gap:.5rem; font-size:.72rem; color:rgba(255,255,255,0.8); line-height:1.4; }
+    .rc-item .rc-dot { width:14px; height:14px; flex-shrink:0; margin-top:1px; border:1.5px solid var(--gray-dark); border-radius:50%; }
+    .rc-item.ok .rc-dot { background:var(--ok); border-color:var(--ok); }
+    .rc-item.miss .rc-dot { border-color:var(--err); }
+    .rc-item.miss { color:var(--err); }
+
+    /* ── SAVED DRAFTS ── */
+    .drafts { max-width:1600px; margin:2rem auto 0; padding:0 3rem; }
+    .drafts-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
+    .drafts-head h2 { font-size:.72rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; }
+    .drafts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); }
+    .draft-card { background:#070707; padding:1.25rem; cursor:pointer; transition:background .2s; }
+    .draft-card:hover { background:#0e0e0e; }
+    .draft-card .dc-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; }
+    .draft-card .dc-no { font-family:var(--font-cond); font-size:.95rem; font-weight:700; letter-spacing:.05em; color:var(--accent); }
+    .draft-card .dc-status { font-size:.55rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; padding:.2rem .5rem; border:1px solid; }
+    .draft-card .dc-status.draft { color:var(--warn); border-color:rgba(232,195,58,0.4); }
+    .draft-card .dc-status.approved { color:var(--ok); border-color:rgba(58,209,122,0.4); }
+    .draft-card .dc-cust { font-size:.85rem; font-weight:600; margin-bottom:.25rem; }
+    .draft-card .dc-addr { font-size:.7rem; color:var(--gray); line-height:1.4; margin-bottom:.5rem; }
+    .draft-card .dc-date { font-size:.6rem; color:var(--gray-dark); letter-spacing:.06em; text-transform:uppercase; }
+    .draft-card .dc-del { float:right; font-size:.6rem; color:var(--gray-dark); background:none; border:none; cursor:pointer; letter-spacing:.1em; text-transform:uppercase; }
+    .draft-card .dc-del:hover { color:var(--err); }
+    .drafts-empty { font-size:.78rem; color:var(--gray); padding:2rem; text-align:center; border:1px dashed var(--border); }
+
+    /* ── INFO STRIP ── */
+    .info-strip { max-width:1600px; margin:3rem auto 0; padding:0 3rem; }
+    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1px solid var(--border); }
+    .info-card { background:#070707; padding:1.75rem 1.5rem; }
+    .info-card .ic-num { font-family:var(--font-cond); font-size:1.8rem; font-weight:700; color:rgba(255,255,255,0.1); margin-bottom:.5rem; }
+    .info-card h4 { font-size:.72rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; margin-bottom:.6rem; }
+    .info-card p { font-size:.78rem; color:rgba(255,255,255,0.62); line-height:1.65; }
+    .info-card a { color:var(--accent); text-decoration:none; }
+    .info-card a:hover { text-decoration:underline; }
+
+    .disclaimer { max-width:1600px; margin:2.5rem auto 0; padding:1.5rem 3rem; }
+    .disclaimer-inner { border:1px solid rgba(232,195,58,0.25); background:rgba(232,195,58,0.04); padding:1.25rem 1.5rem; font-size:.72rem; line-height:1.7; color:rgba(255,255,255,0.7); }
+    .disclaimer-inner strong { color:var(--accent); font-weight:700; letter-spacing:.08em; }
+
+    footer { background:var(--black); border-top:1px solid var(--border); padding:3rem; margin-top:4rem; }
+    .footer-inner { max-width:1600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap; }
+    .footer-copy { font-size:.68rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--gray-dark); line-height:2; }
+    .footer-links { display:flex; gap:2rem; flex-wrap:wrap; }
+    .footer-links a { font-size:.68rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--gray); text-decoration:none; }
+    .footer-links a:hover { color:var(--white); }
+
+    /* ── TOAST ── */
+    .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(120%); z-index:4000; background:#111; border:1px solid var(--accent); color:#fff; padding:.9rem 1.4rem; font-size:.78rem; letter-spacing:.04em; box-shadow:0 10px 40px rgba(0,0,0,0.6); transition:transform .35s cubic-bezier(.4,0,.2,1); display:flex; align-items:center; gap:.6rem; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast .t-dot { width:8px; height:8px; border-radius:50%; background:var(--ok); }
+
+    /* ── MOBILE ── */
+    @media(max-width:1050px){
+      .portal-main { grid-template-columns:1fr; }
+      .info-grid { grid-template-columns:1fr; }
+    }
+    @media(max-width:900px){
+      nav{padding:0 1.5rem} .nav-links,.nav-phone{display:none} .nav-hamburger{display:flex}
+      .portal-hero,.steps,.portal-main,.drafts,.info-strip,.disclaimer{padding-left:1.5rem;padding-right:1.5rem}
+      .approve-bar{margin-left:1.5rem;margin-right:1.5rem}
+      footer{padding:2rem 1.5rem} .footer-inner{flex-direction:column;align-items:flex-start}
+      .field-row{grid-template-columns:1fr} .checks{grid-template-columns:1fr}
+      .cert-grid{grid-template-columns:1fr}
+    }
+
+    /* ── PRINT ── */
+    @media print {
+      body * { visibility:hidden !important; }
+      #certificate, #certificate * { visibility:visible !important; }
+      #certificate { position:absolute; left:0; top:0; width:100%; padding:1.5rem; }
+      @page { margin:14mm; }
+    }
+
+    /* ── MOBILE MENU OVERLAY ── */
+    .mob-overlay { position:fixed; inset:0; z-index:3000; background:#000; transform:translateX(100%); transition:transform .32s cubic-bezier(.4,0,.2,1); display:flex; flex-direction:column; overflow-y:auto; }
+    .mob-overlay.is-open { transform:translateX(0); }
+    .mob-header { display:flex; align-items:center; justify-content:space-between; padding:0 1.5rem; height:64px; flex-shrink:0; border-bottom:1px solid #1a1a1a; }
+    .mob-logo { font-size:.9rem; font-weight:800; letter-spacing:.3em; text-transform:uppercase; color:#fff; text-decoration:none; }
+    .mob-logo span { font-weight:400; color:#666; }
+    .mob-close { width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:none; border:1px solid #222; cursor:pointer; color:#fff; }
+    .mob-close svg { width:16px; height:16px; }
+    .mob-nav { flex:1; padding:.5rem 0; }
+    .mob-nav-item { border-bottom:1px solid #111; }
+    .mob-nav-row { display:flex; align-items:center; min-height:56px; padding:0 1.5rem; text-decoration:none; }
+    .mob-nav-row span { font-size:.72rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#fff; }
+    .mob-footer { padding:2rem 1.5rem; border-top:1px solid #1a1a1a; }
+    .mob-phone { display:block; font-size:1.6rem; font-weight:800; color:#fff; text-decoration:none; margin-bottom:1.25rem; }
+    .nav-hamburger.is-open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+    .nav-hamburger.is-open span:nth-child(2){opacity:0}
+    .nav-hamburger.is-open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+  </style>
+</head>
+<body>
+
+<!-- ══ MOBILE MENU ══ -->
+<div class="mob-overlay" id="mobOverlay" role="dialog" aria-label="Navigation">
+  <div class="mob-header">
+    <a href="../index.html" class="mob-logo">WEILEY<span>&nbsp;ELECTRICAL</span></a>
+    <button class="mob-close" id="mobClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <nav class="mob-nav">
+    <div class="mob-nav-item"><a href="ecert-portal.html" class="mob-nav-row"><span style="color:var(--accent)">eCert Portal</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#compliance" class="mob-nav-row"><span>Compliance</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#industrial" class="mob-nav-row"><span>Industrial</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#commercial" class="mob-nav-row"><span>Commercial</span></a></div>
+    <div class="mob-nav-item"><a href="../hire.html" class="mob-nav-row"><span>Hire</span></a></div>
+    <div class="mob-nav-item"><a href="../index.html#contact" class="mob-nav-row"><span>Contact</span></a></div>
+  </nav>
+  <div class="mob-footer">
+    <a href="tel:0268849292" class="mob-phone">02 6884 9292</a>
+  </div>
+</div>
+
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">WEILEY<span>&nbsp;ELECTRICAL</span></a>
+    <ul class="nav-links">
+      <li class="nav-item"><a href="ecert-portal.html" class="nav-link active">eCert Portal</a></li>
+      <li class="nav-item"><a href="../index.html#compliance" class="nav-link">Compliance</a></li>
+      <li class="nav-item"><a href="../index.html#industrial" class="nav-link">Industrial</a></li>
+      <li class="nav-item"><a href="../index.html#commercial" class="nav-link">Commercial</a></li>
+      <li class="nav-item"><a href="../hire.html" class="nav-link">Hire</a></li>
+      <li class="nav-item"><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="tel:0268849292" class="nav-phone">02 6884 9292</a>
+    </div>
+    <button class="nav-hamburger" id="menuBtn" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<header class="portal-hero">
+  <div class="portal-breadcrumb"><a href="../index.html">Home</a> &nbsp;/&nbsp; <a href="../index.html#compliance">Compliance</a> &nbsp;/&nbsp; eCert Portal</div>
+  <div class="portal-tag"><span class="dot"></span> AI Certificate Builder · Internal Tool</div>
+  <h1 class="portal-headline">Describe the job.<br>Prep the eCert lodgement.</h1>
+  <p class="portal-intro">Type what you did in plain English — who it was for, where, and the work performed. The portal turns it into a structured CCEW worksheet you review and approve, then lodge officially in the <strong style="color:#fff;font-weight:600">NSW eCert Portal</strong>. This tool prepares the details — the official certificate is always issued through NSW eCert, never here.</p>
+</header>
+
+<!-- ══ STEPS ══ -->
+<div class="steps" id="steps">
+  <div class="step active" data-step="1"><div class="step-num">1</div><div class="step-label">Describe</div></div>
+  <div class="step" data-step="2"><div class="step-num">2</div><div class="step-label">Review &amp; Edit</div></div>
+  <div class="step" data-step="3"><div class="step-num">3</div><div class="step-label">Approve</div></div>
+  <div class="step" data-step="4"><div class="step-num">4</div><div class="step-label">Lodge via eCert</div></div>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="portal-main">
+
+  <!-- LEFT: input + form -->
+  <div>
+    <!-- NL input -->
+    <section class="panel" id="inputPanel">
+      <div class="panel-head">
+        <h2>1 · Describe the job</h2>
+        <span class="sub">Plain English</span>
+      </div>
+      <div class="panel-body">
+        <div class="nl-wrap">
+          <textarea id="nlInput" class="nl-input" placeholder="e.g. Did a switchboard upgrade for John Smith at 14 Wheelers Lane, Dubbo NSW 2830 today. Replaced the old ceramic fuse board with a new switchboard, installed 4 RCBOs and a main switch. New installation work, connected to the network. Tested earth continuity, insulation resistance, polarity and RCD operation — all passed. Work done by Mick Weiley, licence 123456C."></textarea>
+        </div>
+        <div class="nl-actions">
+          <button class="btn accent" id="generateBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6l2.1 2.1m0-12.8l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+          Generate certificate</button>
+          <button class="btn ghost sm" id="clearBtn">Clear</button>
+        </div>
+
+        <div class="examples">
+          <button class="example-chip" data-ex="1"><b>Example · Switchboard upgrade</b>Switchboard upgrade for John Smith at 14 Wheelers Lane Dubbo NSW 2830 today. Replaced ceramic fuses with new board, 4 RCBOs and main switch. New installation, connected to network. Tested earth continuity, insulation resistance, polarity and RCD — all passed. Done by Mick Weiley licence 123456C.</button>
+          <button class="example-chip" data-ex="2"><b>Example · Power point addition</b>Added two double power points and a new 20A circuit in the garage for Sarah Nguyen at 8 Cobra Street, Dubbo 2830 on 25/06/2026. Alteration and addition to existing installation. Visual inspection, polarity and insulation resistance tested OK. Electrician Dave Toomey, lic 778812C.</button>
+          <button class="example-chip" data-ex="3"><b>Example · Hot water repair</b>Replaced faulty hot water system circuit and isolator for Wellington Motel at 122 Maughan Street Wellington NSW 2820 yesterday. Repair work. Earth continuity and insulation resistance passed. Carried out by Mick Weiley 123456C.</button>
+        </div>
+
+        <p class="nl-hint"><strong>Tip:</strong> include the customer name, the site address with postcode, what you did, the work type (new / alteration / addition / repair), the test results, and who did the work. Anything missing you can fill in below — nothing is lodged until you approve it.</p>
+      </div>
+    </section>
+
+    <!-- Editable form -->
+    <section class="panel" id="formPanel" style="margin-top:2rem;">
+      <div class="panel-head">
+        <h2>2 · Review &amp; edit details</h2>
+        <span class="sub" id="formSub">Awaiting input</span>
+      </div>
+      <div class="panel-body" id="formBody">
+        <div class="form-empty" id="formEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <p>Generate a certificate above and the extracted details will appear here for you to check and correct.</p>
+        </div>
+        <!-- form injected by JS -->
+        <div id="formFields" style="display:none;"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- RIGHT: certificate preview -->
+  <div>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Live certificate preview</h2>
+        <span class="sub" id="previewStatus">Draft</span>
+      </div>
+      <div class="panel-body" style="padding:1rem; background:#161616;">
+        <div class="preview-empty" id="previewEmpty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+          <p>Your certificate will render here as you describe the job.</p>
+        </div>
+        <div id="certificate" class="certificate cert-scroll" style="display:none;"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ══ APPROVE BAR ══ -->
+<div class="approve-bar" id="approveBar" style="display:none;">
+  <div class="approve-inner">
+    <div class="approve-status">
+      <span class="status-pill draft" id="statusPill">● Draft — not yet approved</span>
+      <span class="approve-text" id="approveText">Check every field is correct. You are the licensed person responsible for this certificate.</span>
+    </div>
+    <div class="approve-actions">
+      <button class="btn ghost sm" id="printBtn">Print / PDF copy</button>
+      <button class="btn solid sm" id="copyBtn">Copy details for eCert</button>
+      <button class="btn accent" id="approveBtn">Approve &amp; save</button>
+      <a class="btn sm" href="https://www.nsw.gov.au/housing-and-construction/compliance-and-regulation/ecert-portal" target="_blank" rel="noopener" id="lodgeBtn" style="border-color:var(--accent);color:var(--accent);">Open NSW eCert Portal ↗</a>
+    </div>
+  </div>
+  <div style="padding:0 1.5rem 1.5rem;">
+    <div class="review-checklist" id="reviewChecklist"></div>
+  </div>
+</div>
+
+<!-- ══ SAVED DRAFTS ══ -->
+<section class="drafts">
+  <div class="drafts-head">
+    <h2>Saved certificates</h2>
+    <button class="btn ghost sm" id="clearAllBtn">Clear all</button>
+  </div>
+  <div id="draftsContainer"></div>
+</section>
+
+<!-- ══ INFO ══ -->
+<section class="info-strip">
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="ic-num">01</div>
+      <h4>What this builds</h4>
+      <p>A structured <strong style="color:#fff;font-weight:600">CCEW lodgement worksheet</strong> from your plain-English description — capturing customer, site, work performed and testing — ready to enter into the official portal. It does not issue or replace the official certificate.</p>
+    </div>
+    <div class="info-card">
+      <div class="ic-num">02</div>
+      <h4>You stay in control</h4>
+      <p>Nothing is final until you approve. Every field is editable, and the certificate is marked <strong style="color:#fff;font-weight:600">DRAFT</strong> until you sign off as the licensed person responsible for the work.</p>
+    </div>
+    <div class="info-card">
+      <div class="ic-num">03</div>
+      <h4>Lodging officially</h4>
+      <p>After approval, print to PDF or use "Copy for NSW portal" to paste the details into the official <a href="https://www.nsw.gov.au/housing-and-construction/compliance-and-regulation/ecert-portal" target="_blank" rel="noopener">NSW eCert Portal ↗</a> for lodgement.</p>
+    </div>
+  </div>
+</section>
+
+<div class="disclaimer">
+  <div class="disclaimer-inner">
+    <strong>IMPORTANT —</strong> This tool produces a <strong>draft only</strong> to speed up your paperwork. It does not lodge anything with NSW Fair Trading and is not a substitute for the official eCert Portal. The licensed electrical worker / qualified supervisor named on the certificate is solely responsible for verifying every detail, confirming the work complies with AS/NZS 3000 and all relevant standards, and lodging the official certificate. Always check the generated content carefully before approving.
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-copy">
+      <p>© 2026 Weiley Electrical — Unit 9B, 55 Wheelers Lane, Dubbo NSW 2830</p>
+      <p>Licensed Electrical Contractor — Serving Central West NSW since 1986</p>
+    </div>
+    <div class="footer-links">
+      <a href="../index.html#compliance">Compliance</a>
+      <a href="ecert-portal.html">eCert Portal</a>
+      <a href="https://www.nsw.gov.au/housing-and-construction/compliance-and-regulation/ecert-portal" target="_blank" rel="noopener">NSW eCert ↗</a>
+      <a href="../index.html#contact">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"><span class="t-dot"></span><span id="toastMsg">Saved</span></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   Weiley Electrical — eCert NLP Portal
+   Self-contained: NL parser + CCEW model + preview + approve + store
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ── Contractor defaults (edit to your real details) ── */
+  var CONTRACTOR = {
+    business: 'Weiley Electrical',
+    abn: '',
+    licence: '',              // electrical contractor licence no.
+    address: 'Unit 9B, 55 Wheelers Lane, Dubbo NSW 2830',
+    phone: '02 6884 9292',
+    email: ''
+  };
+
+  var STORE_KEY = 'weiley_ecert_drafts_v1';
+
+  /* ── State ── */
+  var current = null;       // current certificate object
+  var aiFields = {};        // which fields were auto-extracted (for highlight)
+
+  /* ════════════════ NATURAL LANGUAGE PARSER ════════════════ */
+
+  var MONTHS = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+
+  function pad(n){ return n<10 ? '0'+n : ''+n; }
+  function fmtDate(d){ return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear(); }
+
+  function parseDate(text){
+    var lower = text.toLowerCase();
+    var now = new Date();
+    if(/\btoday\b/.test(lower)) return fmtDate(now);
+    if(/\byesterday\b/.test(lower)){ var y=new Date(now); y.setDate(y.getDate()-1); return fmtDate(y); }
+    // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YY
+    var m = text.match(/\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/);
+    if(m){
+      var yr = m[3].length===2 ? '20'+m[3] : m[3];
+      return pad(+m[1])+'/'+pad(+m[2])+'/'+yr;
+    }
+    // "25 June 2026" / "25th of June" / "June 25 2026"
+    var m2 = lower.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([a-z]{3,9})\.?(?:\s+(\d{4}))?\b/);
+    if(m2 && MONTHS[m2[2].slice(0,3)]!==undefined){
+      var yr2 = m2[3] || now.getFullYear();
+      return pad(+m2[1])+'/'+pad(MONTHS[m2[2].slice(0,3)]+1)+'/'+yr2;
+    }
+    var m3 = lower.match(/\b([a-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b/);
+    if(m3 && MONTHS[m3[1].slice(0,3)]!==undefined){
+      var yr3 = m3[3] || now.getFullYear();
+      return pad(+m3[2])+'/'+pad(MONTHS[m3[1].slice(0,3)]+1)+'/'+yr3;
+    }
+    return '';
+  }
+
+  function parseAddress(text){
+    // Look for "<number> <street words>, <suburb> NSW <postcode>" patterns
+    var re = /(\d{1,5}[a-zA-Z]?(?:[-\/]\d{1,5}[a-zA-Z]?)?\s+[A-Z][A-Za-z'’.]*(?:\s+[A-Z][A-Za-z'’.]*){0,4}\s+(?:St|Street|Rd|Road|Ave|Avenue|Ln|Lane|Dr|Drive|Cres|Crescent|Cl|Close|Pl|Place|Ct|Court|Way|Hwy|Highway|Pde|Parade|Tce|Terrace|Blvd|Boulevard|Cct|Circuit)\b\.?(?:[,\s]+[A-Z][A-Za-z'’]+)*(?:[,\s]+(?:NSW|New South Wales))?(?:\s+\d{4})?)/;
+    var m = text.match(re);
+    if(m) return m[1].replace(/\s+/g,' ').replace(/\s,/g,',').trim();
+    // Fallback: "at <something> NSW 2830"
+    var m2 = text.match(/\bat\s+(.{6,80}?\b(?:NSW|New South Wales)\s+\d{4})/i);
+    if(m2) return m2[1].replace(/\s+/g,' ').trim();
+    // Fallback: anything ending in a 4-digit postcode
+    var m3 = text.match(/\bat\s+([0-9].{5,70}?\d{4})\b/i);
+    if(m3) return m3[1].replace(/\s+/g,' ').trim();
+    return '';
+  }
+
+  function parsePostcode(addr, text){
+    var m = (addr+' '+text).match(/\b(2\d{3}|[0-9]{4})\b/);
+    return m ? m[1] : '';
+  }
+
+  function titleCaseName(s){
+    return s.replace(/\s+/g,' ').trim().split(' ').map(function(w){
+      if(!w) return w;
+      return w.charAt(0).toUpperCase()+w.slice(1);
+    }).join(' ');
+  }
+
+  function parseCustomer(text){
+    // "for John Smith at" / "customer is John Smith" / "owner John Smith" / "client ..."
+    var patterns = [
+      /\b(?:for|customer(?:\s+is)?|client(?:\s+is)?|owner(?:\s+is)?|on behalf of)\s+((?:[A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,3})|(?:[A-Z][A-Za-z'’\-]+\s+(?:Motel|Hotel|Pty|Ltd|Council|Motors|Cafe|Caf[eé]|Bakery|Hospital|School|Club|Centre|Center|Farm|Station|Services|Group|Holdings)))/
+    ];
+    for(var i=0;i<patterns.length;i++){
+      var m = text.match(patterns[i]);
+      if(m){
+        var name = m[1].trim();
+        // stop at common boundary words accidentally captured
+        name = name.replace(/\s+(at|on|today|yesterday|in|for|of)$/i,'').trim();
+        return titleCaseName(name);
+      }
+    }
+    return '';
+  }
+
+  function parseWorker(text){
+    // "by Mick Weiley licence 123456C" / "electrician Dave Toomey" / "carried out by ..."
+    var m = text.match(/\b(?:by|electrician|carried out by|done by|completed by|performed by|sparky)\s+([A-Z][A-Za-z'’\-]+(?:\s+[A-Z][A-Za-z'’\-]+){0,2})/);
+    if(m){
+      var name = m[1].replace(/\s+(licence|license|lic|on|at|today|yesterday)$/i,'').trim();
+      return titleCaseName(name);
+    }
+    return '';
+  }
+
+  function parseLicence(text){
+    // NSW electrical licence: digits + optional letter, e.g. 123456C; or "licence 123456"
+    var m = text.match(/\b(?:licen[cs]e|lic|lic\.?|cert(?:ificate)?(?:\s+no)?)\.?\s*#?\s*([0-9]{4,8}[A-Za-z]?)\b/i);
+    if(m) return m[1].toUpperCase();
+    var m2 = text.match(/\b(\d{5,7}[A-Za-z])\b/); // bare licence-looking token
+    if(m2) return m2[1].toUpperCase();
+    return '';
+  }
+
+  function parseWorkType(text){
+    var l = text.toLowerCase();
+    var types = [];
+    if(/\b(new install|new installation|new build|brand new|new switchboard|new circuit|new sub-?board)\b/.test(l) || /\binstall(ed|ing|ation)?\b/.test(l)) types.push('New installation');
+    if(/\b(alter|alteration|modif|upgrade|rewir|reconfigur|relocat)\w*/.test(l)) types.push('Alteration');
+    if(/\b(add|addition|additional|extra|extend)\w*/.test(l)) types.push('Addition');
+    if(/\b(repair|fix|fault|replace|rectif)\w*/.test(l)) types.push('Repair');
+    if(/\b(maintenance|service|servic(ed|ing)|test and tag|test & tag)\b/.test(l)) types.push('Maintenance');
+    // de-dup keeping order
+    return types.filter(function(v,i){ return types.indexOf(v)===i; });
+  }
+
+  function parseConnected(text){
+    var l = text.toLowerCase();
+    if(/\b(connected to (the )?network|network connect|new connection|connected to supply|live connection|energis|energiz)\w*/.test(l)) return 'yes';
+    if(/\b(not connected|no connection|de-?energis|isolated only)\b/.test(l)) return 'no';
+    return '';
+  }
+
+  var TEST_DEFS = [
+    {key:'visual',  label:'Visual inspection', re:/\bvisual(\s+inspection)?\b/i},
+    {key:'earth',   label:'Earth continuity',  re:/\b(earth(\s+continuity)?|continuity of earth|earthing)\b/i},
+    {key:'insul',   label:'Insulation resistance', re:/\b(insulation(\s+resistance)?|megger|ir test)\b/i},
+    {key:'polarity',label:'Polarity',          re:/\bpolarity\b/i},
+    {key:'rcd',     label:'RCD operation',      re:/\b(rcd|residual current|safety switch)\b/i},
+    {key:'fault',   label:'Fault loop impedance', re:/\b(fault loop|loop impedance|zs test)\b/i},
+    {key:'load',    label:'Correct circuit connections / load', re:/\b(load test|circuit connection|correct connection)\b/i}
+  ];
+
+  function parseTests(text){
+    var out = {};
+    TEST_DEFS.forEach(function(t){ out[t.key] = t.re.test(text); });
+    // If they mention "tested ... all passed" but no specifics, tick the core four
+    if(!Object.keys(out).some(function(k){return out[k];}) && /\btest(ed|ing|s)?\b/i.test(text)){
+      out.visual=true; out.earth=true; out.insul=true; out.polarity=true;
+    }
+    return out;
+  }
+
+  function parseDescription(text){
+    // Use the bulk of the sentence as the work description; trim leading boilerplate
+    var desc = text.replace(/\s+/g,' ').trim();
+    return desc;
+  }
+
+  function extract(text){
+    var addr = parseAddress(text);
+    var work = parseWorkType(text);
+    var cert = {
+      certNo: nextCertNo(),
+      dateCompleted: parseDate(text),
+      customer: parseCustomer(text),
+      siteAddress: addr,
+      postcode: parsePostcode(addr, text),
+      workDesc: parseDescription(text),
+      workTypes: work,
+      connected: parseConnected(text),
+      worker: parseWorker(text) || '',
+      workerLicence: parseLicence(text),
+      tests: parseTests(text),
+      standard: /\b3000\b|wiring rules/i.test(text) ? 'AS/NZS 3000' : 'AS/NZS 3000',
+      result: /\b(fail|failed|not compliant|defect)\b/i.test(text) && !/\ball (passed|ok|good)\b/i.test(text) ? 'See notes' : 'Pass / Compliant',
+      // contractor defaults
+      business: CONTRACTOR.business,
+      contractorLicence: CONTRACTOR.licence,
+      contractorAddress: CONTRACTOR.address,
+      contractorPhone: CONTRACTOR.phone,
+      abn: CONTRACTOR.abn,
+      notes: '',
+      status: 'draft',
+      created: fmtDate(new Date()),
+      raw: text
+    };
+    // Track which fields were auto-filled (non-empty) for highlighting
+    aiFields = {};
+    ['dateCompleted','customer','siteAddress','postcode','worker','workerLicence','connected'].forEach(function(k){
+      if(cert[k]) aiFields[k]=true;
+    });
+    if(work.length) aiFields.workTypes=true;
+    return cert;
+  }
+
+  /* ════════════════ CERT NUMBER ════════════════ */
+  function nextCertNo(){
+    var drafts = loadDrafts();
+    var year = new Date().getFullYear();
+    var seq = drafts.filter(function(d){ return (d.certNo||'').indexOf('WE-'+year)===0; }).length + 1;
+    return 'WE-'+year+'-'+pad(seq<10?seq:seq);
+  }
+
+  /* ════════════════ RENDER FORM ════════════════ */
+  var WORK_TYPE_OPTS = ['New installation','Alteration','Addition','Repair','Maintenance'];
+
+  function el(id){ return document.getElementById(id); }
+
+  function buildForm(c){
+    var f = el('formFields');
+    function fieldClass(k){ return aiFields[k] ? 'field filled' : 'field'; }
+    function aiTag(k){ return aiFields[k] ? '<span class="ai-flag">· auto</span>' : ''; }
+
+    var wtChecks = WORK_TYPE_OPTS.map(function(opt){
+      var on = c.workTypes.indexOf(opt)>=0;
+      return '<label class="check"><input type="checkbox" data-wt="'+opt+'" '+(on?'checked':'')+'> '+opt+'</label>';
+    }).join('');
+
+    var testChecks = TEST_DEFS.map(function(t){
+      var on = !!c.tests[t.key];
+      return '<label class="check"><input type="checkbox" data-test="'+t.key+'" '+(on?'checked':'')+'> '+t.label+'</label>';
+    }).join('');
+
+    f.innerHTML =
+      '<div class="group-title">Job &amp; customer</div>'+
+      '<div class="field-row">'+
+        '<div class="'+fieldClass('customer')+'"><label>Customer / owner '+aiTag('customer')+'</label><input id="f_customer" value="'+esc(c.customer)+'" placeholder="e.g. John Smith"></div>'+
+        '<div class="'+fieldClass('dateCompleted')+'"><label>Date work completed '+aiTag('dateCompleted')+'</label><input id="f_date" value="'+esc(c.dateCompleted)+'" placeholder="DD/MM/YYYY"></div>'+
+      '</div>'+
+      '<div class="'+fieldClass('siteAddress')+'"><label>Site address (where work performed) '+aiTag('siteAddress')+'</label><input id="f_address" value="'+esc(c.siteAddress)+'" placeholder="e.g. 14 Wheelers Lane, Dubbo NSW 2830"></div>'+
+      '<div class="field"><label>Description of electrical work</label><textarea id="f_desc" placeholder="What was carried out...">'+esc(c.workDesc)+'</textarea></div>'+
+
+      '<div class="group-title">Nature of work '+aiTag('workTypes')+'</div>'+
+      '<div class="checks">'+wtChecks+'</div>'+
+      '<div class="field" style="margin-top:1.1rem;"><label>Connected to the distribution network?</label><select id="f_connected">'+
+        '<option value="" '+(c.connected===''?'selected':'')+'>— select —</option>'+
+        '<option value="yes" '+(c.connected==='yes'?'selected':'')+'>Yes — connected / energised</option>'+
+        '<option value="no" '+(c.connected==='no'?'selected':'')+'>No</option>'+
+        '<option value="na" '+(c.connected==='na'?'selected':'')+'>Not applicable</option>'+
+      '</select></div>'+
+
+      '<div class="group-title">Testing &amp; compliance</div>'+
+      '<div class="checks">'+testChecks+'</div>'+
+      '<div class="field-row" style="margin-top:1.1rem;">'+
+        '<div class="field"><label>Standard</label><input id="f_standard" value="'+esc(c.standard)+'"></div>'+
+        '<div class="field"><label>Overall result</label><select id="f_result">'+
+          '<option '+(c.result==='Pass / Compliant'?'selected':'')+'>Pass / Compliant</option>'+
+          '<option '+(c.result==='See notes'?'selected':'')+'>See notes</option>'+
+        '</select></div>'+
+      '</div>'+
+      '<div class="field"><label>Notes / defects (optional)</label><textarea id="f_notes" placeholder="Any defects, follow-up or notes...">'+esc(c.notes)+'</textarea></div>'+
+
+      '<div class="group-title">Licensed person responsible</div>'+
+      '<div class="field-row">'+
+        '<div class="'+fieldClass('worker')+'"><label>Name '+aiTag('worker')+'</label><input id="f_worker" value="'+esc(c.worker)+'" placeholder="Electrician / qualified supervisor"></div>'+
+        '<div class="'+fieldClass('workerLicence')+'"><label>Licence / certificate no. '+aiTag('workerLicence')+'</label><input id="f_workerLic" value="'+esc(c.workerLicence)+'" placeholder="e.g. 123456C"></div>'+
+      '</div>'+
+
+      '<div class="group-title">Electrical contractor</div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label>Business</label><input id="f_business" value="'+esc(c.business)+'"></div>'+
+        '<div class="field"><label>Contractor licence no.</label><input id="f_contractorLic" value="'+esc(c.contractorLicence)+'" placeholder="Contractor licence"></div>'+
+      '</div>'+
+      '<div class="field-row">'+
+        '<div class="field"><label>ABN (optional)</label><input id="f_abn" value="'+esc(c.abn)+'"></div>'+
+        '<div class="field"><label>Phone</label><input id="f_phone" value="'+esc(c.contractorPhone)+'"></div>'+
+      '</div>';
+
+    // wire inputs → state
+    f.querySelectorAll('input,select,textarea').forEach(function(inp){
+      inp.addEventListener('input', syncFromForm);
+      inp.addEventListener('change', syncFromForm);
+    });
+    el('formEmpty').style.display='none';
+    f.style.display='block';
+    el('formSub').textContent = 'Editable · '+c.certNo;
+  }
+
+  function syncFromForm(){
+    if(!current) return;
+    current.customer = el('f_customer').value;
+    current.dateCompleted = el('f_date').value;
+    current.siteAddress = el('f_address').value;
+    current.postcode = parsePostcode(current.siteAddress,'') || current.postcode;
+    current.workDesc = el('f_desc').value;
+    current.connected = el('f_connected').value;
+    current.standard = el('f_standard').value;
+    current.result = el('f_result').value;
+    current.notes = el('f_notes').value;
+    current.worker = el('f_worker').value;
+    current.workerLicence = el('f_workerLic').value;
+    current.business = el('f_business').value;
+    current.contractorLicence = el('f_contractorLic').value;
+    current.abn = el('f_abn').value;
+    current.contractorPhone = el('f_phone').value;
+    var wt = [];
+    document.querySelectorAll('[data-wt]').forEach(function(c2){ if(c2.checked) wt.push(c2.getAttribute('data-wt')); });
+    current.workTypes = wt;
+    document.querySelectorAll('[data-test]').forEach(function(c2){ current.tests[c2.getAttribute('data-test')] = c2.checked; });
+    renderCertificate(current);
+    renderChecklist(current);
+  }
+
+  /* ════════════════ RENDER CERTIFICATE ════════════════ */
+  function row(k,v){
+    var empty = !v || !(''+v).trim();
+    return '<div class="cert-row"><div class="k">'+k+'</div><div class="v'+(empty?' empty':'')+'">'+(empty?'—':esc(v))+'</div></div>';
+  }
+  function fullRow(k,v){
+    var empty = !v || !(''+v).trim();
+    return '<div class="cert-full"><div class="k">'+k+'</div><div class="v'+(empty?' empty':'')+'">'+(empty?'—':esc(v))+'</div></div>';
+  }
+
+  function renderCertificate(c){
+    el('previewEmpty').style.display='none';
+    var cert = el('certificate');
+    cert.style.display='block';
+
+    var workTypeStr = c.workTypes.length ? c.workTypes.join(', ') : '';
+    var connStr = c.connected==='yes' ? 'Yes — connected / energised' : c.connected==='no' ? 'No' : c.connected==='na' ? 'Not applicable' : '';
+
+    var testHtml = TEST_DEFS.map(function(t){
+      var on = !!c.tests[t.key];
+      return '<span class="cert-test'+(on?'':' no')+'"><span class="tick">'+(on?'✓':'·')+'</span> '+t.label+'</span>';
+    }).join('');
+
+    var approved = c.status==='approved';
+    var watermark = approved
+      ? '<div class="cert-watermark" style="color:#1b7a43;border-color:#1b7a43;">Lodgement Worksheet — Approved · Lodge via NSW eCert Portal</div>'
+      : '<div class="cert-watermark">Draft Worksheet — Pending Approval</div>';
+
+    cert.innerHTML =
+      '<div class="cert-head">'+
+        '<div class="cert-brand">WEILEY <span>ELECTRICAL</span>'+
+          '<small>'+esc(c.contractorAddress||'')+'</small>'+
+          '<small>'+esc(c.contractorPhone||'')+(c.contractorLicence?' · Lic '+esc(c.contractorLicence):'')+(c.abn?' · ABN '+esc(c.abn):'')+'</small>'+
+        '</div>'+
+        '<div class="cert-meta">'+
+          '<div>Certificate No.<br><b>'+esc(c.certNo)+'</b></div>'+
+          '<div style="margin-top:.4rem">Issued<br><b>'+esc(c.created)+'</b></div>'+
+        '</div>'+
+      '</div>'+
+      watermark+
+      '<div class="cert-title"><h1>CCEW Lodgement Worksheet</h1><p>Prepared for entry into the NSW eCert Portal · Not an official certificate</p></div>'+
+
+      '<div class="cert-section"><h3>Customer &amp; installation</h3>'+
+        '<div class="cert-grid">'+
+          row('Customer / owner', c.customer)+
+          row('Date completed', c.dateCompleted)+
+        '</div>'+
+        fullRow('Site address (work performed at)', c.siteAddress)+
+      '</div>'+
+
+      '<div class="cert-section"><h3>Electrical work</h3>'+
+        fullRow('Description of work', c.workDesc)+
+        '<div class="cert-grid">'+
+          row('Nature of work', workTypeStr)+
+          row('Connected to network', connStr)+
+        '</div>'+
+      '</div>'+
+
+      '<div class="cert-section"><h3>Testing &amp; compliance</h3>'+
+        '<div class="cert-tests" style="margin-bottom:.6rem">'+testHtml+'</div>'+
+        '<div class="cert-grid">'+
+          row('Tested to', c.standard)+
+          row('Result', c.result)+
+        '</div>'+
+        (c.notes ? fullRow('Notes / defects', c.notes) : '')+
+      '</div>'+
+
+      '<div class="cert-declaration">I certify that the electrical installation work described above has been carried out and tested in accordance with the requirements of AS/NZS 3000 (Wiring Rules) and the Electricity Supply (Safety and Network Management) Regulation, and that the installation is electrically safe to connect / use to the extent of the work performed.</div>'+
+
+      '<div class="cert-sign">'+
+        '<div><div class="name">'+esc(c.worker||'—')+'</div><div class="line">Licensed worker / qualified supervisor'+(c.workerLicence?' · Lic '+esc(c.workerLicence):'')+'</div></div>'+
+        '<div><div class="name">'+(approved? esc(c.worker||'') : '&nbsp;')+'</div><div class="line">Signature &amp; date'+(approved?' · APPROVED '+esc(c.approvedAt||''):'')+'</div></div>'+
+      '</div>'+
+
+      '<div class="cert-foot">'+esc(c.business||'Weiley Electrical')+(c.contractorLicence?' · Electrical Contractor Licence '+esc(c.contractorLicence):'')+'. This is an internal preparation worksheet covering only the electrical work described above — <b>it is not a Certificate of Compliance Electrical Work</b>. The official CCEW must be lodged through the NSW eCert Portal by the licensed person responsible.</div>';
+
+    // status pill / preview status
+    el('previewStatus').textContent = approved ? 'Approved' : 'Draft';
+  }
+
+  /* ════════════════ REVIEW CHECKLIST ════════════════ */
+  function renderChecklist(c){
+    var items = [
+      {ok: !!c.customer, label:'Customer / owner named'},
+      {ok: !!c.siteAddress, label:'Site address present'},
+      {ok: !!c.dateCompleted, label:'Date of work set'},
+      {ok: !!c.workDesc && c.workDesc.length>8, label:'Work described'},
+      {ok: c.workTypes.length>0, label:'Nature of work selected'},
+      {ok: Object.keys(c.tests).some(function(k){return c.tests[k];}), label:'Testing recorded'},
+      {ok: !!c.worker, label:'Responsible person named'},
+      {ok: !!c.workerLicence, label:'Licence number present'}
+    ];
+    el('reviewChecklist').innerHTML = items.map(function(it){
+      return '<div class="rc-item '+(it.ok?'ok':'miss')+'"><span class="rc-dot"></span> '+(it.ok?'':'Missing: ')+it.label+'</div>';
+    }).join('');
+    var missing = items.filter(function(i){return !i.ok;}).length;
+    var btn = el('approveBtn');
+    if(c.status==='approved'){
+      el('statusPill').className='status-pill approved';
+      el('statusPill').textContent='● Approved';
+      el('approveText').textContent='Approved by '+(c.worker||'—')+' on '+(c.approvedAt||'')+'. You can re-open to edit if needed.';
+      btn.textContent='Re-open to edit';
+    } else {
+      el('statusPill').className='status-pill draft';
+      el('statusPill').textContent='● Draft — not yet approved';
+      el('approveText').innerHTML = missing>0
+        ? '<span style="color:var(--err)">'+missing+' field'+(missing>1?'s':'')+' still missing.</span> You can still approve, but check the certificate carefully.'
+        : 'All key fields present. Confirm everything is correct before approving — you are the licensed person responsible.';
+      btn.textContent='Approve & save';
+    }
+  }
+
+  /* ════════════════ STEPS ════════════════ */
+  function setStep(n){
+    document.querySelectorAll('.step').forEach(function(s){
+      var sn = +s.getAttribute('data-step');
+      s.classList.toggle('active', sn===n);
+      s.classList.toggle('done', sn<n);
+    });
+  }
+
+  /* ════════════════ STORAGE ════════════════ */
+  function loadDrafts(){
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); }
+    catch(e){ return []; }
+  }
+  function saveDrafts(arr){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+  function upsertDraft(c){
+    var arr = loadDrafts();
+    var i = arr.findIndex(function(d){ return d.certNo===c.certNo; });
+    if(i>=0) arr[i]=c; else arr.unshift(c);
+    saveDrafts(arr);
+    renderDrafts();
+  }
+  function deleteDraft(certNo){
+    var arr = loadDrafts().filter(function(d){ return d.certNo!==certNo; });
+    saveDrafts(arr);
+    renderDrafts();
+  }
+
+  function renderDrafts(){
+    var arr = loadDrafts();
+    var box = el('draftsContainer');
+    if(!arr.length){
+      box.innerHTML = '<div class="drafts-empty">No certificates yet. Generate and approve one above — it will be saved here on this device.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="drafts-grid">'+arr.map(function(d){
+      return '<div class="draft-card" data-open="'+esc(d.certNo)+'">'+
+        '<div class="dc-top"><span class="dc-no">'+esc(d.certNo)+'</span><span class="dc-status '+(d.status==='approved'?'approved':'draft')+'">'+(d.status==='approved'?'Approved':'Draft')+'</span></div>'+
+        '<div class="dc-cust">'+esc(d.customer||'— no customer —')+'</div>'+
+        '<div class="dc-addr">'+esc(d.siteAddress||'No address')+'</div>'+
+        '<div class="dc-date">'+esc(d.dateCompleted||d.created||'')+' <button class="dc-del" data-del="'+esc(d.certNo)+'">Delete</button></div>'+
+      '</div>';
+    }).join('')+'</div>';
+
+    box.querySelectorAll('[data-open]').forEach(function(card){
+      card.addEventListener('click', function(e){
+        if(e.target.hasAttribute('data-del')) return;
+        openDraft(card.getAttribute('data-open'));
+      });
+    });
+    box.querySelectorAll('[data-del]').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(confirm('Delete certificate '+b.getAttribute('data-del')+'?')) deleteDraft(b.getAttribute('data-del'));
+      });
+    });
+  }
+
+  function openDraft(certNo){
+    var d = loadDrafts().find(function(x){ return x.certNo===certNo; });
+    if(!d) return;
+    current = d;
+    aiFields = {}; // editing existing — no highlight
+    el('nlInput').value = d.raw || '';
+    buildForm(current);
+    renderCertificate(current);
+    renderChecklist(current);
+    el('approveBar').style.display='block';
+    setStep(current.status==='approved'?4:2);
+    window.scrollTo({top: el('formPanel').offsetTop-90, behavior:'smooth'});
+  }
+
+  /* ════════════════ ACTIONS ════════════════ */
+  function generate(){
+    var text = el('nlInput').value.trim();
+    if(!text){ toast('Describe the job first','warn'); el('nlInput').focus(); return; }
+    current = extract(text);
+    buildForm(current);
+    renderCertificate(current);
+    renderChecklist(current);
+    el('approveBar').style.display='block';
+    setStep(2);
+    window.scrollTo({top: el('formPanel').offsetTop-90, behavior:'smooth'});
+    toast('Draft generated — review the details');
+  }
+
+  function approve(){
+    if(!current) return;
+    if(current.status==='approved'){
+      // re-open to edit
+      current.status='draft';
+      renderCertificate(current);
+      renderChecklist(current);
+      upsertDraft(current);
+      setStep(2);
+      toast('Re-opened for editing');
+      return;
+    }
+    current.status='approved';
+    current.approvedAt = fmtDate(new Date());
+    renderCertificate(current);
+    renderChecklist(current);
+    upsertDraft(current);
+    setStep(4);
+    toast('Approved & saved — ready to print or lodge');
+    window.scrollTo({top: el('approveBar').offsetTop-90, behavior:'smooth'});
+  }
+
+  function printCert(){
+    if(!current){ toast('Nothing to print yet','warn'); return; }
+    window.print();
+  }
+
+  function copyForPortal(){
+    if(!current) return;
+    var c = current;
+    var L = [
+      'NSW eCert — Certificate of Compliance Electrical Work',
+      '====================================================',
+      'Certificate ref:   '+c.certNo,
+      'Date completed:    '+(c.dateCompleted||''),
+      '',
+      'CUSTOMER / OWNER:  '+(c.customer||''),
+      'SITE ADDRESS:      '+(c.siteAddress||''),
+      '',
+      'WORK DESCRIPTION:',
+      (c.workDesc||''),
+      '',
+      'Nature of work:    '+(c.workTypes.join(', ')||''),
+      'Connected to net:  '+(c.connected==='yes'?'Yes':c.connected==='no'?'No':c.connected==='na'?'N/A':''),
+      'Tested to:         '+(c.standard||''),
+      'Result:            '+(c.result||''),
+      'Tests performed:   '+TEST_DEFS.filter(function(t){return c.tests[t.key];}).map(function(t){return t.label;}).join(', '),
+      (c.notes?'Notes:             '+c.notes:''),
+      '',
+      'RESPONSIBLE PERSON:'+(c.worker||''),
+      'Licence / cert no.:'+(c.workerLicence||''),
+      'Contractor:        '+(c.business||''),
+      'Contractor licence:'+(c.contractorLicence||'')
+    ].filter(function(x){return x!==undefined;});
+    var txt = L.join('\n');
+    copyText(txt);
+  }
+
+  function copyText(txt){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){ toast('Copied — paste into the NSW eCert portal'); },
+        function(){ fallbackCopy(txt); });
+    } else fallbackCopy(txt);
+  }
+  function fallbackCopy(txt){
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Copied to clipboard'); } catch(e){ toast('Copy failed — select manually','warn'); }
+    document.body.removeChild(ta);
+  }
+
+  function esc(s){
+    return (''+(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var toastT;
+  function toast(msg, kind){
+    var t = el('toast'); el('toastMsg').textContent=msg;
+    t.querySelector('.t-dot').style.background = kind==='warn' ? 'var(--warn)' : 'var(--ok)';
+    t.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+  }
+
+  /* ════════════════ EXAMPLES ════════════════ */
+  var EXAMPLES = {
+    '1':'Switchboard upgrade for John Smith at 14 Wheelers Lane, Dubbo NSW 2830 today. Replaced the old ceramic fuse board with a new switchboard, installed 4 RCBOs and a main switch. New installation, connected to the network. Tested earth continuity, insulation resistance, polarity and RCD operation — all passed. Work done by Mick Weiley, licence 123456C.',
+    '2':'Added two double power points and a new 20A circuit in the garage for Sarah Nguyen at 8 Cobra Street, Dubbo NSW 2830 on 25/06/2026. Alteration and addition to the existing installation. Visual inspection, polarity and insulation resistance tested OK. Electrician Dave Toomey, lic 778812C.',
+    '3':'Replaced faulty hot water system circuit and isolator for Wellington Motel at 122 Maughan Street, Wellington NSW 2820 yesterday. Repair work. Earth continuity and insulation resistance passed. Carried out by Mick Weiley 123456C.'
+  };
+
+  /* ════════════════ INIT ════════════════ */
+  function init(){
+    el('generateBtn').addEventListener('click', generate);
+    el('clearBtn').addEventListener('click', function(){
+      el('nlInput').value=''; el('nlInput').focus();
+    });
+    el('approveBtn').addEventListener('click', approve);
+    el('printBtn').addEventListener('click', printCert);
+    el('copyBtn').addEventListener('click', copyForPortal);
+    el('clearAllBtn').addEventListener('click', function(){
+      if(confirm('Delete ALL saved certificates on this device?')){ saveDrafts([]); renderDrafts(); toast('All cleared'); }
+    });
+    document.querySelectorAll('.example-chip').forEach(function(ch){
+      ch.addEventListener('click', function(){
+        el('nlInput').value = EXAMPLES[ch.getAttribute('data-ex')];
+        el('nlInput').focus();
+        generate();
+      });
+    });
+    // Ctrl/Cmd+Enter to generate
+    el('nlInput').addEventListener('keydown', function(e){
+      if((e.ctrlKey||e.metaKey) && e.key==='Enter') generate();
+    });
+
+    // mobile menu
+    var ov=el('mobOverlay'), ob=el('menuBtn'), cb=el('mobClose');
+    if(ob) ob.addEventListener('click', function(){ ov.classList.add('is-open'); ob.classList.add('is-open'); document.body.style.overflow='hidden'; });
+    if(cb) cb.addEventListener('click', function(){ ov.classList.remove('is-open'); ob.classList.remove('is-open'); document.body.style.overflow=''; });
+
+    renderDrafts();
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
