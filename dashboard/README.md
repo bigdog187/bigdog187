@@ -47,6 +47,38 @@ to extend it — e.g. "add a chart widget", "add a tool for purchase orders",
 
 ---
 
+## Connect to your live AroFlo
+
+This app runs on **your** machine and talks to **your** AroFlo account with
+**your** API credentials — the credentials never leave your computer (they live
+in `.env`, which is gitignored). Steps:
+
+1. **Turn on the AroFlo API add-on.** In AroFlo go to **Site Administration →
+   Settings → General → AroFlo API**. (The API is a paid add-on on most plans —
+   if you don't see it, contact AroFlo support to enable it. Rate limit is
+   ~2,000 calls/day.)
+2. **Copy your credentials** from that screen into `.env`:
+   `AROFLO_CUID`, `AROFLO_ORG_ENCODED_KEY`, `AROFLO_USER_NAME`,
+   `AROFLO_U_ENCODED_KEY`, and set `AROFLO_ENABLED=true`.
+3. **Restart** (`npm run dev`) and click the **Claude / AroFlo** indicator in
+   the top-right → **Test AroFlo connection**. It makes one live call and shows
+   the result (or the exact error) without ever printing your secrets.
+4. Once it says **Connected**, the widgets and Claude answers use your real
+   data automatically — nothing else to change.
+
+> **One thing to confirm on the first live test:** AroFlo signs requests with
+> HMAC, and the exact signing recipe (string-to-sign + header names) is defined
+> in [AroFlo's API docs / Postman collection](https://apidocs.aroflo.com/). The
+> client (`server/aroflo.js` → `signRequest()`) implements AroFlo's documented
+> SHA512 model, but if the test returns an auth error, that one function is the
+> only thing to adjust — the **Test connection** button shows the raw status so
+> it's a quick fix. If you paste the exact fields from your AroFlo API screen (or
+> the Postman pre-request script), I can finalise the signing to match.
+
+There is **no way for me (or anyone else) to connect to your AroFlo remotely** —
+AroFlo auth is per-account and the keys stay with you. This local app is the
+connection.
+
 ## Going live (add real keys)
 
 Edit `.env`:

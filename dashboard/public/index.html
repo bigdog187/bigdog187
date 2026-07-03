@@ -16,11 +16,25 @@
       <button class="tab active" data-view="dashboard">Dashboard</button>
       <button class="tab" data-view="routines">Routines</button>
     </nav>
-    <div class="status" id="status">
+    <button class="status" id="status" title="View connections">
       <span class="dot" id="dot-claude"></span> Claude
       <span class="dot" id="dot-aroflo"></span> AroFlo
-    </div>
+    </button>
   </header>
+
+  <dialog id="conn-dialog">
+    <div class="conn">
+      <h3>Connections</h3>
+      <ul class="conn-list">
+        <li><span class="dot" id="cd-claude"></span> <strong>Claude</strong> — <span id="cd-claude-t">…</span></li>
+        <li><span class="dot" id="cd-aroflo"></span> <strong>AroFlo</strong> — <span id="cd-aroflo-t">…</span></li>
+      </ul>
+      <button id="btn-test-aroflo" class="btn">Test AroFlo connection</button>
+      <pre id="conn-result" hidden></pre>
+      <p class="conn-help">To go live: put your keys in <code>.env</code>, set <code>AROFLO_ENABLED=true</code> and <code>ANTHROPIC_API_KEY</code>, then restart. Keys come from AroFlo → Site Administration → Settings → General → AroFlo API. See the README's "Connect to your live AroFlo" section.</p>
+      <div class="dialog-actions"><button class="btn ghost" id="conn-close">Close</button></div>
+    </div>
+  </dialog>
 
   <main class="layout" id="dashboard-view">
     <!-- Dashboard -->

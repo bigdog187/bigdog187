@@ -9,43 +9,44 @@ import { loadMock } from './mock-data.js';
  *   - MOCK  (AROFLO_ENABLED=false): returns realistic sample data from
  *           data/mock/*.json so you can build & demo with no credentials.
  *   - LIVE  (AROFLO_ENABLED=true):  signs requests with HMAC and calls the
- *           real AroFlo API.
+ *           real AroFlo API (docs: https://apidocs.aroflo.com/).
  *
- * The HMAC signing below is a scaffold based on AroFlo's API auth model
- * (an org-level key + a user-level key, HMAC-SHA512). Confirm the exact
- * header/parameter names against your AroFlo API documentation
- * (Site Admin → API) and adjust `signRequest()` once — every endpoint
- * method flows through it, so it's a single place to get right.
+ * Known facts about the AroFlo API (from AroFlo's docs / help):
+ *   - REST; returns XML by default, JSON when requested. Rate limit 2000/day.
+ *   - Auth is HMAC (AroFlo documents SHA512). Keys come from AroFlo:
+ *     Site Administration → Settings → General → AroFlo API.
+ *   - Zones include: clientele (clients), tasks (jobs), quotes, invoices,
+ *     sites, timesheets, schedule.
+ *
+ * ⚠️ The exact string-to-sign and header names below are AroFlo's HMAC model
+ * but must be confirmed against AroFlo's official Postman collection
+ * (apidocs.aroflo.com → the pre-request script). This function is the ONE
+ * place to adjust — every endpoint flows through it. Use GET /api/aroflo/test
+ * to try a live call and read back the exact status/response while tuning.
  */
+
+const HMAC_ALGO = (process.env.AROFLO_HMAC_ALGO || 'sha512').toLowerCase();
 
 function signRequest(method, zone, params) {
   const { cuid, orgEncodedKey, userName, uEncodedKey } = config.aroflo;
   const afdate = new Date().toUTCString();
 
-  // String-to-sign: method + zone + sorted params + date. Adjust to match
-  // your AroFlo API spec exactly.
   const sortedParams = Object.keys(params)
     .sort()
     .map((k) => `${k}=${params[k]}`)
     .join('&');
   const stringToSign = [method.toUpperCase(), zone, sortedParams, afdate].join('\n');
 
-  const orgSig = crypto
-    .createHmac('sha512', orgEncodedKey)
-    .update(stringToSign)
-    .digest('base64');
-  const userSig = crypto
-    .createHmac('sha512', uEncodedKey)
-    .update(stringToSign)
-    .digest('base64');
+  const sign = (key) => crypto.createHmac(HMAC_ALGO, key || '').update(stringToSign).digest('base64');
 
   return {
     headers: {
       'afdate': afdate,
       'afkey': cuid,
-      'afsig': orgSig,
+      'afsig': sign(orgEncodedKey),
       'afusername': userName,
-      'afusersig': userSig,
+      'afusersig': sign(uEncodedKey),
+      'Accept': 'application/json',
       'Content-Type': 'application/x-www-form-urlencoded',
     },
   };
@@ -53,17 +54,59 @@ function signRequest(method, zone, params) {
 
 async function liveRequest(zone, params = {}) {
   const method = 'GET';
-  const { headers } = signRequest(method, zone, params);
-  const qs = new URLSearchParams(params).toString();
+  // Ask AroFlo for JSON (it defaults to XML).
+  const withFormat = { format: 'json', ...params };
+  const { headers } = signRequest(method, zone, withFormat);
+  const qs = new URLSearchParams(
+    Object.fromEntries(Object.entries(withFormat).filter(([, v]) => v != null && v !== '')),
+  ).toString();
   const url = `${config.aroflo.baseUrl}/${zone}${qs ? `?${qs}` : ''}`;
 
   const res = await fetch(url, { method, headers });
+  const text = await res.text().catch(() => '');
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`AroFlo ${zone} failed: ${res.status} ${body.slice(0, 300)}`);
+    throw new Error(`AroFlo ${zone} → HTTP ${res.status}. ${text.slice(0, 400)}`);
   }
-  // AroFlo can return JSON or XML depending on config; assume JSON here.
-  return res.json();
+  const trimmed = text.trimStart();
+  if (trimmed.startsWith('<')) {
+    throw new Error(
+      `AroFlo ${zone} returned XML, not JSON. Add "&format=json" support or set your ` +
+      `AroFlo API output to JSON. First 200 chars: ${trimmed.slice(0, 200)}`,
+    );
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`AroFlo ${zone}: could not parse response as JSON. First 200 chars: ${text.slice(0, 200)}`);
+  }
+}
+
+/**
+ * Try a minimal live call and return a diagnostic (never throws). Used by the
+ * "Test connection" button so you can confirm credentials + signing.
+ */
+export async function testConnection() {
+  const { enabled, baseUrl, cuid, orgEncodedKey, userName, uEncodedKey } = config.aroflo;
+  const present = {
+    AROFLO_CUID: !!cuid,
+    AROFLO_ORG_ENCODED_KEY: !!orgEncodedKey,
+    AROFLO_USER_NAME: !!userName,
+    AROFLO_U_ENCODED_KEY: !!uEncodedKey,
+  };
+  if (!enabled) {
+    return { ok: false, mode: 'mock', baseUrl, present, message: 'AROFLO_ENABLED is false — running on sample data. Set it to true in .env to attempt a live connection.' };
+  }
+  const missing = Object.entries(present).filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length) {
+    return { ok: false, mode: 'live', baseUrl, present, message: `Missing credentials in .env: ${missing.join(', ')}` };
+  }
+  try {
+    const data = await liveRequest('clientele', { limit: 1 });
+    const count = Array.isArray(data) ? data.length : (data && typeof data === 'object' ? Object.keys(data).length : 0);
+    return { ok: true, mode: 'live', baseUrl, present, message: `Connected. Sample "clientele" call returned data (${count} field/record${count === 1 ? '' : 's'}).` };
+  } catch (err) {
+    return { ok: false, mode: 'live', baseUrl, present, message: String(err.message || err) };
+  }
 }
 
 // ── Public API ────────────────────────────────────────────────

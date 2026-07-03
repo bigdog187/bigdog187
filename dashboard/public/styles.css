@@ -29,8 +29,21 @@ body {
 .tab:hover { color: var(--white); }
 .tab.active { color: var(--white); border-bottom-color: var(--white); }
 
-.status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--gray); letter-spacing: 0.1em; text-transform: uppercase; }
+.status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: var(--gray); letter-spacing: 0.1em; text-transform: uppercase; background: none; border: none; cursor: pointer; font-family: var(--font); }
+.status:hover { color: var(--white); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray2); display: inline-block; margin-left: 0.6rem; }
+
+/* Connections dialog */
+#conn-dialog { max-width: 460px; }
+.conn { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.conn h3 { font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.05em; }
+.conn-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: #ddd; }
+.conn-list .dot { margin-left: 0; margin-right: 0.3rem; }
+.conn-help { font-size: 0.72rem; color: var(--gray); line-height: 1.5; }
+.conn-help code { background: var(--panel2); padding: 0 0.25rem; }
+#conn-result { background: var(--black); border: 1px solid var(--line); padding: 0.75rem; font-size: 0.72rem; color: #ddd; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow: auto; font-family: ui-monospace, Menlo, monospace; }
+#conn-result.ok { border-color: #2c5e42; }
+#conn-result.err { border-color: #5e2c2c; }
 .dot.live { background: #4caf72; box-shadow: 0 0 8px #4caf72aa; }
 .dot.mock { background: var(--warn); }
 

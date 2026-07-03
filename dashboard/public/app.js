@@ -38,12 +38,41 @@ function fmtCell(key, val) {
   return String(val);
 }
 
-// ── Status ────────────────────────────────────────────────────
+// ── Status & connections ──────────────────────────────────────
+let lastStatus = { claude: 'mock', aroflo: 'mock' };
 async function loadStatus() {
   const s = await api.get('/api/status');
+  lastStatus = s;
   $('#dot-claude').className = 'dot ' + s.claude;
   $('#dot-aroflo').className = 'dot ' + s.aroflo;
 }
+
+const connDialog = $('#conn-dialog');
+$('#status').addEventListener('click', () => {
+  $('#cd-claude').className = 'dot ' + lastStatus.claude;
+  $('#cd-aroflo').className = 'dot ' + lastStatus.aroflo;
+  $('#cd-claude-t').textContent = lastStatus.claude === 'live'
+    ? `live (${lastStatus.model})` : 'mock — add ANTHROPIC_API_KEY to .env';
+  $('#cd-aroflo-t').textContent = lastStatus.aroflo === 'live'
+    ? 'live' : 'mock — set AROFLO_ENABLED=true + keys in .env';
+  $('#conn-result').hidden = true;
+  connDialog.showModal();
+});
+$('#conn-close').addEventListener('click', () => connDialog.close());
+$('#btn-test-aroflo').addEventListener('click', async () => {
+  const btn = $('#btn-test-aroflo');
+  const out = $('#conn-result');
+  btn.disabled = true; btn.textContent = 'Testing…';
+  try {
+    const r = await api.get('/api/aroflo/test');
+    out.hidden = false;
+    out.className = r.ok ? 'ok' : 'err';
+    out.textContent = `${r.ok ? '✓ ' : '✗ '}${r.message}\n\nmode: ${r.mode}\nbaseUrl: ${r.baseUrl}\ncredentials present: ${JSON.stringify(r.present)}`;
+  } catch (e) {
+    out.hidden = false; out.className = 'err'; out.textContent = 'Request failed: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = 'Test AroFlo connection';
+});
 
 // ── Dashboard rendering ───────────────────────────────────────
 let layout = { title: 'Dashboard', widgets: [] };

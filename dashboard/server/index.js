@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { config, statusSummary, ROOT } from './config.js';
-import { aroflo } from './aroflo.js';
+import { aroflo, testConnection } from './aroflo.js';
 import { dashboardStore } from './dashboard-store.js';
 import { chat } from './claude.js';
 import { SOURCES } from './sources.js';
@@ -22,6 +22,9 @@ let conversation = [];
 app.get('/api/buildid', (_req, res) => res.json({ buildId: BUILD_ID }));
 
 app.get('/api/status', (_req, res) => res.json(statusSummary()));
+
+// Live AroFlo connection diagnostic (safe: never returns secret values).
+app.get('/api/aroflo/test', async (_req, res) => res.json(await testConnection()));
 
 // ── Dashboard layout ──────────────────────────────────────────
 app.get('/api/dashboard', (_req, res) => res.json(dashboardStore.get()));
