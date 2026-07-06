@@ -7,7 +7,7 @@ Design language: engineering blueprint / electrical schematic.
  - circuit-bus service lists with junction nodes
  - faux-glow (radial gradients), ghost outline display type
  - monospace annotations, dimension lines, pulse waves, halftone fades
- - engineering title-block footer with sheet numbers
+ - engineering title-block footer
 Palette: red / white / blue.
 
 Run:  python3 generate_ads.py
@@ -87,33 +87,28 @@ def crosshair(x, y, r=14, op=0.55):
     )
 
 
-def title_block(sheet, total=7):
+def title_block():
     """Engineering-drawing title block as the footer."""
     y0, h = 968, 78
     yb = y0 + h / 2
     return (
         f'<rect x="0" y="{y0}" width="{SIZE}" height="{SIZE-y0}" fill="#050F20"/>'
         f'<rect x="0" y="{y0}" width="{SIZE}" height="3" fill="{RED}"/>'
-        f'<line x1="352" y1="{y0+12}" x2="352" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
-        f'<line x1="648" y1="{y0+12}" x2="648" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
-        f'<line x1="912" y1="{y0+12}" x2="912" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
+        f'<line x1="392" y1="{y0+12}" x2="392" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
+        f'<line x1="712" y1="{y0+12}" x2="712" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
         f'<text x="40" y="{yb-2}" font-family="{FONT_M}" font-size="17" font-weight="bold" fill="{WHITE}">WEILEY ELECTRICAL</text>'
         f'<text x="40" y="{yb+22}" font-family="{FONT_M}" font-size="14" fill="{MIST}">DUBBO &#8226; CENTRAL WEST NSW &#8226; EST. 1986</text>'
-        f'<text x="500" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{WHITE}">wyelec.com.au</text>'
-        f'<text x="780" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{RED}">{PHONE}</text>'
-        f'<text x="996" y="{yb-2}" text-anchor="middle" font-family="{FONT_M}" font-size="15" fill="{MIST}">SHT {sheet:02d}/{total:02d}</text>'
-        f'<text x="996" y="{yb+22}" text-anchor="middle" font-family="{FONT_M}" font-size="15" fill="{MIST}">REV A</text>'
+        f'<text x="552" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{WHITE}">wyelec.com.au</text>'
+        f'<text x="876" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{RED}">{PHONE}</text>'
     )
 
 
-def chrome(sheet, tag):
+def chrome():
     return (
         f'<rect width="{SIZE}" height="{SIZE}" fill="url(#ink)"/>'
         f'{grid()}'
         f'{crosshair(40, 40)}{crosshair(1040, 40)}{crosshair(40, 928)}{crosshair(1040, 928)}'
-        f'<text x="1004" y="46" text-anchor="end" font-family="{FONT_M}" font-size="15" '
-        f'letter-spacing="1" fill="{MIST}" opacity="0.8">{esc(tag)} // SHT {sheet:02d}</text>'
-        f'{title_block(sheet)}'
+        f'{title_block()}'
     )
 
 
@@ -278,7 +273,7 @@ def stamp(cx, cy, rot=-12, r=150):
 # ----------------------------------------------------------------------------
 def ad_hero():
     inner = (
-        f'{chrome(1, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(430, 705, "POWER", fs=265, op=0.07)}'
         f'{halftone(820, 120, 8, 6, gap=28, r0=4.5, op=0.16)}'
         # glowing bolt, wired to the right edge
@@ -315,10 +310,10 @@ def ad_industrial():
              "Pump control & diagnostics", "Fault finding & repairs",
              "Preventive plant maintenance"]
     inner = (
-        f'{chrome(2, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(560, 330, "24/7", fs=250, op=0.09)}'
         f'{logo(64, 64, s=0.9)}'
-        f'{kicker(64, 216, "SERVICE 01 — INDUSTRIAL")}'
+        f'{kicker(64, 216, "INDUSTRIAL DIVISION")}'
         f'<text x="60" y="316" font-family="{FONT}" font-size="88" font-weight="bold" fill="{WHITE}">INDUSTRIAL</text>'
         f'<text x="62" y="404" font-family="{FONT}" font-size="88" font-weight="bold" fill="none" '
         f'stroke="{RED}" stroke-width="3">ELECTRICAL</text>'
@@ -340,11 +335,11 @@ def ad_commercial():
     right = ["Power & machinery wiring", "Fibre optic infrastructure",
              "Facility maintenance", "Emergency fault response"]
     inner = (
-        f'{chrome(3, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(600, 340, "OPEN", fs=250, op=0.08)}'
         f'{halftone(70, 620, 6, 8, gap=26, r0=4.2, op=0.12)}'
         f'{logo(64, 64, s=0.9)}'
-        f'{kicker(64, 216, "SERVICE 02 — COMMERCIAL")}'
+        f'{kicker(64, 216, "COMMERCIAL DIVISION")}'
         f'<text x="60" y="316" font-family="{FONT}" font-size="80" font-weight="bold" fill="{WHITE}">FIT-OUTS. REPAIRS.</text>'
         f'<text x="62" y="400" font-family="{FONT}" font-size="80" font-weight="bold" fill="none" '
         f'stroke="{RED}" stroke-width="3">MAINTENANCE.</text>'
@@ -374,10 +369,10 @@ def ad_compliance():
             f'<line x1="72" y1="{y+18}" x2="704" y2="{y+18}" stroke="{LINE}" stroke-width="1.5" opacity="0.7"/>'
         )
     inner = (
-        f'{chrome(4, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(620, 330, "SAFE", fs=250, op=0.08)}'
         f'{logo(64, 64, s=0.9)}'
-        f'{kicker(64, 216, "SERVICE 03 — COMPLIANCE & SAFETY")}'
+        f'{kicker(64, 216, "COMPLIANCE & SAFETY")}'
         f'<text x="60" y="316" font-family="{FONT}" font-size="84" font-weight="bold" fill="{WHITE}">STAY SAFE.</text>'
         f'<text x="60" y="400" font-family="{FONT}" font-size="84" font-weight="bold" fill="{RED}">STAY COMPLIANT.</text>'
         f'<text x="64" y="458" font-family="{FONT_M}" font-size="22" letter-spacing="2" fill="{MIST}">'
@@ -420,7 +415,7 @@ def ad_industries():
         chips.append(svg)
         x += w + 26
     inner = (
-        f'{chrome(5, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(520, 350, "LOCAL", fs=240, op=0.08)}'
         f'{halftone(830, 700, 7, 8, gap=27, r0=4.6, op=0.14)}'
         f'{logo(64, 64, s=0.9)}'
@@ -460,7 +455,7 @@ def ad_why():
               "Free quotes, no obligation", "24/7 industrial breakdown support",
               "Quality assurance on every job"]
     inner = (
-        f'{chrome(6, "WY-EL-26")}'
+        f'{chrome()}'
         f'{ghost(500, 330, "TRUST", fs=240, op=0.08)}'
         f'{logo(64, 64, s=0.9)}'
         f'{kicker(64, 216, "THE WEILEY DIFFERENCE")}'
@@ -497,7 +492,7 @@ def ad_quote():
         )
         y += 78 if big else 54
     inner = (
-        f'{chrome(7, "WY-EL-26")}'
+        f'{chrome()}'
         f'{logo(64, 64, s=0.9)}'
         # ticket / voucher
         f'<rect x="{tx}" y="{ty}" width="{tw}" height="{th}" rx="18" fill="{PANEL}" '
@@ -505,7 +500,7 @@ def ad_quote():
         f'<circle cx="{tx}" cy="{ty+th/2}" r="26" fill="{INK}" stroke="{MIST}" stroke-width="2.5" stroke-dasharray="8 7"/>'
         f'<circle cx="{tx+tw}" cy="{ty+th/2}" r="26" fill="{INK}" stroke="{MIST}" stroke-width="2.5" stroke-dasharray="8 7"/>'
         f'<text x="{tx+44}" y="{ty+58}" font-family="{FONT_M}" font-size="19" letter-spacing="3" '
-        f'fill="{MIST}">VOUCHER WY-Q-26 — NO EXPIRY — NO OBLIGATION</text>'
+        f'fill="{MIST}">FREE QUOTE VOUCHER — NO EXPIRY — NO OBLIGATION</text>'
         f'{glow(tx+310, ty+220, 260, "gRed", 0.55)}'
         f'<text x="{tx+40}" y="{ty+256}" font-family="{FONT}" font-size="172" font-weight="bold" fill="{WHITE}">FREE</text>'
         f'<text x="{tx+44}" y="{ty+356}" font-family="{FONT}" font-size="92" font-weight="bold" fill="{RED}">QUOTES</text>'

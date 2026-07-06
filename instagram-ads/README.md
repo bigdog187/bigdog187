@@ -11,7 +11,7 @@ Engineering blueprint / electrical schematic aesthetic, red / white / blue:
 - ghost outline display type, faux-glow radial gradients, halftone fades
 - monospace engineering annotations, dimension lines, square pulse waves
 - rubber-stamp "AUDIT READY" inspection seal and a free-quote voucher ticket
-- engineering title-block footer with per-ad sheet numbers (SHT 01/07 … 07/07)
+- engineering title-block footer with web + phone
 
 | File | Concept | Use it for |
 |------|---------|-----------|
