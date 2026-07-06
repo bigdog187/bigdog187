@@ -1,19 +1,27 @@
-# Weiley Electrical — Instagram Ad Campaign
+# Weiley Electrical — Instagram Ad Campaign (v2 "Schematic")
 
-A full set of **seven** ready-to-post **1080×1080** square ads for
-[@weileyelec](https://www.facebook.com/weileyelec), built from **all** the
-content across [wyelec.com.au](https://wyelec.com.au) (home, about, industrial,
-commercial, compliance and contact pages).
+Seven ready-to-post **1080×1080** ads for [@weileyelec](https://www.facebook.com/weileyelec),
+built from **all** the content across [wyelec.com.au](https://wyelec.com.au)
+(home, about, industrial, commercial, compliance and contact pages).
+
+## Design language — v2 "Schematic"
+Engineering blueprint / electrical schematic aesthetic, red / white / blue:
+- deep ink-blue drafting grid with corner registration crosshairs
+- circuit-bus service lists with glowing junction nodes and terminal pads
+- ghost outline display type, faux-glow radial gradients, halftone fades
+- monospace engineering annotations, dimension lines, square pulse waves
+- rubber-stamp "AUDIT READY" inspection seal and a free-quote voucher ticket
+- engineering title-block footer with per-ad sheet numbers (SHT 01/07 … 07/07)
 
 | File | Concept | Use it for |
 |------|---------|-----------|
 | `01_hero_powered.png` | Brand / tagline — *"Keeping Central West Businesses Powered"* | Awareness, profile pinning |
 | `02_industrial.png` | Industrial electrical capabilities | Plants, factories, operations managers |
 | `03_commercial.png` | Commercial fit-outs, repairs & maintenance | Retail, offices, hospitality |
-| `04_compliance.png` | Compliance & safety services | Facility / WHS managers, audit season |
+| `04_compliance.png` | Compliance & safety + AUDIT READY stamp | Facility / WHS managers, audit season |
 | `05_industries_served.png` | Who we work with (industries) | Broad reach across the Central West |
-| `06_why_choose_us.png` | Why choose Weiley (credentials & stats) | Trust / consideration stage |
-| `07_free_quote_contact.png` | Free quotes + full contact details | Direct-response lead generation |
+| `06_why_choose_us.png` | Credentials & stat cards | Trust / consideration stage |
+| `07_free_quote_contact.png` | Free-quote voucher + full contact details | Direct-response lead generation |
 
 Each `.png` has a matching editable `.svg` source.
 
@@ -36,13 +44,13 @@ Each `.png` has a matching editable `.svg` source.
   Mon–Fri 7:30am–4pm · 24/7 industrial breakdown
 
 ## Note on brand colours
-The website didn't expose explicit brand hex values, so these use a professional
-**navy + electric-amber** electrician palette with a lightning-bolt mark. Share your
-exact brand colours and a logo file and I can swap them in for a perfect match.
+The website didn't expose explicit brand hex values, so these use a red / white / blue
+palette (per request). Share your exact brand colours and a logo file and I can swap
+them in for a perfect match.
 
 ## Regenerate / edit
 ```bash
 pip install cairosvg pillow
 python3 generate_ads.py
 ```
-Edit copy, colours (`NAVY`, `AMBER`, …) or layout near the top of `generate_ads.py`.
+Copy, colours (`RED`, `BLUE`, `INK`, …) and layout live near the top of `generate_ads.py`.
