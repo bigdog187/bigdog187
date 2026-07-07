@@ -98,7 +98,7 @@ def title_block():
         f'<line x1="712" y1="{y0+12}" x2="712" y2="{y0+h-12}" stroke="{LINE}" stroke-width="1.5"/>'
         f'<text x="40" y="{yb-2}" font-family="{FONT_M}" font-size="17" font-weight="bold" fill="{WHITE}">WEILEY ELECTRICAL</text>'
         f'<text x="40" y="{yb+22}" font-family="{FONT_M}" font-size="14" fill="{MIST}">DUBBO &#8226; CENTRAL WEST NSW &#8226; EST. 1986</text>'
-        f'<text x="552" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{WHITE}">wyelec.com.au</text>'
+        f'<text x="552" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{WHITE}">www.wyelec.com.au</text>'
         f'<text x="876" y="{yb+9}" text-anchor="middle" font-family="{FONT}" font-size="27" font-weight="bold" fill="{RED}">{PHONE}</text>'
     )
 
