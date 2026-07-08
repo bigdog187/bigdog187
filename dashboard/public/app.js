@@ -143,8 +143,15 @@ async function renderWidget(w) {
     if (w.type === 'metric') {
       const data = await getSourceData(w.source);
       let val = data[w.field];
-      if (w.format === 'money') val = fmtMoney(val);
-      body = `<div class="metric-value ${w.tone === 'warn' ? 'warn' : ''}">${val ?? '—'}</div>`;
+      if (val == null) {
+        // Field absent — for non-financial users the server strips $ fields.
+        body = !canDo('financial')
+          ? '<div class="metric-value" style="font-size:1rem;color:var(--gray2)">🔒 Restricted</div>'
+          : '<div class="metric-value">—</div>';
+      } else {
+        if (w.format === 'money') val = fmtMoney(val);
+        body = `<div class="metric-value ${w.tone === 'warn' ? 'warn' : ''}">${val}</div>`;
+      }
     } else if (w.type === 'chart') {
       const rows = await getSourceData(w.source);
       el.innerHTML = head + '<div class="chart-wrap"></div>';
