@@ -137,15 +137,50 @@ export const tools = {
   },
 };
 
-export function toolSchemas() {
-  return Object.values(tools).map((t) => t.schema);
+// ── Permission filtering ──────────────────────────────────────
+// Which tools a user may call, based on their permission snapshot
+// (see auth.permsOf). Admins pass everything.
+function toolAllowed(name, perms) {
+  if (!perms || perms.admin) return true;
+  switch (name) {
+    case 'list_invoices': return !!perms.financial;
+    case 'add_widget': return !!perms.editDashboard;
+    case 'remove_widget': return false; // deleting is admin-only
+    case 'get_dashboard': return !!perms.dashboard;
+    default: return true;
+  }
 }
 
-export async function runTool(name, input) {
+// Strip financial fields from tool outputs for users without the
+// 'financial' permission. Defence in depth: the model never sees the
+// numbers, so it can't repeat them.
+function sanitizeOutput(name, data, perms) {
+  if (!perms || perms.admin || perms.financial) return data;
+  const stripKeys = (obj, keys) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    const copy = { ...obj };
+    for (const k of keys) delete copy[k];
+    return copy;
+  };
+  if (name === 'get_metrics') return stripKeys(data, ['unpaidInvoices', 'unpaidTotal']);
+  if (name === 'list_jobs' && Array.isArray(data)) return data.map((j) => stripKeys(j, ['value']));
+  if (name === 'list_clients' && Array.isArray(data)) return data.map((c) => stripKeys(c, ['ytdValue']));
+  return data;
+}
+
+export function toolSchemas(perms) {
+  return Object.entries(tools)
+    .filter(([name]) => toolAllowed(name, perms))
+    .map(([, t]) => t.schema);
+}
+
+export async function runTool(name, input, perms) {
   const tool = tools[name];
   if (!tool) return { error: `Unknown tool: ${name}` };
+  if (!toolAllowed(name, perms)) return { error: 'Not permitted for this user' };
   try {
-    return await tool.run(input || {});
+    const result = await tool.run(input || {});
+    return sanitizeOutput(name, result, perms);
   } catch (err) {
     return { error: String(err.message || err) };
   }

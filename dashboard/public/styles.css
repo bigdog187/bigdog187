@@ -18,10 +18,13 @@ body {
 
 /* Topbar */
 .topbar {
-  height: 60px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 1.5rem; border-bottom: 1px solid var(--line);
+  min-height: 60px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 1.5rem; border-bottom: 1px solid var(--line); gap: 0.75rem; flex-wrap: wrap;
   position: sticky; top: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); z-index: 50;
 }
+.top-right { display: flex; align-items: center; gap: 0.75rem; }
+.user-chip { font-size: 0.72rem; color: var(--gray); letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; padding: 0.25rem 0.7rem; white-space: nowrap; }
+.user-chip .role { color: #4caf72; }
 .brand { font-weight: 800; letter-spacing: 0.28em; font-size: 0.95rem; }
 .brand span { font-weight: 400; color: var(--gray); }
 .nav-tabs { display: flex; gap: 0.25rem; margin-left: 2rem; flex: 1; }
@@ -159,6 +162,40 @@ dialog::backdrop { background: rgba(0,0,0,0.7); }
 #routine-form textarea { font-family: ui-monospace, 'SF Mono', Menlo, monospace; resize: vertical; }
 #routine-form label code { background: var(--black); padding: 0 0.25rem; font-size: 0.9em; text-transform: none; }
 #routine-dialog { max-width: 520px; }
+
+/* Settings / users */
+.settings-view { padding: 1.5rem; max-width: 900px; }
+.user-form { background: var(--panel); border: 1px solid var(--line); padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+.user-form h3, .users-heading { font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.05em; font-size: 1.05rem; }
+.users-heading { margin-bottom: 0.75rem; }
+.user-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+.user-form label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gray); }
+.user-form input, .user-form select { background: var(--panel2); border: 1px solid var(--line); color: var(--white); padding: 0.55rem 0.6rem; font-family: var(--font); font-size: 0.9rem; text-transform: none; letter-spacing: 0; }
+.perm-checks { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.perm-checks label, .user-perms label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: #ddd; cursor: pointer; text-transform: none; letter-spacing: 0; flex-direction: row; }
+.msg-line { font-size: 0.8rem; color: #c45b5b; }
+.users-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.user-row { background: var(--panel); border: 1px solid var(--line); padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.user-row-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.user-name { font-weight: 600; display: flex; align-items: center; gap: 0.6rem; }
+.role-badge { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.55rem; color: var(--gray); }
+.role-badge.admin { color: #4caf72; border-color: #2c5e42; }
+.user-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.user-perms { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; }
+.user-perms.locked { opacity: 0.5; pointer-events: none; }
+
+/* Mobile */
+@media (max-width: 700px) {
+  .topbar { padding: 0.5rem 0.9rem; }
+  .nav-tabs { margin-left: 0; order: 3; width: 100%; overflow-x: auto; }
+  .board-wrap, .routines-view, .settings-view { padding: 1rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .widget.span2 { grid-column: 1 / -1; }
+  .chat { position: static; height: auto; min-height: 60vh; }
+  .messages { max-height: 45vh; }
+  .routine { grid-template-columns: 1fr; }
+  .routine-actions { justify-content: flex-start; }
+}
 
 .empty { color: var(--gray2); font-size: 0.85rem; padding: 2rem; text-align: center; grid-column: 1 / -1; border: 1px dashed var(--line); }
 .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--gray2); border-top-color: var(--white); border-radius: 50%; animation: spin 0.7s linear infinite; }

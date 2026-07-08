@@ -30,15 +30,16 @@ const client = config.claude.enabled ? new Anthropic({ apiKey: config.claude.api
  *
  * `history` is the prior [{role, content}] messages for context.
  */
-export async function chat({ message, history = [], emit }) {
+export async function chat({ message, history = [], emit, perms }) {
   if (!client) {
-    return mockChat({ message, emit });
+    return mockChat({ message, emit, perms });
   }
 
   const messages = [...history, { role: 'user', content: message }];
   let dashboardChanged = false;
 
-  // Manual tool-use loop.
+  // Manual tool-use loop. Tools are filtered by the requesting user's
+  // permissions, and their outputs sanitized (see tools.js).
   for (let step = 0; step < 8; step++) {
     let response;
     try {
@@ -47,7 +48,7 @@ export async function chat({ message, history = [], emit }) {
         max_tokens: 4096,
         thinking: { type: 'adaptive' },
         system: SYSTEM_PROMPT,
-        tools: toolSchemas(),
+        tools: toolSchemas(perms),
         messages,
       });
     } catch (err) {
@@ -71,7 +72,7 @@ export async function chat({ message, history = [], emit }) {
     for (const block of response.content) {
       if (block.type !== 'tool_use') continue;
       emit({ type: 'tool', name: block.name });
-      const result = await runTool(block.name, block.input);
+      const result = await runTool(block.name, block.input, perms);
       if (DASHBOARD_MUTATING_TOOLS.has(block.name)) dashboardChanged = true;
       toolResults.push({
         type: 'tool_result',
@@ -90,15 +91,17 @@ export async function chat({ message, history = [], emit }) {
 
 /**
  * Run a one-shot prompt (no prior history) and return the final text plus the
- * tools that were called. Used by scheduled "Claude prompt" routines.
+ * tools that were called. Used by scheduled "Claude prompt" routines, which
+ * are admin-configured — so they run with full (system) permissions.
  */
-export async function runPrompt(message) {
+export async function runPrompt(message, perms) {
   const parts = [];
   const toolsUsed = [];
   let error = null;
   await chat({
     message,
     history: [],
+    perms,
     emit: (e) => {
       if (e.type === 'text') parts.push(e.text);
       else if (e.type === 'tool') toolsUsed.push(e.name);
@@ -111,7 +114,7 @@ export async function runPrompt(message) {
 
 // ── Mock chat (no API key) ────────────────────────────────────
 // Gives believable behaviour so the whole app works before keys are added.
-async function mockChat({ message, emit }) {
+async function mockChat({ message, emit, perms }) {
   const q = message.toLowerCase();
   let name = null;
   if (/overdue|late/.test(q)) name = 'list_jobs';
@@ -122,7 +125,17 @@ async function mockChat({ message, emit }) {
   else name = 'get_metrics';
 
   emit({ type: 'tool', name });
-  const data = await runTool(name, {});
+  const data = await runTool(name, {}, perms);
+  if (data && data.error === 'Not permitted for this user') {
+    emit({
+      type: 'text',
+      text:
+        `*(Demo mode)* That information is **restricted for your account** — ` +
+        `ask an administrator if you need access to it.`,
+    });
+    emit({ type: 'done' });
+    return { history: [] };
+  }
   const count = Array.isArray(data) ? data.length : Object.keys(data).length;
   emit({
     type: 'text',

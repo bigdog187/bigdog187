@@ -1,15 +1,30 @@
 // ── Helpers ───────────────────────────────────────────────────
 const $ = (sel) => document.querySelector(sel);
+
+async function handle(res) {
+  if (res.status === 401) { location.href = '/login.html'; throw new Error('Not signed in'); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.error || `Request failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
+  return body;
+}
 const api = {
-  async get(url) { return (await fetch(url)).json(); },
+  async get(url) { return handle(await fetch(url)); },
   async send(url, method, body) {
-    return (await fetch(url, {
+    return handle(await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
-    })).json();
+    }));
   },
 };
+
+// Current signed-in user: { user, perms, permissions } from /api/me.
+let ME = null;
+const canDo = (p) => !!(ME && (ME.perms.admin || ME.perms[p]));
 
 const METRIC_FIELDS = {
   openJobs: 'Open Jobs', overdueJobs: 'Overdue Jobs', unpaidInvoices: 'Unpaid Invoices',
@@ -107,13 +122,21 @@ async function renderWidget(w) {
   const wide = w.type === 'table' || (w.type === 'chart' && w.chartType !== 'donut');
   el.className = 'widget' + (wide ? ' span2' : '');
   el.dataset.id = w.id;
-  el.draggable = true;
+  el.draggable = canDo('editDashboard');
 
+  // Only administrators can delete widgets.
+  const removeBtn = canDo('admin') ? `<button class="widget-x" title="Remove" data-x="${w.id}">×</button>` : '';
   const head = `
     <div class="widget-head">
       <span class="widget-title"><span class="drag-handle">⠿</span>${w.title}</span>
-      <button class="widget-x" title="Remove" data-x="${w.id}">×</button>
+      ${removeBtn}
     </div>`;
+
+  const finish = () => {
+    wireDrag(el);
+    el.querySelector('[data-x]')?.addEventListener('click', () => removeWidget(w.id));
+    return el;
+  };
 
   let body = '';
   try {
@@ -125,11 +148,9 @@ async function renderWidget(w) {
     } else if (w.type === 'chart') {
       const rows = await getSourceData(w.source);
       el.innerHTML = head + '<div class="chart-wrap"></div>';
-      wireDrag(el);
-      el.querySelector('[data-x]').addEventListener('click', () => removeWidget(w.id));
       // Defer canvas draw until the element is in the DOM and sized.
       requestAnimationFrame(() => drawChart(el.querySelector('.chart-wrap'), w, rows));
-      return el;
+      return finish();
     } else {
       const rows = await getSourceData(w.source);
       const cols = w.columns || SOURCE_COLUMNS[w.source] || Object.keys(rows[0] || {});
@@ -138,14 +159,14 @@ async function renderWidget(w) {
         `<tr>${cols.map((c) => `<td>${fmtCell(c, r[c])}</td>`).join('')}</tr>`).join('');
       body = `<div class="table-scroll"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
     }
-  } catch {
-    body = '<div class="metric-value">—</div>';
+  } catch (err) {
+    body = err?.status === 403
+      ? '<div class="metric-value" style="font-size:1rem;color:var(--gray2)">🔒 Restricted</div>'
+      : '<div class="metric-value">—</div>';
   }
 
   el.innerHTML = head + body;
-  wireDrag(el);
-  el.querySelector('[data-x]').addEventListener('click', () => removeWidget(w.id));
-  return el;
+  return finish();
 }
 
 async function removeWidget(id) {
@@ -384,14 +405,16 @@ async function pollBuild() {
 }
 setInterval(pollBuild, 1500);
 
-// ── View switching (Dashboard / Routines) ─────────────────────
+// ── View switching (Dashboard / Routines / Settings) ──────────
 document.querySelectorAll('.tab').forEach((tab) => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
     const view = tab.dataset.view;
     $('#dashboard-view').hidden = view !== 'dashboard';
     $('#routines-view').hidden = view !== 'routines';
+    $('#settings-view').hidden = view !== 'settings';
     if (view === 'routines') loadRoutines();
+    if (view === 'settings') loadUsers();
   });
 });
 
@@ -440,27 +463,31 @@ function routineCard(r) {
       </div>
     </div>
     <div class="routine-actions">
-      <label class="switch"><input type="checkbox" ${r.enabled ? 'checked' : ''} data-toggle="${r.id}"><span class="slider"></span></label>
+      ${canDo('admin') ? `<label class="switch"><input type="checkbox" ${r.enabled ? 'checked' : ''} data-toggle="${r.id}"><span class="slider"></span></label>` : ''}
       <button class="btn small" data-run="${r.id}">Run now</button>
       <button class="btn ghost small" data-output="${r.id}">Output</button>
-      <button class="btn ghost small" data-edit="${r.id}">Edit</button>
-      <button class="btn ghost small" data-del="${r.id}">Delete</button>
+      ${canDo('admin') ? `<button class="btn ghost small" data-edit="${r.id}">Edit</button>
+      <button class="btn ghost small" data-del="${r.id}">Delete</button>` : ''}
     </div>`;
 
-  el.querySelector('[data-toggle]').addEventListener('change', async () => {
+  el.querySelector('[data-toggle]')?.addEventListener('change', async () => {
     await api.send(`/api/routines/${r.id}/toggle`, 'POST');
     loadRoutines();
   });
   el.querySelector('[data-run]').addEventListener('click', async (e) => {
     e.target.textContent = '…'; e.target.disabled = true;
-    const rec = await api.send(`/api/routines/${r.id}/run`, 'POST');
-    showOutput(r.name, rec.ok ? rec.output : 'ERROR: ' + rec.error);
+    try {
+      const rec = await api.send(`/api/routines/${r.id}/run`, 'POST');
+      showOutput(r.name, rec.ok ? rec.output : 'ERROR: ' + rec.error);
+    } catch (err) {
+      showOutput(r.name, 'ERROR: ' + err.message);
+    }
     loadRoutines();
   });
   el.querySelector('[data-output]').addEventListener('click', () =>
     showOutput(r.name, r.lastOutput || '(this routine has not run yet)'));
-  el.querySelector('[data-edit]').addEventListener('click', () => openRoutineDialog(r));
-  el.querySelector('[data-del]').addEventListener('click', async () => {
+  el.querySelector('[data-edit]')?.addEventListener('click', () => openRoutineDialog(r));
+  el.querySelector('[data-del]')?.addEventListener('click', async () => {
     if (!confirm(`Delete routine "${r.name}"?`)) return;
     await api.send(`/api/routines/${r.id}`, 'DELETE');
     loadRoutines();
@@ -542,9 +569,150 @@ $('#routine-form').addEventListener('submit', async (e) => {
   loadRoutines();
 });
 
+// ── Users admin (Settings view) ───────────────────────────────
+function permChecks(container, perms, { disabled = false, onChange } = {}) {
+  container.innerHTML = '';
+  for (const p of ME.permissions) {
+    const label = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = !!perms[p.key];
+    cb.disabled = disabled;
+    cb.dataset.perm = p.key;
+    if (onChange) cb.addEventListener('change', () => onChange(p.key, cb.checked));
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + p.label));
+    container.appendChild(label);
+  }
+}
+
+async function loadUsers() {
+  if (!canDo('admin')) return;
+  const users = await api.get('/api/users');
+  const wrap = $('#users-list');
+  wrap.innerHTML = '';
+  for (const u of users) wrap.appendChild(userRow(u));
+}
+
+function userRow(u) {
+  const el = document.createElement('div');
+  el.className = 'user-row';
+  const isSelf = u.id === ME.user.id;
+  el.innerHTML = `
+    <div class="user-row-top">
+      <span class="user-name">${u.username}
+        <span class="role-badge ${u.role}">${u.role === 'admin' ? 'Administrator' : 'General user'}</span>
+        ${isSelf ? '<span class="role-badge">you</span>' : ''}
+      </span>
+      <span class="user-actions">
+        <select class="btn ghost small" data-role>
+          <option value="user" ${u.role === 'user' ? 'selected' : ''}>General user</option>
+          <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Administrator</option>
+        </select>
+        <button class="btn ghost small" data-pw>Reset password</button>
+        ${isSelf ? '' : '<button class="btn ghost small" data-del>Delete</button>'}
+      </span>
+    </div>
+    <div class="user-perms ${u.role === 'admin' ? 'locked' : ''}" data-perms></div>`;
+
+  const permsWrap = el.querySelector('[data-perms]');
+  const renderPerms = () => permChecks(permsWrap, u.role === 'admin'
+    ? Object.fromEntries(ME.permissions.map((p) => [p.key, true]))
+    : (u.perms || {}), {
+    disabled: u.role === 'admin',
+    onChange: async (key, checked) => {
+      const perms = { ...(u.perms || {}), [key]: checked };
+      try { const upd = await api.send(`/api/users/${u.id}`, 'PUT', { perms }); u.perms = upd.perms; }
+      catch (err) { alert(err.message); loadUsers(); }
+    },
+  });
+  renderPerms();
+
+  el.querySelector('[data-role]').addEventListener('change', async (e) => {
+    try { await api.send(`/api/users/${u.id}`, 'PUT', { role: e.target.value }); }
+    catch (err) { alert(err.message); }
+    loadUsers();
+  });
+  el.querySelector('[data-pw]').addEventListener('click', async () => {
+    const pw = prompt(`New password for "${u.username}" (min 8 characters):`);
+    if (!pw) return;
+    try { await api.send(`/api/users/${u.id}/password`, 'POST', { password: pw }); alert('Password updated. Their existing sessions were signed out.'); }
+    catch (err) { alert(err.message); }
+  });
+  el.querySelector('[data-del]')?.addEventListener('click', async () => {
+    if (!confirm(`Delete user "${u.username}"? This cannot be undone.`)) return;
+    try { await api.send(`/api/users/${u.id}`, 'DELETE'); } catch (err) { alert(err.message); }
+    loadUsers();
+  });
+  return el;
+}
+
+$('#user-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const perms = {};
+  $('#uf-perms').querySelectorAll('input[data-perm]').forEach((cb) => { perms[cb.dataset.perm] = cb.checked; });
+  const errEl = $('#uf-error');
+  errEl.hidden = true;
+  try {
+    await api.send('/api/users', 'POST', {
+      username: f.get('username'), password: f.get('password'), role: f.get('role'), perms,
+    });
+    e.target.reset();
+    setupNewUserPerms();
+    loadUsers();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.hidden = false;
+  }
+});
+
+function setupNewUserPerms() {
+  // Sensible defaults for a general user: can view and chat; no financial.
+  permChecks($('#uf-perms'), { dashboard: true, chat: true, routines: true });
+}
+
+// ── Auth boot ─────────────────────────────────────────────────
+$('#btn-logout').addEventListener('click', async () => {
+  try { await api.send('/api/logout', 'POST'); } catch { /* session already gone */ }
+  location.href = '/login.html';
+});
+
+function applyPermissions() {
+  const { user } = ME;
+  $('#user-chip').innerHTML = `${user.username} <span class="role">${user.role === 'admin' ? '· admin' : ''}</span>`;
+
+  // Tabs
+  $('#tab-routines').hidden = !canDo('routines');
+  $('#tab-settings').hidden = !canDo('admin');
+
+  // Dashboard controls
+  $('#btn-add').hidden = !canDo('editDashboard');
+  $('#btn-reset').hidden = !canDo('admin');
+
+  // Chat panel
+  if (!canDo('chat')) {
+    document.querySelector('.chat').style.display = 'none';
+    document.querySelector('.layout').style.gridTemplateColumns = '1fr';
+  }
+
+  // Routines: creating is admin-only
+  $('#btn-new-routine').hidden = !canDo('admin');
+
+  // Connection diagnostics are admin-only
+  $('#btn-test-aroflo').hidden = !canDo('admin');
+}
+
 // ── Init ──────────────────────────────────────────────────────
-setupAddForm();
-setupRoutineForm();
-loadStatus();
-loadDashboard();
-pollBuild();
+(async function init() {
+  try {
+    ME = await api.get('/api/me'); // 401 → handle() redirects to /login.html
+  } catch { return; }
+  applyPermissions();
+  setupAddForm();
+  setupRoutineForm();
+  setupNewUserPerms();
+  loadStatus();
+  loadDashboard();
+  pollBuild();
+})();

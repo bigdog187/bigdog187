@@ -6,7 +6,7 @@
   "description": "Weiley Electrical work dashboard — connects AroFlo and Claude. Ask questions in plain English, get answers from live AroFlo data, and reshape the dashboard on the fly.",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "nodemon --watch server --watch public --watch data -e js,html,css,json server/index.js"
+    "dev": "nodemon --watch server --watch public -e js,html,css,json server/index.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",

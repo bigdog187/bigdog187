@@ -47,6 +47,75 @@ to extend it — e.g. "add a chart widget", "add a tool for purchase orders",
 
 ---
 
+## Users, logins & permissions
+
+The dashboard is protected by a local username/password system — no external
+service, everything stays on your server.
+
+- **First run:** visiting the app shows a **Create administrator** screen.
+  That account manages everything else. (No default password ships with the
+  app.)
+- **Add users:** Settings tab (admins only) → *Add a user*. Set a role and
+  tick the permissions each person should have:
+  - **View dashboard** · **Add & rearrange widgets** · **Use the assistant
+    (chat)** · **View & run routines** · **Financial data ($ values, invoices)**
+- **Roles:**
+  - **General user** — only what their permissions allow. They can **never
+    delete anything** (widgets, routines, users) and **never see financial
+    data** unless you grant it. Financial figures are stripped **server-side**
+    — including from Claude's chat answers, where the invoice tool and $
+    fields are removed before the model ever sees them.
+  - **Administrator** — everything: deletes, financial data, user management,
+    routine editing, connection settings. You can't delete or demote the last
+    administrator (or your own account), so you can't lock yourself out.
+- **Passwords** are hashed (scrypt + per-user salt) in `data/users.json`;
+  sessions are httpOnly cookies lasting 7 days. Both files are gitignored.
+  Resetting a user's password signs out their existing sessions. Failed
+  logins are rate-limited (10 tries / 15 min).
+
+> Note: routine **outputs** are visible to anyone with routine access. If
+> general users can run routines, don't put financial summaries in routine
+> prompts — or don't grant those users routine access.
+
+---
+
+## Access it from your phone (over the internet)
+
+The app is mobile-responsive — the missing piece is reaching your PC from
+outside. **Recommended: Cloudflare Tunnel** (free, gives you HTTPS, no router
+port-forwarding, hides your home IP):
+
+1. Install `cloudflared`:
+   - **Windows:** `winget install Cloudflare.cloudflared`
+   - **macOS:** `brew install cloudflared`
+2. Start the dashboard (`npm start`), then in another terminal:
+   ```bash
+   cloudflared tunnel --url http://localhost:3000
+   ```
+3. It prints a public `https://….trycloudflare.com` URL — open that on your
+   phone and log in. Add it to your home screen for an app-like feel.
+
+That quick tunnel gets a **new random URL each time** — great for trying it
+out. For a permanent address, either:
+- **Named Cloudflare Tunnel** (free, needs a domain on Cloudflare): follow
+  Cloudflare's "Create a tunnel" guide and point it at
+  `http://localhost:3000`, or
+- **Tailscale** (free for personal use): install on the PC and your phone,
+  and the dashboard is reachable privately at `http://<pc-name>:3000` from
+  anywhere, with no public exposure at all. Most private option.
+
+**Security notes, honestly stated:**
+- Only expose the app **with the login system in place** (it is — every page
+  and API call requires a signed-in session).
+- Prefer Cloudflare Tunnel or Tailscale over router port-forwarding: both
+  give you encryption (HTTPS/WireGuard) without opening ports; raw
+  port-forwarding of HTTP sends your passwords unencrypted.
+- Use strong passwords — anything internet-facing gets probed by bots.
+- The server must be running for phone access; on Windows, Task Scheduler
+  (or `pm2`) can keep `npm start` running in the background.
+
+---
+
 ## Connect to your live AroFlo
 
 This app runs on **your** machine and talks to **your** AroFlo account with

@@ -14,12 +14,17 @@
     <div class="brand">WEILEY <span>OPERATIONS</span></div>
     <nav class="nav-tabs">
       <button class="tab active" data-view="dashboard">Dashboard</button>
-      <button class="tab" data-view="routines">Routines</button>
+      <button class="tab" data-view="routines" id="tab-routines">Routines</button>
+      <button class="tab" data-view="settings" id="tab-settings" hidden>Settings</button>
     </nav>
-    <button class="status" id="status" title="View connections">
-      <span class="dot" id="dot-claude"></span> Claude
-      <span class="dot" id="dot-aroflo"></span> AroFlo
-    </button>
+    <div class="top-right">
+      <button class="status" id="status" title="View connections">
+        <span class="dot" id="dot-claude"></span> Claude
+        <span class="dot" id="dot-aroflo"></span> AroFlo
+      </button>
+      <span class="user-chip" id="user-chip"></span>
+      <button class="btn ghost small" id="btn-logout">Log out</button>
+    </div>
   </header>
 
   <dialog id="conn-dialog">
@@ -94,6 +99,34 @@
       </div>
       <pre id="output-body"></pre>
     </div>
+  </main>
+
+  <!-- Settings view (admin only) -->
+  <main class="settings-view" id="settings-view" hidden>
+    <div class="board-head">
+      <h1>Settings — Users &amp; Access</h1>
+    </div>
+    <p class="routines-intro">Create accounts for your team and choose what each person can see and do. General users can never delete anything or manage users; financial data is hidden unless you grant it. Administrators can do everything.</p>
+
+    <form id="user-form" class="user-form">
+      <h3>Add a user</h3>
+      <div class="user-form-grid">
+        <label>Username <input name="username" required minlength="2" autocomplete="off" placeholder="e.g. jake" /></label>
+        <label>Password <input name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="min 8 characters" /></label>
+        <label>Role
+          <select name="role" id="uf-role">
+            <option value="user">General user</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </label>
+      </div>
+      <div class="perm-checks" id="uf-perms"></div>
+      <p class="msg-line" id="uf-error" hidden></p>
+      <div><button class="btn" type="submit">Create user</button></div>
+    </form>
+
+    <h3 class="users-heading">Users</h3>
+    <div id="users-list" class="users-list"></div>
   </main>
 
   <!-- Routine editor dialog -->

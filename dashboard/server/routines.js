@@ -5,6 +5,7 @@ import { ROOT } from './config.js';
 import { aroflo } from './aroflo.js';
 import { SOURCES } from './sources.js';
 import { runPrompt } from './claude.js';
+import { SYSTEM_PERMS } from './auth.js';
 
 const DATA_DIR = path.join(ROOT, 'data');
 const FILE = path.join(DATA_DIR, 'routines.json');
@@ -105,7 +106,8 @@ function fmtArgs(a) {
 
 async function executeAction(action) {
   if (action.type === 'claude') {
-    const { text, toolsUsed } = await runPrompt(action.prompt || '');
+    // Routines are admin-configured → run with full permissions.
+    const { text, toolsUsed } = await runPrompt(action.prompt || '', SYSTEM_PERMS);
     const tools = toolsUsed.length ? `\n\n[tools: ${toolsUsed.join(', ')}]` : '';
     return (text || '(no answer)') + tools;
   }

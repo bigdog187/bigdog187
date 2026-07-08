@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — Weiley Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --black:#000; --panel:#0b0b0b; --panel2:#111; --line:#1f1f1f; --white:#fff; --gray:#9b9b9b; --warn:#e0a23b; --err:#c45b5b; }
+    body {
+      background: var(--black); color: var(--white);
+      font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      -webkit-font-smoothing: antialiased; padding: 1.5rem;
+    }
+    .card { width: 100%; max-width: 360px; }
+    .brand { font-weight: 800; letter-spacing: 0.28em; font-size: 1rem; text-align: center; margin-bottom: 0.4rem; }
+    .brand span { font-weight: 400; color: var(--gray); }
+    .sub { text-align: center; color: var(--gray); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2rem; }
+    form { background: var(--panel); border: 1px solid var(--line); padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem; }
+    h1 { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.15rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray); }
+    input {
+      background: var(--panel2); border: 1px solid var(--line); color: var(--white);
+      padding: 0.7rem 0.75rem; font-family: inherit; font-size: 1rem;
+    }
+    input:focus { outline: none; border-color: var(--gray); }
+    button {
+      font-family: inherit; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.8rem; border: 1px solid var(--white); background: var(--white); color: var(--black); cursor: pointer;
+    }
+    button:hover { background: var(--gray); border-color: var(--gray); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .msg { font-size: 0.8rem; line-height: 1.4; display: none; }
+    .msg.err { color: var(--err); display: block; }
+    .msg.info { color: var(--warn); display: block; }
+    .foot { text-align: center; color: #555; font-size: 0.68rem; margin-top: 1.25rem; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">WEILEY <span>OPERATIONS</span></div>
+    <div class="sub">AroFlo + Claude Dashboard</div>
+
+    <form id="form" autocomplete="on">
+      <h1 id="title">Sign in</h1>
+      <p class="msg info" id="setup-note">First run — create the administrator account. Keep these details safe: this account manages all other users.</p>
+      <label>Username <input name="username" id="username" autocomplete="username" required /></label>
+      <label>Password <input name="password" id="password" type="password" autocomplete="current-password" required minlength="8" /></label>
+      <label id="confirm-row" style="display:none">Confirm password <input id="confirm" type="password" autocomplete="new-password" minlength="8" /></label>
+      <p class="msg err" id="error"></p>
+      <button id="submit" type="submit">Sign in</button>
+    </form>
+
+    <p class="foot">Access is account-based. Ask your administrator if you need a login<br>or extra permissions.</p>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    let setupMode = false;
+
+    async function init() {
+      try {
+        const r = await fetch('/api/setup-needed');
+        const { needed } = await r.json();
+        setupMode = !!needed;
+      } catch { setupMode = false; }
+      $('#title').textContent = setupMode ? 'Create administrator' : 'Sign in';
+      $('#submit').textContent = setupMode ? 'Create account' : 'Sign in';
+      $('#setup-note').style.display = setupMode ? 'block' : 'none';
+      $('#confirm-row').style.display = setupMode ? 'flex' : 'none';
+      $('#password').autocomplete = setupMode ? 'new-password' : 'current-password';
+    }
+
+    $('#form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('#error');
+      err.classList.remove('err');
+      err.textContent = '';
+      const username = $('#username').value.trim();
+      const password = $('#password').value;
+      if (setupMode && password !== $('#confirm').value) {
+        err.textContent = 'Passwords do not match';
+        err.classList.add('err');
+        return;
+      }
+      const btn = $('#submit');
+      btn.disabled = true;
+      try {
+        const r = await fetch(setupMode ? '/api/setup' : '/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.error || 'Sign-in failed');
+        location.href = '/';
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.add('err');
+        btn.disabled = false;
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
