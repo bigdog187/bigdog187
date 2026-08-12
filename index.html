@@ -239,6 +239,24 @@
         }
         .product-foot a:hover { border-color: var(--white); gap: 16px; }
 
+        .pcat-row {
+            grid-column: 1 / -1; background: var(--black);
+            display: flex; justify-content: space-between; align-items: baseline; gap: 20px;
+            padding: 30px clamp(28px, 3vw, 48px) 24px;
+        }
+        .pcat-row h5 {
+            font-size: 0.78rem; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;
+            color: var(--white);
+        }
+        .pcat-row h5 span { color: var(--gray-dark); margin-right: 14px; }
+        .pcat-row .label { font-size: 0.6rem; }
+
+        .product-wide { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 24px clamp(32px, 4vw, 72px); align-content: start; }
+        .product-wide .product-top { margin-bottom: 28px; }
+        .product-wide .product-body { display: flex; flex-direction: column; }
+        .product-wide .product-body p { margin-top: 0; }
+        .product-wide .product-foot { padding-top: 26px; }
+
         /* ══════════════════════════════════════════
            CONTACT
         ══════════════════════════════════════════ */
@@ -292,6 +310,8 @@
             .steps { grid-template-columns: 1fr; }
             .panel-detail ul { grid-template-columns: 1fr; }
             .products-grid { grid-template-columns: 1fr; }
+            .product-wide { grid-template-columns: 1fr; gap: 0; }
+            .pcat-row { flex-direction: column; gap: 6px; }
         }
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -454,6 +474,11 @@
         </div>
         <div class="products-grid">
 
+            <div class="pcat-row rv">
+                <h5><span>01</span>Systems &amp; Machines</h5>
+                <span class="label">Designed &amp; Built In-House</span>
+            </div>
+
             <div class="product rv">
                 <div class="product-top">
                     <span class="label">P — 01</span>
@@ -492,41 +517,59 @@
                 <div class="product-foot"><a href="#contact">Enquire →</a></div>
             </div>
 
-            <div class="product rv rv-d1">
-                <div class="product-top">
-                    <span class="label">P — 03</span>
-                    <span class="product-icon">
-                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
-                            <path d="M8 34h28"/>
-                            <path d="M14 34v-12l8-6 8 6v12"/>
-                            <path d="M22 34v-8"/>
-                            <circle cx="34" cy="12" r="3"/>
-                            <path d="M34 15v5M29.5 8a6.4 6.4 0 0 1 9 0M27 5a10 10 0 0 1 14 0" stroke-opacity="0.6"/>
-                        </svg>
-                    </span>
-                </div>
-                <h4>Farm Remote Monitoring</h4>
-                <span class="ptag">Authorised Device Reseller</span>
-                <p>Remote monitoring devices for farms and remote sites — water levels, pumps, power, and environmental conditions reported straight to your phone over cellular or satellite. Supplied, configured, and supported locally by Apex.</p>
-                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+            <div class="pcat-row rv">
+                <h5><span>02</span>Software</h5>
+                <span class="label">Developed by Apex</span>
             </div>
 
-            <div class="product rv rv-d2">
-                <div class="product-top">
-                    <span class="label">P — 04</span>
-                    <span class="product-icon">
-                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
-                            <circle cx="12" cy="22" r="4"/>
-                            <circle cx="32" cy="12" r="4"/>
-                            <circle cx="32" cy="32" r="4"/>
-                            <path d="M15.5 20l13-6M15.5 24l13 6" stroke-opacity="0.6"/>
-                        </svg>
-                    </span>
+            <div class="product product-wide rv">
+                <div class="product-body">
+                    <div class="product-top">
+                        <span class="label">P — 03</span>
+                        <span class="product-icon">
+                            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                                <circle cx="12" cy="22" r="4"/>
+                                <circle cx="32" cy="12" r="4"/>
+                                <circle cx="32" cy="32" r="4"/>
+                                <path d="M15.5 20l13-6M15.5 24l13 6" stroke-opacity="0.6"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <h4>Node</h4>
+                    <span class="ptag">Secure Remote Access Software</span>
                 </div>
-                <h4>Node</h4>
-                <span class="ptag">Secure Remote Access Software</span>
-                <p>Node connects you securely to site networks from anywhere — PLCs, HMIs, and SCADA reachable for diagnostics, programming, and support without a site visit, with access controlled and logged per user.</p>
-                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+                <div class="product-body">
+                    <p>Node connects you securely to site networks from anywhere — PLCs, HMIs, and SCADA reachable for diagnostics, programming, and support without a site visit, with access controlled and logged per user.</p>
+                    <div class="product-foot"><a href="#contact">Enquire →</a></div>
+                </div>
+            </div>
+
+            <div class="pcat-row rv">
+                <h5><span>03</span>Supplied &amp; Supported</h5>
+                <span class="label">Authorised Reselling Partners</span>
+            </div>
+
+            <div class="product product-wide rv">
+                <div class="product-body">
+                    <div class="product-top">
+                        <span class="label">P — 04</span>
+                        <span class="product-icon">
+                            <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                                <path d="M8 34h28"/>
+                                <path d="M14 34v-12l8-6 8 6v12"/>
+                                <path d="M22 34v-8"/>
+                                <circle cx="34" cy="12" r="3"/>
+                                <path d="M34 15v5M29.5 8a6.4 6.4 0 0 1 9 0M27 5a10 10 0 0 1 14 0" stroke-opacity="0.6"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <h4>Farm Remote Monitoring</h4>
+                    <span class="ptag">Farm &amp; Remote-Site Telemetry</span>
+                </div>
+                <div class="product-body">
+                    <p>Remote monitoring devices for farms and remote sites — water levels, pumps, power, and environmental conditions reported straight to your phone over cellular or satellite. Supplied, configured, and supported locally by Apex.</p>
+                    <div class="product-foot"><a href="#contact">Enquire →</a></div>
+                </div>
             </div>
 
         </div>
