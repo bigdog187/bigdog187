@@ -219,6 +219,27 @@
         .ind:hover { color: var(--white); border-color: var(--gray-dark); }
 
         /* ══════════════════════════════════════════
+           PRODUCTS
+        ══════════════════════════════════════════ */
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+        .product { background: var(--black); padding: clamp(36px, 4vw, 56px) clamp(28px, 3vw, 48px); position: relative; transition: background 0.3s; display: flex; flex-direction: column; }
+        .product:hover { background: #0d0d0d; }
+        .product-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+        .product-top .label { padding-top: 6px; }
+        .product-icon svg { display: block; }
+        .product h4 { font-weight: 700; text-transform: uppercase; font-size: clamp(1.3rem, 2vw, 1.7rem); letter-spacing: 0.04em; }
+        .product .ptag { display: block; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gray-dark); margin-top: 10px; }
+        .product p { color: var(--gray); font-size: 0.92rem; line-height: 1.7; font-weight: 300; margin-top: 18px; max-width: 52ch; }
+        .product-foot { margin-top: auto; padding-top: 30px; }
+        .product-foot a {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--white); text-decoration: none; border-bottom: 1px solid var(--gray-dark); padding-bottom: 6px;
+            transition: border-color 0.25s, gap 0.25s;
+        }
+        .product-foot a:hover { border-color: var(--white); gap: 16px; }
+
+        /* ══════════════════════════════════════════
            CONTACT
         ══════════════════════════════════════════ */
         .contact-sec {
@@ -270,6 +291,7 @@
             .mission-grid, .contact-grid { grid-template-columns: 1fr; }
             .steps { grid-template-columns: 1fr; }
             .panel-detail ul { grid-template-columns: 1fr; }
+            .products-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -296,6 +318,7 @@
         <li><a href="#mes">MES Software</a></li>
         <li><a href="#automation">Automation</a></li>
         <li><a href="#panels">Control Panels</a></li>
+        <li><a href="#products">Products</a></li>
         <li><a href="#contact">Contact</a></li>
     </ul>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
@@ -308,7 +331,8 @@
     <a href="#mes"><small>02</small>MES Software</a>
     <a href="#automation"><small>03</small>Automation</a>
     <a href="#panels"><small>04</small>Control Panels</a>
-    <a href="#contact"><small>05</small>Contact</a>
+    <a href="#products"><small>05</small>Products</a>
+    <a href="#contact"><small>06</small>Contact</a>
 </div>
 
 <!-- ════════ HERO ════════ -->
@@ -421,6 +445,94 @@
     </div>
 </section>
 
+<!-- ════════ PRODUCTS ════════ -->
+<section class="dark-sec" id="products">
+    <div class="dark-inner">
+        <div class="sec-head rv">
+            <h3>Products</h3>
+            <span class="label">What We Build &amp; Supply</span>
+        </div>
+        <div class="products-grid">
+
+            <div class="product rv">
+                <div class="product-top">
+                    <span class="label">P — 01</span>
+                    <span class="product-icon">
+                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                            <rect x="6" y="12" width="24" height="18" rx="2"/>
+                            <circle cx="18" cy="21" r="6"/>
+                            <circle cx="18" cy="21" r="2.4"/>
+                            <path d="M30 17h8M30 21h8M30 25h8" stroke-opacity="0.6"/>
+                            <path d="M10 8h6M10 34h24" stroke-opacity="0.6"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4>PerceptionQA</h4>
+                <span class="ptag">Vision-Based Quality Assurance</span>
+                <p>Automated visual inspection for production lines. PerceptionQA uses machine vision to check product quality in real time — catching defects, verifying presentation, and logging every result against the batch record before product leaves the line.</p>
+                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+            </div>
+
+            <div class="product rv rv-d1">
+                <div class="product-top">
+                    <span class="label">P — 02</span>
+                    <span class="product-icon">
+                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                            <path d="M8 28h28l-3-9H15z"/>
+                            <path d="M15 19v-7h9l4 7"/>
+                            <path d="M15 12h-4"/>
+                            <circle cx="14" cy="32" r="3.4"/>
+                            <circle cx="31" cy="32" r="3.4"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4>The Golf Cart</h4>
+                <span class="ptag">Electric Cart Platform</span>
+                <p>Our electric golf cart programme — cart electronics, drive and battery control engineered with the same industrial-grade components and rigour we put into plant automation. Ask us about current builds and availability.</p>
+                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+            </div>
+
+            <div class="product rv rv-d1">
+                <div class="product-top">
+                    <span class="label">P — 03</span>
+                    <span class="product-icon">
+                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                            <path d="M8 34h28"/>
+                            <path d="M14 34v-12l8-6 8 6v12"/>
+                            <path d="M22 34v-8"/>
+                            <circle cx="34" cy="12" r="3"/>
+                            <path d="M34 15v5M29.5 8a6.4 6.4 0 0 1 9 0M27 5a10 10 0 0 1 14 0" stroke-opacity="0.6"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4>Farm Remote Monitoring</h4>
+                <span class="ptag">Authorised Device Reseller</span>
+                <p>Remote monitoring devices for farms and remote sites — water levels, pumps, power, and environmental conditions reported straight to your phone over cellular or satellite. Supplied, configured, and supported locally by Apex.</p>
+                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+            </div>
+
+            <div class="product rv rv-d2">
+                <div class="product-top">
+                    <span class="label">P — 04</span>
+                    <span class="product-icon">
+                        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#8d8d8a" stroke-width="1.4">
+                            <circle cx="12" cy="22" r="4"/>
+                            <circle cx="32" cy="12" r="4"/>
+                            <circle cx="32" cy="32" r="4"/>
+                            <path d="M15.5 20l13-6M15.5 24l13 6" stroke-opacity="0.6"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4>Node</h4>
+                <span class="ptag">Secure Remote Access Software</span>
+                <p>Node connects you securely to site networks from anywhere — PLCs, HMIs, and SCADA reachable for diagnostics, programming, and support without a site visit, with access controlled and logged per user.</p>
+                <div class="product-foot"><a href="#contact">Enquire →</a></div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
 <!-- ════════ MISSION / APPROACH ════════ -->
 <section class="dark-sec" id="approach">
     <div class="dark-inner">
@@ -524,6 +636,7 @@
             <li><a href="#mes">MES Software</a></li>
             <li><a href="#automation">Automation</a></li>
             <li><a href="#panels">Control Panels</a></li>
+            <li><a href="#products">Products</a></li>
             <li><a href="#contact">Contact</a></li>
         </ul>
         <div class="foot-base" style="display:flex;flex-direction:column;gap:8px;align-items:center">
