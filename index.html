@@ -296,6 +296,13 @@
             margin: 0 auto; background: #0f0f0e; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;
             font-size: 0.62rem; letter-spacing: 0.06em; color: var(--gray); padding: 4px 26px;
         }
+        .sw-modes { display: flex; gap: 2px; background: #0f0f0e; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 2px; }
+        .sw-modes button {
+            font-family: var(--font); font-size: 0.56rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--gray); background: none; border: 0; cursor: pointer; border-radius: 4px; padding: 4px 11px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .sw-modes button.on { background: #2e2e2c; color: var(--white); }
         .sw-shot img { display: block; width: 100%; height: auto; }
 
         /* ══════════════════════════════════════════
@@ -631,11 +638,17 @@
                     <li>Downtime capture &amp; cause analysis</li>
                     <li>Alarm &amp; event monitoring</li>
                     <li>Automated shift &amp; management reports</li>
+                    <li>Light &amp; dark themes — control room to office</li>
                 </ul>
                 <div class="sw-cta"><a href="#contact">Book a demo →</a></div>
             </div>
             <div class="sw-shot">
-                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">argus.apexcontrolsystems.com.au</span></div>
+                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">argus.apexcontrolsystems.com.au</span>
+                    <div class="sw-modes">
+                        <button class="on" data-src="images/argus-dashboard.png">Dark</button>
+                        <button data-src="images/argus-dashboard-light.png">Light</button>
+                    </div>
+                </div>
                 <img src="images/argus-dashboard.png" alt="Argus plant monitoring dashboard — live OEE, line throughput, downtime and alarms" loading="lazy">
             </div>
         </div>
@@ -657,11 +670,17 @@
                     <li>Quote pipeline &amp; win rates</li>
                     <li>Invoicing &amp; cashflow tracking</li>
                     <li>Phone, tablet &amp; office screen</li>
+                    <li>Light &amp; dark themes</li>
                 </ul>
                 <div class="sw-cta"><a href="#contact">Register interest →</a></div>
             </div>
             <div class="sw-shot">
-                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">atlas.apexcontrolsystems.com.au</span></div>
+                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">atlas.apexcontrolsystems.com.au</span>
+                    <div class="sw-modes">
+                        <button class="on" data-src="images/atlas-dashboard.png">Dark</button>
+                        <button data-src="images/atlas-dashboard-light.png">Light</button>
+                    </div>
+                </div>
                 <img src="images/atlas-dashboard.png" alt="Atlas trade services dashboard — jobs, technician schedule, quotes and cashflow" loading="lazy">
             </div>
         </div>
@@ -807,6 +826,19 @@
         entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
     }, { threshold: 0.15 });
     document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+    /* ── software screenshot theme toggles ── */
+    document.querySelectorAll('.sw-modes button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const shot = btn.closest('.sw-shot');
+            shot.querySelectorAll('.sw-modes button').forEach(b => b.classList.toggle('on', b === btn));
+            shot.querySelector('img').src = btn.dataset.src;
+        });
+    });
+    addEventListener('load', () => {
+        ['images/argus-dashboard-light.png', 'images/atlas-dashboard-light.png']
+            .forEach(s => { const i = new Image(); i.src = s; });
+    });
 
     /* ── LEARN MORE toggles ── */
     document.querySelectorAll('[data-toggle]').forEach(btn => {
