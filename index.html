@@ -258,6 +258,47 @@
         .product-wide .product-foot { padding-top: 26px; }
 
         /* ══════════════════════════════════════════
+           SOFTWARE PLATFORMS
+        ══════════════════════════════════════════ */
+        .sw-block { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: clamp(36px, 4.5vw, 80px); align-items: center; }
+        .sw-block + .sw-block { margin-top: clamp(70px, 8vw, 130px); }
+        .sw-block.flip { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+        .sw-block.flip .sw-shot { order: -1; }
+        .sw-name { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .sw-name h4 { font-weight: 800; letter-spacing: 0.2em; font-size: clamp(1.4rem, 2vw, 1.8rem); text-transform: uppercase; }
+        .sw-badge {
+            font-size: 0.58rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+            border: 1px solid var(--gray-dark); color: var(--gray); border-radius: 3px; padding: 5px 10px;
+        }
+        .sw-text .ptag { display: block; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gray-dark); margin-top: 12px; }
+        .sw-text > p { color: var(--gray); font-size: 0.95rem; line-height: 1.75; font-weight: 300; margin-top: 20px; max-width: 50ch; }
+        .sw-feats { list-style: none; margin-top: 26px; border-top: 1px solid var(--border); }
+        .sw-feats li {
+            font-size: 0.76rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+            color: #d6d6d6; padding: 12px 0 12px 22px; border-bottom: 1px solid var(--border); position: relative;
+        }
+        .sw-feats li::before { content: '+'; position: absolute; left: 0; color: var(--gray-dark); }
+        .sw-cta { margin-top: 28px; }
+        .sw-cta a {
+            display: inline-flex; align-items: center; gap: 10px;
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+            color: var(--white); text-decoration: none; border-bottom: 1px solid var(--gray-dark); padding-bottom: 6px;
+            transition: border-color 0.25s, gap 0.25s;
+        }
+        .sw-cta a:hover { border-color: var(--white); gap: 16px; }
+        .sw-shot {
+            border: 1px solid #2e2e2c; border-radius: 10px; overflow: hidden; background: #141413;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.6);
+        }
+        .sw-chrome { display: flex; align-items: center; gap: 7px; padding: 11px 14px; background: #161615; border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .sw-chrome i { width: 10px; height: 10px; border-radius: 50%; background: #2e2e2c; }
+        .sw-chrome .url {
+            margin: 0 auto; background: #0f0f0e; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;
+            font-size: 0.62rem; letter-spacing: 0.06em; color: var(--gray); padding: 4px 26px;
+        }
+        .sw-shot img { display: block; width: 100%; height: auto; }
+
+        /* ══════════════════════════════════════════
            CONTACT
         ══════════════════════════════════════════ */
         .contact-sec {
@@ -312,6 +353,8 @@
             .products-grid { grid-template-columns: 1fr; }
             .product-wide { grid-template-columns: 1fr; gap: 0; }
             .pcat-row { flex-direction: column; gap: 6px; }
+            .sw-block { grid-template-columns: 1fr; }
+            .sw-block.flip .sw-shot { order: 0; }
         }
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -335,10 +378,11 @@
     </a>
     <ul class="nav-links">
         <li><a href="#plc-scada">PLC &amp; SCADA</a></li>
-        <li><a href="#mes">MES Software</a></li>
+        <li><a href="#mes">MES Reporting</a></li>
         <li><a href="#automation">Automation</a></li>
         <li><a href="#panels">Control Panels</a></li>
         <li><a href="#products">Products</a></li>
+        <li><a href="#software">Software</a></li>
         <li><a href="#contact">Contact</a></li>
     </ul>
     <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
@@ -348,11 +392,12 @@
 
 <div class="mobile-menu" id="mobileMenu">
     <a href="#plc-scada"><small>01</small>PLC &amp; SCADA</a>
-    <a href="#mes"><small>02</small>MES Software</a>
+    <a href="#mes"><small>02</small>MES Reporting</a>
     <a href="#automation"><small>03</small>Automation</a>
     <a href="#panels"><small>04</small>Control Panels</a>
     <a href="#products"><small>05</small>Products</a>
-    <a href="#contact"><small>06</small>Contact</a>
+    <a href="#software"><small>06</small>Software</a>
+    <a href="#contact"><small>07</small>Contact</a>
 </div>
 
 <!-- ════════ HERO ════════ -->
@@ -561,6 +606,68 @@
     </div>
 </section>
 
+<!-- ════════ SOFTWARE PLATFORMS ════════ -->
+<section class="dark-sec" id="software" style="padding-top:0">
+    <div class="dark-inner">
+        <div class="sec-head rv">
+            <h3>Software</h3>
+            <span class="label">Platforms Built by Apex</span>
+        </div>
+
+        <div class="sw-block rv">
+            <div class="sw-text">
+                <div class="sw-name">
+                    <svg width="30" height="30" viewBox="0 0 26 26" fill="none">
+                        <circle cx="13" cy="13" r="10.5" stroke="#ffffff" stroke-width="1.8"/>
+                        <circle cx="13" cy="13" r="4.5" fill="#ffffff"/>
+                        <path d="M13 2.5v4M13 19.5v4M2.5 13h4M19.5 13h4" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <h4>Argus</h4>
+                </div>
+                <span class="ptag">Plant Monitoring for Manufacturing</span>
+                <p>Argus watches every line, tank, and utility on site — live OEE, throughput, downtime, and alarms streamed from your PLCs into one screen the whole plant works from. It connects to the controllers and historian you already have, and turns shift-end guesswork into numbers.</p>
+                <ul class="sw-feats">
+                    <li>Live line status &amp; plant OEE</li>
+                    <li>Downtime capture &amp; cause analysis</li>
+                    <li>Alarm &amp; event monitoring</li>
+                    <li>Automated shift &amp; management reports</li>
+                </ul>
+                <div class="sw-cta"><a href="#contact">Book a demo →</a></div>
+            </div>
+            <div class="sw-shot">
+                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">argus.apexcontrolsystems.com.au</span></div>
+                <img src="images/argus-dashboard.png" alt="Argus plant monitoring dashboard — live OEE, line throughput, downtime and alarms" loading="lazy">
+            </div>
+        </div>
+
+        <div class="sw-block flip rv">
+            <div class="sw-text">
+                <div class="sw-name">
+                    <svg width="30" height="30" viewBox="0 0 26 26" fill="none">
+                        <path d="M3 20 10 6l4.2 8L17 9l6 11" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                        <path d="M2 23h22" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                    </svg>
+                    <h4>Atlas</h4>
+                    <span class="sw-badge">In Development</span>
+                </div>
+                <span class="ptag">Operations Dashboard for Trade Services</span>
+                <p>Atlas puts a trade service business on one screen — today's jobs and technician schedule, the quote pipeline, invoicing, and cashflow — so you run the day from the dashboard, not the paperwork. Built for electrical, plumbing, HVAC, and field service teams.</p>
+                <ul class="sw-feats">
+                    <li>Job board &amp; technician scheduling</li>
+                    <li>Quote pipeline &amp; win rates</li>
+                    <li>Invoicing &amp; cashflow tracking</li>
+                    <li>Phone, tablet &amp; office screen</li>
+                </ul>
+                <div class="sw-cta"><a href="#contact">Register interest →</a></div>
+            </div>
+            <div class="sw-shot">
+                <div class="sw-chrome"><i></i><i></i><i></i><span class="url">atlas.apexcontrolsystems.com.au</span></div>
+                <img src="images/atlas-dashboard.png" alt="Atlas trade services dashboard — jobs, technician schedule, quotes and cashflow" loading="lazy">
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- ════════ MISSION / APPROACH ════════ -->
 <section class="dark-sec" id="approach">
     <div class="dark-inner">
@@ -661,10 +768,11 @@
         </a>
         <ul class="foot-links">
             <li><a href="#plc-scada">PLC &amp; SCADA</a></li>
-            <li><a href="#mes">MES Software</a></li>
+            <li><a href="#mes">MES Reporting</a></li>
             <li><a href="#automation">Automation</a></li>
             <li><a href="#panels">Control Panels</a></li>
             <li><a href="#products">Products</a></li>
+            <li><a href="#software">Software</a></li>
             <li><a href="#contact">Contact</a></li>
         </ul>
         <div class="foot-base" style="display:flex;flex-direction:column;gap:8px;align-items:center">
