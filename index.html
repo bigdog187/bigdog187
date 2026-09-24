@@ -1,1238 +1,378 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weiley Electrical — Keeping Central West Businesses Powered</title>
-    <meta name="description" content="Weiley Electrical — ISO-certified electrical contractor serving Dubbo and Central West NSW since 1986. Industrial, commercial, and compliance services.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-        :root {
-            --black:     #000000;
-            --white:     #ffffff;
-            --gray:      #9b9b9b;
-            --gray-dark: #4a4a4a;
-            --border:    #1f1f1f;
-            --font:      'Barlow', 'Helvetica Neue', Arial, sans-serif;
-            --font-cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-        }
-
-        html { scroll-behavior: smooth; }
-
-        body {
-            background: var(--black);
-            color: var(--white);
-            font-family: var(--font);
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: var(--black); }
-        ::-webkit-scrollbar-thumb { background: var(--gray-dark); }
-
-        /* ══════════════════════════════════════════
-           NAV
-        ══════════════════════════════════════════ */
-        nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            height: 72px;
-            display: flex; align-items: center;
-            padding: 0 3rem;
-            transition: background 0.3s ease;
-            background: linear-gradient(rgba(0,0,0,0.6), transparent);
-        }
-        nav.scrolled { background: rgba(0,0,0,0.94); backdrop-filter: blur(14px); }
-
-        .nav-inner {
-            display: flex; align-items: center; justify-content: space-between;
-            width: 100%; max-width: 1600px; margin: 0 auto;
-            gap: 2rem;
-        }
-
-        .nav-logo {
-            font-family: var(--font);
-            font-size: 1rem; font-weight: 800;
-            letter-spacing: 0.32em; text-transform: uppercase;
-            color: var(--white); text-decoration: none; white-space: nowrap;
-            flex-shrink: 0;
-        }
-        .nav-logo span { font-weight: 400; color: var(--gray); }
-
-        /* Nav link list */
-        .nav-links { display: flex; align-items: stretch; list-style: none; }
-
-        /* Each top-level item is a positioned container */
-        .nav-item { position: relative; }
-
-        .nav-link {
-            display: flex; align-items: center; gap: 0.35rem;
-            font-size: 0.7rem; font-weight: 600;
-            letter-spacing: 0.18em; text-decoration: none; color: var(--white);
-            padding: 0 1rem; height: 72px;
-            text-transform: uppercase; white-space: nowrap;
-            border: none; background: none; cursor: pointer;
-            font-family: var(--font);
-            transition: color 0.2s;
-        }
-        .nav-link:hover { color: var(--gray); }
-
-        /* Chevron for items with dropdowns */
-        .nav-link .chev {
-            width: 8px; height: 5px; flex-shrink: 0;
-            border-left: 1.5px solid currentColor;
-            border-bottom: 1.5px solid currentColor;
-            transform: rotate(-45deg) translate(1px, -1px);
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-        .nav-item:hover .nav-link .chev,
-        .nav-item.open .nav-link .chev { transform: rotate(135deg) translate(-1px, 1px); }
-
-        /* Underline on hover */
-        .nav-link::after {
-            content: ''; position: absolute; left: 1rem; right: 1rem; bottom: 14px;
-            height: 1px; background: var(--white); opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .nav-item:hover .nav-link::after { opacity: 0.5; }
-
-        /* ── DROPDOWN ── */
-        .dropdown {
-            position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
-            background: rgba(5,5,5,0.97); backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 2rem 2.5rem 2.5rem;
-            width: 480px;
-            opacity: 0; visibility: hidden; pointer-events: none;
-            transform: translateX(-50%) translateY(-8px);
-            transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s;
-        }
-        .nav-item:hover .dropdown,
-        .nav-item.open .dropdown {
-            opacity: 1; visibility: visible; pointer-events: all;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .dropdown-header {
-            font-size: 0.6rem; font-weight: 700; letter-spacing: 0.3em;
-            text-transform: uppercase; color: var(--gray);
-            padding-bottom: 1rem; margin-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .dropdown-items {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 0;
-        }
-
-        .dropdown-item {
-            display: flex; align-items: flex-start; gap: 0.875rem;
-            padding: 0.9rem 0.75rem;
-            text-decoration: none; color: var(--white);
-            transition: background 0.15s;
-            border-radius: 2px;
-        }
-        .dropdown-item:hover { background: rgba(255,255,255,0.05); }
-
-        .di-icon {
-            width: 34px; height: 34px; flex-shrink: 0;
-            border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--gray);
-            transition: border-color 0.15s, color 0.15s;
-        }
-        .dropdown-item:hover .di-icon { border-color: rgba(255,255,255,0.3); color: var(--white); }
-        .di-icon svg { width: 15px; height: 15px; }
-
-        .di-text {}
-        .di-title {
-            font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
-            line-height: 1.3; margin-bottom: 0.2rem;
-        }
-        .di-desc {
-            font-size: 0.65rem; color: var(--gray); line-height: 1.45; font-weight: 400;
-        }
-
-        .dropdown-footer {
-            margin-top: 1.25rem; padding-top: 1.25rem;
-            border-top: 1px solid var(--border);
-            display: flex; justify-content: flex-end;
-        }
-        .dropdown-cta {
-            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em;
-            text-transform: uppercase; color: var(--white);
-            text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.35);
-            padding-bottom: 2px; transition: border-color 0.2s;
-        }
-        .dropdown-cta:hover { border-color: var(--white); }
-
-        .nav-right {
-            display: flex; align-items: center; gap: 1.5rem; flex-shrink: 0;
-        }
-        .nav-phone {
-            font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em;
-            color: var(--white); text-decoration: none;
-        }
-
-        /* ══════════════════════════════════════════
-           BUTTONS
-        ══════════════════════════════════════════ */
-        .btn {
-            display: inline-block; font-family: var(--font);
-            font-size: 0.72rem; font-weight: 700;
-            letter-spacing: 0.22em; text-transform: uppercase;
-            color: var(--white); text-decoration: none; text-align: center;
-            border: 2px solid var(--white);
-            padding: 1.05rem 2.75rem;
-            background: transparent; cursor: pointer;
-            transition: background 0.25s ease, color 0.25s ease;
-        }
-        .btn:hover { background: var(--white); color: var(--black); }
-        .btn-solid { background: var(--white); color: var(--black); }
-        .btn-solid:hover { background: transparent; color: var(--white); }
-
-        /* ══════════════════════════════════════════
-           FULL-BLEED PANELS
-        ══════════════════════════════════════════ */
-        .panel {
-            position: relative; min-height: 100vh;
-            display: flex; align-items: flex-end; overflow: hidden;
-        }
-        .panel-bg {
-            position: absolute; inset: 0;
-            background-size: cover; background-position: center;
-            transform: scale(1.04);
-            transition: transform 8s ease;
-        }
-        .panel.visible .panel-bg { transform: scale(1); }
-        .panel-bg::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(180deg,
-                rgba(0,0,0,0.38) 0%,
-                rgba(0,0,0,0.05) 35%,
-                rgba(0,0,0,0.78) 100%);
-        }
-
-        .panel-content {
-            position: relative; z-index: 2;
-            width: 100%; max-width: 1600px; margin: 0 auto;
-            padding: 0 3rem 7rem;
-        }
-
-        .panel-label {
-            font-size: 0.76rem; font-weight: 700; letter-spacing: 0.35em;
-            text-transform: uppercase; color: rgba(255,255,255,0.8);
-            margin-bottom: 1rem;
-        }
-        .panel-headline {
-            font-family: var(--font); font-size: clamp(2.4rem, 5.5vw, 4.75rem);
-            font-weight: 800; line-height: 1.02;
-            letter-spacing: 0.01em; text-transform: uppercase;
-            max-width: 900px; margin-bottom: 1.25rem;
-        }
-        .panel-sub {
-            font-size: clamp(0.9rem, 1.35vw, 1.1rem); font-weight: 400; line-height: 1.65;
-            color: rgba(255,255,255,0.85); max-width: 540px; margin-bottom: 2.25rem;
-        }
-        .panel-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
-
-        /* Per-panel backgrounds */
-        #hero .panel-bg       { background-image: url('images/hero.jpg'); }
-        #industrial .panel-bg { background-image: url('images/industrial.jpg'); }
-        #commercial .panel-bg { background-image: url('images/commercial.jpg'); }
-        #compliance .panel-bg { background-image: url('images/compliance.jpg'); }
-        #about .panel-bg      { background-image: url('images/regional.jpg'); }
-
-        #hero .panel-content { padding-bottom: 9rem; }
-
-        .hero-est {
-            font-size: 0.76rem; font-weight: 700; letter-spacing: 0.38em;
-            text-transform: uppercase; color: rgba(255,255,255,0.75);
-            margin-bottom: 1.25rem;
-        }
-
-        /* Scroll cue */
-        .scroll-cue {
-            position: absolute; bottom: 2.25rem; left: 50%;
-            transform: translateX(-50%); z-index: 3;
-            width: 22px; height: 36px;
-            border: 2px solid rgba(255,255,255,0.5); border-radius: 12px;
-        }
-        .scroll-cue::before {
-            content: ''; position: absolute; top: 6px; left: 50%;
-            width: 3px; height: 7px; margin-left: -1.5px;
-            background: var(--white); border-radius: 2px;
-            animation: cue 2s ease-in-out infinite;
-        }
-        @keyframes cue { 0%{opacity:1;transform:translateY(0)} 70%{opacity:0;transform:translateY(12px)} 100%{opacity:0} }
-
-        /* ══════════════════════════════════════════
-           SERVICE DETAIL CARDS (inside panels)
-        ══════════════════════════════════════════ */
-        .service-detail {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 1px; background: rgba(255,255,255,0.12);
-            margin-bottom: 2.5rem; max-width: 900px;
-        }
-        .sd-card {
-            background: rgba(0,0,0,0.62); backdrop-filter: blur(8px);
-            padding: 1.25rem 1.5rem;
-        }
-        .sd-title {
-            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
-            text-transform: uppercase; margin-bottom: 0.45rem;
-        }
-        .sd-desc {
-            font-size: 0.7rem; color: rgba(255,255,255,0.65); line-height: 1.55; font-weight: 400;
-        }
-
-        /* ══════════════════════════════════════════
-           STATS BAND
-        ══════════════════════════════════════════ */
-        .stats-band {
-            background: var(--black); border-top: 1px solid var(--border);
-            border-bottom: 1px solid var(--border); padding: 5.5rem 3rem;
-        }
-        .stats-inner {
-            max-width: 1600px; margin: 0 auto;
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 3rem;
-        }
-        .stat { text-align: center; }
-        .stat-value {
-            font-family: var(--font-cond); font-size: clamp(3rem, 5.5vw, 5rem);
-            font-weight: 700; line-height: 1; letter-spacing: 0.02em;
-        }
-        .stat-label {
-            margin-top: 0.75rem; font-size: 0.68rem; font-weight: 600;
-            letter-spacing: 0.28em; text-transform: uppercase; color: var(--gray);
-        }
-
-        /* ══════════════════════════════════════════
-           ABOUT PANEL
-        ══════════════════════════════════════════ */
-        #about { align-items: center; }
-        #about .panel-bg::after {
-            background: linear-gradient(90deg,
-                rgba(0,0,0,0.85) 0%,
-                rgba(0,0,0,0.5) 55%,
-                rgba(0,0,0,0.18) 100%);
-        }
-        #about .panel-content { padding: 8rem 3rem; }
-        .about-text {
-            font-size: clamp(0.95rem, 1.4vw, 1.15rem); line-height: 1.8;
-            color: rgba(255,255,255,0.88); max-width: 600px; margin-bottom: 1.1rem;
-        }
-
-        /* ══════════════════════════════════════════
-           CONTACT
-        ══════════════════════════════════════════ */
-        #contact { background: var(--black); padding: 8rem 3rem; }
-        .contact-inner { max-width: 1600px; margin: 0 auto; }
-
-        .contact-head { margin-bottom: 4.5rem; max-width: 700px; }
-        .contact-label {
-            font-size: 0.76rem; font-weight: 700; letter-spacing: 0.35em;
-            text-transform: uppercase; color: var(--gray); margin-bottom: 1rem;
-        }
-        .contact-title {
-            font-size: clamp(2.2rem, 4.5vw, 4rem);
-            font-weight: 800; text-transform: uppercase; line-height: 1.05;
-        }
-
-        .contact-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 6rem; }
-
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-label {
-            display: block; font-size: 0.66rem; font-weight: 700;
-            letter-spacing: 0.22em; text-transform: uppercase;
-            color: var(--gray); margin-bottom: 0.625rem;
-        }
-        .form-input, .form-textarea, .form-select {
-            width: 100%; background: transparent;
-            border: none; border-bottom: 1px solid var(--gray-dark);
-            color: var(--white); font-family: var(--font); font-size: 1rem;
-            padding: 0.625rem 0; outline: none;
-            transition: border-color 0.2s; appearance: none; border-radius: 0;
-        }
-        .form-input:focus, .form-textarea:focus, .form-select:focus { border-bottom-color: var(--white); }
-        .form-input::placeholder, .form-textarea::placeholder { color: var(--gray-dark); }
-        .form-textarea { min-height: 100px; resize: vertical; }
-        .form-select { cursor: pointer; }
-        .form-select option { background: #000; }
-
-        .info-row { padding: 1.75rem 0; border-bottom: 1px solid var(--border); }
-        .info-row:first-child { padding-top: 0.5rem; }
-        .info-label {
-            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.25em;
-            text-transform: uppercase; color: var(--gray); margin-bottom: 0.625rem;
-        }
-        .info-val { font-size: 1rem; font-weight: 500; line-height: 1.65; }
-        .info-val a { color: inherit; text-decoration: none; }
-        .info-val a:hover { text-decoration: underline; text-underline-offset: 4px; }
-        .info-note {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
-            text-transform: uppercase; color: var(--gray); margin-top: 0.625rem;
-        }
-
-        /* ══════════════════════════════════════════
-           FOOTER
-        ══════════════════════════════════════════ */
-        footer {
-            background: var(--black); border-top: 1px solid var(--border);
-            padding: 3rem;
-        }
-        .footer-inner {
-            max-width: 1600px; margin: 0 auto;
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 2rem; flex-wrap: wrap;
-        }
-        .footer-copy {
-            font-size: 0.68rem; font-weight: 500; letter-spacing: 0.12em;
-            text-transform: uppercase; color: var(--gray-dark); line-height: 2;
-        }
-        .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; }
-        .footer-links a {
-            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.18em;
-            text-transform: uppercase; color: var(--gray); text-decoration: none;
-        }
-        .footer-links a:hover { color: var(--white); }
-
-        /* ══════════════════════════════════════════
-           ANIMATIONS
-        ══════════════════════════════════════════ */
-        .reveal {
-            opacity: 0; transform: translateY(26px);
-            transition: opacity 0.85s ease, transform 0.85s ease;
-        }
-        .panel.visible .reveal, .reveal.visible { opacity: 1; transform: none; }
-        .reveal:nth-child(2) { transition-delay: 0.08s; }
-        .reveal:nth-child(3) { transition-delay: 0.16s; }
-        .reveal:nth-child(4) { transition-delay: 0.24s; }
-        .reveal:nth-child(5) { transition-delay: 0.32s; }
-        .reveal:nth-child(6) { transition-delay: 0.40s; }
-
-        /* Mobile hamburger */
-        .nav-hamburger {
-            display: none; flex-direction: column; gap: 5px;
-            background: none; border: none; cursor: pointer; padding: 4px;
-        }
-        .nav-hamburger span { display: block; width: 22px; height: 1.5px; background: var(--white); transition: all 0.2s; }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE
-        ══════════════════════════════════════════ */
-        @media (max-width: 1200px) {
-            .service-detail { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 1024px) {
-            .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 3.5rem 2rem; }
-            .contact-grid { grid-template-columns: 1fr; gap: 4rem; }
-        }
-        @media (max-width: 900px) {
-            nav { padding: 0 1.5rem; }
-            .nav-links, .nav-phone { display: none; }
-            .nav-hamburger { display: flex; }
-            .panel-content { padding: 0 1.5rem 5rem; }
-            #hero .panel-content { padding-bottom: 7rem; }
-            #about .panel-content { padding: 6rem 1.5rem; }
-            #contact { padding: 5rem 1.5rem; }
-            footer { padding: 2.5rem 1.5rem; }
-            .form-row { grid-template-columns: 1fr; gap: 0; margin-bottom: 0; }
-            .stats-band { padding: 4rem 1.5rem; }
-            .footer-inner { flex-direction: column; align-items: flex-start; }
-            .service-detail { grid-template-columns: 1fr; max-width: 100%; }
-        }
-    
-        /* ══════════════════════════════════════════
-           MOBILE MENU OVERLAY
-        ══════════════════════════════════════════ */
-        .mob-overlay {
-            position: fixed; inset: 0; z-index: 3000;
-            background: #000;
-            transform: translateX(100%);
-            transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column;
-            overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-        .mob-overlay.is-open { transform: translateX(0); }
-
-        .mob-header {
-            display: flex; align-items: center; justify-content: space-between;
-            position: relative; z-index: 10; padding: 0 1.5rem; height: 64px; flex-shrink: 0;
-            border-bottom: 1px solid #1a1a1a;
-        }
-        .mob-logo {
-            font-size: .9rem; font-weight: 800; letter-spacing: .3em;
-            text-transform: uppercase; color: #fff; text-decoration: none;
-        }
-        .mob-logo span { font-weight: 400; color: #666; }
-        .mob-close {
-            width: 44px; height: 44px; display: flex; align-items: center;
-            justify-content: center; background: none; border: 1px solid #222;
-            cursor: pointer; color: #fff; flex-shrink: 0;
-        }
-        .mob-close svg { width: 16px; height: 16px; }
-
-        .mob-nav { flex: 1; padding: 0.5rem 0; }
-
-        .mob-nav-item { border-bottom: 1px solid #111; }
-
-        .mob-nav-row {
-            display: flex; align-items: center; justify-content: space-between;
-            min-height: 56px; padding: 0 1.5rem; cursor: pointer;
-            text-decoration: none;
-        }
-        .mob-nav-row span {
-            font-size: .72rem; font-weight: 700; letter-spacing: .2em;
-            text-transform: uppercase; color: #fff;
-        }
-        .mob-arrow {
-            width: 10px; height: 10px; flex-shrink: 0;
-            border-right: 1.5px solid #555; border-bottom: 1.5px solid #555;
-            transform: rotate(45deg); transition: transform 0.2s;
-            margin-right: 2px;
-        }
-        .mob-nav-item.is-open .mob-arrow { transform: rotate(-135deg); }
-
-        .mob-sub {
-            max-height: 0; overflow: hidden;
-            transition: max-height 0.3s ease;
-            background: #060606;
-        }
-        .mob-nav-item.is-open .mob-sub { max-height: 700px; }
-
-        .mob-sub a {
-            display: flex; align-items: center; min-height: 50px;
-            padding: 0 1.5rem 0 2.25rem;
-            font-size: .75rem; font-weight: 500; letter-spacing: .08em;
-            color: rgba(255,255,255,.65); text-decoration: none;
-            border-bottom: 1px solid #0d0d0d; transition: color .15s;
-        }
-        .mob-sub a:last-child { border-bottom: none; }
-        .mob-sub a:active { color: #fff; }
-
-        .mob-footer {
-            padding: 2rem 1.5rem; border-top: 1px solid #1a1a1a; flex-shrink: 0;
-        }
-        .mob-phone {
-            display: block; font-size: 1.6rem; font-weight: 800;
-            letter-spacing: .02em; color: #fff; text-decoration: none;
-            margin-bottom: 1.25rem;
-        }
-        .mob-cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
-        .mob-btn {
-            flex: 1; min-width: 130px; display: flex; align-items: center;
-            justify-content: center; height: 48px;
-            font-family: inherit; font-size: .68rem; font-weight: 700;
-            letter-spacing: .2em; text-transform: uppercase;
-            text-decoration: none; text-align: center;
-            border: 1.5px solid #fff; color: #fff; background: transparent;
-            transition: background .2s, color .2s; cursor: pointer;
-        }
-        .mob-btn.solid { background: #fff; color: #000; }
-        .mob-btn:active { background: #fff; color: #000; }
-
-        /* Hamburger animation */
-        .nav-hamburger.is-open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-        .nav-hamburger.is-open span:nth-child(2) { opacity: 0; }
-        .nav-hamburger.is-open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-
-        /* Extra mobile tweaks */
-        @media (max-width: 480px) {
-            .panel-headline { font-size: clamp(2rem, 10vw, 2.8rem); }
-            .stat-value { font-size: clamp(2.4rem, 10vw, 3.5rem); }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weiley Electrical — Industrial & Commercial Electrical Engineering | Dubbo NSW</title>
+<meta name="description" content="Weiley Electrical: industrial, commercial and compliance electrical engineering for Dubbo and the Central West since 1986. ISO 9001 & 45001 certified. 24/7 industrial breakdown.">
+<meta name="theme-color" content="#04070c">
+<meta property="og:title" content="Weiley Electrical — Industrial & Commercial Electrical Engineering | Dubbo NSW">
+<meta property="og:description" content="Weiley Electrical: industrial, commercial and compliance electrical engineering for Dubbo and the Central West since 1986. ISO 9001 & 45001 certified. 24/7 industrial breakdown.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.wyelec.com.au/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%2304070c'/%3E%3Cpath d='M20 2 36 11v18L20 38 4 29V11z' fill='none' stroke='%2319e3ff' stroke-width='1.5'/%3E%3Cpath d='M22.5 9 13 22h6.5L17.5 31 27 18h-6.5z' fill='%2319e3ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
-
-<!-- ══ MOBILE MENU ══════════════════════════════════════════════ -->
-<div class="mob-overlay" id="mobOverlay" aria-modal="true" role="dialog" aria-label="Navigation">
-  <div class="mob-header">
-    <a href="#hero" class="mob-logo" id="mobLogoLink">WEILEY<span>&nbsp;ELECTRICAL</span></a>
-    <button class="mob-close" id="mobClose" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <nav class="mob-nav">
-    <!-- Industrial -->
-    <div class="mob-nav-item" id="mobInd">
-      <div class="mob-nav-row" role="button" tabindex="0">
-        <span>Industrial</span>
-        <span class="mob-arrow"></span>
-      </div>
-      <div class="mob-sub">
-        <a href="industrial/installations-wiring.html">Installations &amp; Wiring</a>
-        <a href="industrial/plc-scada.html">PLC &amp; SCADA Systems</a>
-        <a href="industrial/hazardous-area.html">Hazardous Area</a>
-        <a href="industrial/automation-control.html">Automation &amp; Control</a>
-        <a href="industrial/preventive-maintenance.html">Preventive Maintenance</a>
-        <a href="industrial/emergency-breakdown.html">24/7 Breakdown Response</a>
-      </div>
-    </div>
-    <!-- Commercial -->
-    <div class="mob-nav-item" id="mobCom">
-      <div class="mob-nav-row" role="button" tabindex="0">
-        <span>Commercial</span>
-        <span class="mob-arrow"></span>
-      </div>
-      <div class="mob-sub">
-        <a href="commercial/installations-upgrades.html">Installations &amp; Upgrades</a>
-        <a href="commercial/repairs-fault-finding.html">Repairs &amp; Fault Finding</a>
-        <a href="commercial/data-fibre-cabling.html">Data &amp; Fibre Cabling</a>
-        <a href="commercial/security-systems.html">Security Systems</a>
-        <a href="commercial/facility-maintenance.html">Facility Maintenance</a>
-        <a href="commercial/complex-cabling.html">Complex Cabling</a>
-      </div>
-    </div>
-    <!-- Compliance -->
-    <div class="mob-nav-item" id="mobComp">
-      <div class="mob-nav-row" role="button" tabindex="0">
-        <span>Compliance</span>
-        <span class="mob-arrow"></span>
-      </div>
-      <div class="mob-sub">
-        <a href="compliance/compliance-auditing.html">Compliance Auditing</a>
-        <a href="compliance/rcd-testing.html">RCD Testing</a>
-        <a href="compliance/test-tag.html">Test &amp; Tag</a>
-        <a href="compliance/emergency-lighting.html">Emergency Lighting</a>
-        <a href="compliance/switchboard-assessment.html">Switchboard Assessment</a>
-        <a href="compliance/safety-reports.html">Safety Reports</a>
-      </div>
-    </div>
-    <!-- Flat links -->
-    <div class="mob-nav-item"><a href="hire.html" class="mob-nav-row"><span>Hire</span></a></div>
-    <div class="mob-nav-item"><a href="index.html#about" class="mob-nav-row"><span>About</span></a></div>
-    <div class="mob-nav-item"><a href="index.html#contact" class="mob-nav-row"><span>Contact</span></a></div>
-  </nav>
-  <div class="mob-footer">
-    <a href="tel:0268849292" class="mob-phone">02 6884 9292</a>
-    <div class="mob-cta-row">
-      <a href="tel:0268849292" class="mob-btn">Call Now</a>
-      <a href="index.html#contact" class="mob-btn solid">Get a Quote</a>
+<a class="sr-only" href="#main" style="position:absolute;left:-9999px">Skip to content</a>
+<div class="topbar">
+  <div class="wrap">
+    <div class="status"><i class="dot"></i> <span>Systems online</span><span class="hide-sm">&nbsp;· Dubbo NSW · Est. 1986</span></div>
+    <div class="topbar__right">
+      <a href="tel:0268849292">24/7 Industrial Breakdown</a>
+      <a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a>
+      <span>Mon–Fri 7:30–16:00</span>
     </div>
   </div>
 </div>
+<header class="header">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Weiley Electrical home">
+      <svg class="logo__mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+  <path d="M20 2 36 11v18L20 38 4 29V11z" stroke="#19e3ff" stroke-width="1.2"/>
+  <path d="M20 7.5 31.5 14v12L20 32.5 8.5 26V14z" stroke="rgba(120,190,255,.35)" stroke-width="1"/>
+  <path d="M22.5 9 13 22h6.5L17.5 31 27 18h-6.5z" fill="#19e3ff"/>
+</svg>
+      <span class="logo__text"><span class="logo__name">WEILEY</span><span class="logo__sub">ELECTRICAL · ENGINEERING</span></span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <a href="industrial.html">Industrial</a>
+      <a href="commercial.html">Commercial</a>
+      <a href="compliance.html">Compliance</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <div class="header__cta">
+      <a class="header__phone" href="tel:0268849292"><span>T</span> 02 6884 9292</a>
+      <a class="btn" href="index.html#contact">Get a Quote <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a>
+      <button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<main id="main">
+<section class="hero">
+  <div class="hero__bg" aria-hidden="true"></div>
+  <canvas id="circuit" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div>
+      <span class="eyebrow reveal">Electrical Engineering · Central West NSW</span>
+      <h1 class="reveal" data-d="1">Powering the<br><span class="grad">Central West.</span></h1>
+      <p class="lead reveal" data-d="2">Weiley Electrical designs, installs, automates and maintains the electrical systems that keep regional industry and business running, backed by four decades of field experience and dual ISO certification.</p>
+      <div class="hero__actions reveal" data-d="3">
+        <a class="btn" href="#contact">Request a Quote <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a>
+        <a class="btn btn--ghost" href="#capabilities">Explore Capabilities</a>
+      </div>
+      <div class="hero__meta reveal" data-d="3">
+        <span><b>ISO</b> 9001:2018</span>
+        <span><b>ISO</b> 45001:2018</span>
+        <span><b>24/7</b> Industrial Breakdown</span>
+      </div>
+    </div>
+    <aside class="hud reveal" data-d="2" aria-label="Company overview">
+      <div class="hud__head"><span>WYELEC // SYS-01</span><span class="live"><i class="dot"></i> LIVE</span></div>
+      <div class="hud__wave">
+        <svg id="wave" viewBox="0 0 300 90" preserveAspectRatio="none" aria-hidden="true">
+          <path stroke="#19e3ff" stroke-width="1.4" fill="none"/>
+          <path stroke="#3d7bff" stroke-width="1.2" fill="none" opacity=".8"/>
+          <path stroke="#ffb020" stroke-width="1" fill="none" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="hud__row"><span>Established</span><b>1986</b></div>
+      <div class="hud__row"><span>Base of operations</span><b>Dubbo, NSW</b></div>
+      <div class="hud__row"><span>Disciplines</span><b class="acc">IND · COM · CMP</b></div>
+      <div class="hud__row"><span>Quality / WHS</span><b>ISO 9001 · 45001</b></div>
+      <div class="hud__row"><span>Breakdown response</span><b class="ok">24/7 ACTIVE</b></div>
+    </aside>
+  </div>
+  <div class="scroll-cue" aria-hidden="true">SCROLL<i></i></div>
+</section>
 
-<!-- ══ NAV ══════════════════════════════════════════════════════ -->
-<nav id="nav">
-    <div class="nav-inner">
-        <a href="#hero" class="nav-logo">WEILEY<span>&nbsp;ELECTRICAL</span></a>
+<section class="metrics" aria-label="Key figures">
+  <div class="wrap">
+    <div class="metric reveal"><div class="metric__val"><span data-count="40">40</span><small>+ YRS</small></div><div class="metric__label">Field experience</div></div>
+    <div class="metric reveal" data-d="1"><div class="metric__val">24/7</div><div class="metric__label">Industrial breakdown</div></div>
+    <div class="metric reveal" data-d="2"><div class="metric__val">ISO<small>×2</small></div><div class="metric__label">9001 &amp; 45001 certified</div></div>
+    <div class="metric reveal" data-d="3"><div class="metric__val"><span data-count="100">100</span><small>%</small></div><div class="metric__label">Locally owned &amp; operated</div></div>
+  </div>
+</section>
 
-        <ul class="nav-links">
-
-            <!-- Industrial -->
-            <li class="nav-item">
-                <a href="#industrial" class="nav-link">Industrial <span class="chev"></span></a>
-                <div class="dropdown">
-                    <div class="dropdown-header">Industrial Electrical Services</div>
-                    <div class="dropdown-items">
-                        <a href="industrial/installations-wiring.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Installations &amp; Wiring</div>
-                                <div class="di-desc">New industrial electrical installations and machinery wiring to spec</div>
-                            </div>
-                        </a>
-                        <a href="industrial/plc-scada.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="0"/><path d="M8 21h8M12 17v4"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">PLC &amp; SCADA Systems</div>
-                                <div class="di-desc">Programmable logic controllers and industrial control systems</div>
-                            </div>
-                        </a>
-                        <a href="industrial/hazardous-area.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Hazardous Area</div>
-                                <div class="di-desc">Certified electrical work in classified hazardous zones</div>
-                            </div>
-                        </a>
-                        <a href="industrial/automation-control.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 19.07a10 10 0 010-14.14"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Automation &amp; Control</div>
-                                <div class="di-desc">Motor control, drive systems and process automation</div>
-                            </div>
-                        </a>
-                        <a href="industrial/preventive-maintenance.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Preventive Maintenance</div>
-                                <div class="di-desc">Scheduled maintenance programs to prevent downtime</div>
-                            </div>
-                        </a>
-                        <a href="industrial/emergency-breakdown.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">24/7 Breakdown Response</div>
-                                <div class="di-desc">Emergency callout for industrial clients — any hour, any day</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="dropdown-footer">
-                        <a href="#contact" class="dropdown-cta">Request industrial service →</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Commercial -->
-            <li class="nav-item">
-                <a href="#commercial" class="nav-link">Commercial <span class="chev"></span></a>
-                <div class="dropdown">
-                    <div class="dropdown-header">Commercial Electrical Services</div>
-                    <div class="dropdown-items">
-                        <a href="commercial/installations-upgrades.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18M9 21V9"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Installations &amp; Upgrades</div>
-                                <div class="di-desc">Full fit-outs and upgrades for commercial premises</div>
-                            </div>
-                        </a>
-                        <a href="commercial/repairs-fault-finding.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Repairs &amp; Fault Finding</div>
-                                <div class="di-desc">Rapid diagnosis and repair of electrical faults</div>
-                            </div>
-                        </a>
-                        <a href="commercial/data-fibre-cabling.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Data &amp; Fibre Cabling</div>
-                                <div class="di-desc">Structured cabling, Cat6, fibre and network infrastructure</div>
-                            </div>
-                        </a>
-                        <a href="commercial/security-systems.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l-4 4l6 6l4-16l-18 7l4 2l2 6l3-4"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Security Systems</div>
-                                <div class="di-desc">Access control, CCTV and integrated security installations</div>
-                            </div>
-                        </a>
-                        <a href="commercial/facility-maintenance.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Facility Maintenance</div>
-                                <div class="di-desc">Ongoing electrical maintenance contracts for commercial buildings</div>
-                            </div>
-                        </a>
-                        <a href="commercial/complex-cabling.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Complex Cabling</div>
-                                <div class="di-desc">Multicore, armoured and specialist cable installations</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="dropdown-footer">
-                        <a href="#contact" class="dropdown-cta">Request commercial service →</a>
-                    </div>
-                </div>
-            </li>
-
-            <!-- Compliance -->
-            <li class="nav-item">
-                <a href="#compliance" class="nav-link">Compliance <span class="chev"></span></a>
-                <div class="dropdown">
-                    <div class="dropdown-header">Compliance &amp; Testing Services</div>
-                    <div class="dropdown-items">
-                        <a href="compliance/compliance-auditing.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Compliance Auditing</div>
-                                <div class="di-desc">Full electrical compliance audits with written reports</div>
-                            </div>
-                        </a>
-                        <a href="compliance/rcd-testing.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">RCD Testing</div>
-                                <div class="di-desc">Residual current device testing and certification</div>
-                            </div>
-                        </a>
-                        <a href="compliance/test-tag.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M12 12v4M10 14h4"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Test &amp; Tag</div>
-                                <div class="di-desc">Portable appliance testing and tagging to AS/NZS 3760</div>
-                            </div>
-                        </a>
-                        <a href="compliance/emergency-lighting.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Emergency Lighting</div>
-                                <div class="di-desc">Emergency and exit lighting inspections and testing</div>
-                            </div>
-                        </a>
-                        <a href="compliance/switchboard-assessment.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="0"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 12v3M10 15h4"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Switchboard Assessment</div>
-                                <div class="di-desc">Safety assessment of switchboards and distribution boards</div>
-                            </div>
-                        </a>
-                        <a href="compliance/safety-reports.html" class="dropdown-item">
-                            <div class="di-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                            </div>
-                            <div class="di-text">
-                                <div class="di-title">Safety Reports</div>
-                                <div class="di-desc">Documented compliance reports for insurers and regulators</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="dropdown-footer">
-                        <a href="#contact" class="dropdown-cta">Book a compliance inspection →</a>
-                    </div>
-                </div>
-            </li>
-
-            <li class="nav-item"><a href="hire.html" class="nav-link">Hire</a></li>
-            <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
-            <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+<section class="section" id="capabilities">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="reveal">
+        <span class="eyebrow">Capabilities</span>
+        <h2>Three disciplines.<br>One accountable team.</h2>
+      </div>
+      <p class="lead reveal" data-d="1">From machinery wiring and process automation to structured cabling and statutory testing, every engagement is scoped, engineered and documented to Australian Standards.</p>
+    </div>
+    <div class="caps">
+      <article class="cap reveal">
+        <div class="cap__top"><span class="cap__num">01 / IND</span><svg class="cap__icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 48V26l12 7v-7l12 7v-7l12 7V10h8v38z"/><path d="M6 48h44M14 41h4M24 41h4M34 41h4"/><circle cx="46" cy="6" r="2"/></svg></div>
+        <h3>Industrial</h3>
+        <p>Installations, machinery wiring, automation and maintenance for plants, quarries, processing and agricultural sites, with 24/7 breakdown response.</p>
+        <ul>
+          <li>Installations &amp; machinery wiring</li>
+          <li>PLC, SCADA &amp; control systems</li>
+          <li>VSDs, MCCs &amp; motor control</li>
+          <li>Preventive maintenance &amp; thermography</li>
+          <li>24/7 emergency breakdown</li>
         </ul>
-
-        <div class="nav-right">
-            <a href="tel:0268849292" class="nav-phone">02 6884 9292</a>
-        </div>
-
-        <button class="nav-hamburger" id="menuBtn" aria-label="Menu">
-            <span></span><span></span><span></span>
-        </button>
+        <a class="cap__link" href="industrial.html">Industrial systems <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a>
+      </article>
+      <article class="cap reveal" data-d="1">
+        <div class="cap__top"><span class="cap__num">02 / COM</span><svg class="cap__icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="10" y="6" width="24" height="44"/><rect x="34" y="20" width="14" height="30"/><path d="M16 14h4M24 14h4M16 22h4M24 22h4M16 30h4M24 30h4M16 38h4M24 38h4M39 28h4M39 36h4M4 50h48"/></svg></div>
+        <h3>Commercial</h3>
+        <p>Fit-outs, upgrades, repairs, data and security infrastructure for offices, retail, hospitality and facilities across the region.</p>
+        <ul>
+          <li>Installations &amp; switchboard upgrades</li>
+          <li>Repairs &amp; fault finding</li>
+          <li>Data, Cat6 &amp; fibre cabling</li>
+          <li>CCTV &amp; access control</li>
+          <li>Facility maintenance contracts</li>
+        </ul>
+        <a class="cap__link" href="commercial.html">Commercial systems <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a>
+      </article>
+      <article class="cap reveal" data-d="2">
+        <div class="cap__top"><span class="cap__num">03 / CMP</span><svg class="cap__icon" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M28 4 48 12v14c0 12-8 21-20 26C16 47 8 38 8 26V12z"/><path d="m19 28 6 6 12-13"/></svg></div>
+        <h3>Compliance</h3>
+        <p>Testing, auditing and documentation that keeps workplaces safe, insurable and aligned with current AS/NZS requirements.</p>
+        <ul>
+          <li>Compliance auditing &amp; reports</li>
+          <li>RCD testing</li>
+          <li>Test &amp; tag</li>
+          <li>Emergency &amp; exit lighting</li>
+          <li>Switchboard assessment</li>
+        </ul>
+        <a class="cap__link" href="compliance.html">Compliance services <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a>
+      </article>
     </div>
-</nav>
-
-
-<!-- ══ HERO ═════════════════════════════════════════════════════ -->
-<section id="hero" class="panel">
-    <div class="panel-bg"></div>
-    <div class="panel-content">
-        <div class="hero-est reveal">Est. 1986 — Dubbo, NSW — ISO Certified</div>
-        <h1 class="panel-headline reveal">Keeping Central West<br>Businesses Powered</h1>
-        <p class="panel-sub reveal">Industrial, commercial and compliance electrical services. Trusted across regional NSW for over four decades.</p>
-        <div class="panel-actions reveal">
-            <a href="#industrial" class="btn">Explore Services</a>
-            <a href="#contact" class="btn btn-solid">Get a Quote</a>
-        </div>
-    </div>
-    <div class="scroll-cue"></div>
+  </div>
 </section>
 
-
-<!-- ══ STATS ═════════════════════════════════════════════════════ -->
-<div class="stats-band" id="stats">
-    <div class="stats-inner">
-        <div class="stat reveal">
-            <div class="stat-value" data-count="40" data-suffix="+">0</div>
-            <div class="stat-label">Years Operating</div>
-        </div>
-        <div class="stat reveal">
-            <div class="stat-value">24/7</div>
-            <div class="stat-label">Breakdown Response</div>
-        </div>
-        <div class="stat reveal">
-            <div class="stat-value">ISO ×2</div>
-            <div class="stat-label">9001 &amp; 45001 Certified</div>
-        </div>
-        <div class="stat reveal">
-            <div class="stat-value" data-count="100" data-suffix="%">0</div>
-            <div class="stat-label">Free Quotes</div>
-        </div>
-    </div>
+<div class="ticker" aria-hidden="true">
+  <div class="ticker__track">
+    <span class="ticker__item">AS/NZS 3000 Wiring Rules</span><span class="ticker__item">AS/NZS 3760 Test &amp; Tag</span><span class="ticker__item">AS/NZS 3017 Verification</span><span class="ticker__item">AS/NZS 2293 Emergency Lighting</span><span class="ticker__item">AS/NZS 3008 Cable Selection</span><span class="ticker__item">ISO 9001:2018 Quality</span><span class="ticker__item">ISO 45001:2018 WHS</span><span class="ticker__item">AS/NZS 3439 / 61439 Switchgear</span><span class="ticker__item">AS/NZS 3000 Wiring Rules</span><span class="ticker__item">AS/NZS 3760 Test &amp; Tag</span><span class="ticker__item">AS/NZS 3017 Verification</span><span class="ticker__item">AS/NZS 2293 Emergency Lighting</span><span class="ticker__item">AS/NZS 3008 Cable Selection</span><span class="ticker__item">ISO 9001:2018 Quality</span><span class="ticker__item">ISO 45001:2018 WHS</span><span class="ticker__item">AS/NZS 3439 / 61439 Switchgear</span>
+  </div>
 </div>
 
-
-<!-- ══ INDUSTRIAL ════════════════════════════════════════════════ -->
-<section id="industrial" class="panel">
-    <div class="panel-bg"></div>
-    <div class="panel-content">
-        <div class="panel-label reveal">01 — Industrial Electrical</div>
-        <h2 class="panel-headline reveal">Power for<br>Industry</h2>
-        <p class="panel-sub reveal">From factory fit-outs to complex automation, we wire and maintain the machines that keep Central West industry running.</p>
-        <div class="service-detail reveal">
-            <div class="sd-card">
-                <div class="sd-title">Installations &amp; Wiring</div>
-                <div class="sd-desc">New machinery wiring, motor connections, distribution boards and full industrial electrical fit-outs.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">PLC &amp; SCADA</div>
-                <div class="sd-desc">Programmable controller commissioning, SCADA integration and control panel building.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Hazardous Areas</div>
-                <div class="sd-desc">Zone-certified electrical installations for classified areas including grain, chemical and petroleum facilities.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Automation &amp; Control</div>
-                <div class="sd-desc">Variable speed drives, motor control centres and process automation across all sectors.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Preventive Maintenance</div>
-                <div class="sd-desc">Scheduled site inspections, thermal imaging and maintenance programs to prevent costly downtime.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">24/7 Emergency Breakdown</div>
-                <div class="sd-desc">On-call breakdown response for industrial clients. We're there when production stops.</div>
-            </div>
-        </div>
-        <div class="panel-actions reveal">
-            <a href="#contact" class="btn">Request Industrial Service</a>
-        </div>
+<section class="section" id="about">
+  <div class="wrap split">
+    <div class="frame reveal">
+      <span class="frame__corner tl"></span><span class="frame__corner tr"></span>
+      <img src="assets/img/field.jpg" alt="Weiley Electrical technician working on site electrical equipment" loading="lazy">
+      <div class="frame__scan"></div>
+      <div class="frame__tag"><span>Field Ops · Central West</span><span>EST. 1986</span></div>
     </div>
+    <div>
+      <span class="eyebrow reveal">About Weiley Electrical</span>
+      <h2 class="reveal" data-d="1" style="margin-top:20px">Built in Dubbo.<br><span class="grad">Engineered to last.</span></h2>
+      <p class="lead reveal" data-d="2" style="margin-top:24px">Since 1986 we have served Dubbo and the Central West with expert electrical solutions for industrial, commercial and agricultural operations. We take pride in every project and work diligently until the job is completed to your complete satisfaction.</p>
+      <ul class="checks reveal" data-d="3">
+        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1 18 5.5v9L10 19 2 14.5v-9z"/><path d="m6.5 10 2.5 2.5 4.5-5"/></svg><div><h4>40+ years of experience</h4><p>Four decades of hands-on expertise delivering reliable, efficient, professional outcomes.</p></div></li>
+        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1 18 5.5v9L10 19 2 14.5v-9z"/><path d="m6.5 10 2.5 2.5 4.5-5"/></svg><div><h4>Certified quality &amp; safety</h4><p>ISO 9001:2018 and ISO 45001:2018 underpin our standards of quality, compliance and WHS.</p></div></li>
+        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1 18 5.5v9L10 19 2 14.5v-9z"/><path d="m6.5 10 2.5 2.5 4.5-5"/></svg><div><h4>Local and responsive</h4><p>We understand regional operations and deliver responsive service and tailored solutions.</p></div></li>
+        <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 1 18 5.5v9L10 19 2 14.5v-9z"/><path d="m6.5 10 2.5 2.5 4.5-5"/></svg><div><h4>Transparent free quotes</h4><p>Clear, no-obligation scope and cost before any electrical work begins.</p></div></li>
+      </ul>
+    </div>
+  </div>
 </section>
 
-
-<!-- ══ COMMERCIAL ════════════════════════════════════════════════ -->
-<section id="commercial" class="panel">
-    <div class="panel-bg"></div>
-    <div class="panel-content">
-        <div class="panel-label reveal">02 — Commercial Electrical</div>
-        <h2 class="panel-headline reveal">Built for<br>Business</h2>
-        <p class="panel-sub reveal">Complete electrical solutions for offices, retail, hospitality and commercial premises across the Central West.</p>
-        <div class="service-detail reveal">
-            <div class="sd-card">
-                <div class="sd-title">Installations &amp; Upgrades</div>
-                <div class="sd-desc">Full commercial electrical fit-outs, switchboard upgrades and capacity increases.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Repairs &amp; Fault Finding</div>
-                <div class="sd-desc">Rapid diagnosis and repair to minimise disruption to your business operations.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Data &amp; Fibre Cabling</div>
-                <div class="sd-desc">Structured cabling, Cat6, fibre optic and telecommunications infrastructure.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Security Systems</div>
-                <div class="sd-desc">CCTV, access control and integrated security system installations.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Facility Maintenance</div>
-                <div class="sd-desc">Ongoing maintenance contracts keeping your premises electrically safe and compliant.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Complex Cabling</div>
-                <div class="sd-desc">Multicore, armoured, screened and specialist cable installations for demanding applications.</div>
-            </div>
-        </div>
-        <div class="panel-actions reveal">
-            <a href="#contact" class="btn">Request Commercial Service</a>
-        </div>
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="reveal">
+        <span class="eyebrow">Delivery Methodology</span>
+        <h2>From assessment<br>to assurance.</h2>
+      </div>
+      <p class="lead reveal" data-d="1">A disciplined, documented workflow on every job, whether it's a single fault call or a full plant installation.</p>
     </div>
+    <div class="process">
+      <div class="step reveal"><div class="step__node"><span>01</span></div><h3>Assess</h3><p>Site inspection, load and condition review, and a clear understanding of your operational constraints.</p><div class="step__code">Scope · Risk · Survey</div></div>
+      <div class="step reveal" data-d="1"><div class="step__node"><span>02</span></div><h3>Engineer</h3><p>Design, cable selection, control philosophy and a transparent, itemised quote.</p><div class="step__code">Design · Spec · Quote</div></div>
+      <div class="step reveal" data-d="2"><div class="step__node"><span>03</span></div><h3>Install &amp; Commission</h3><p>Safe, tidy installation by licensed electricians, tested and commissioned to standard.</p><div class="step__code">Build · Test · Verify</div></div>
+      <div class="step reveal" data-d="3"><div class="step__node"><span>04</span></div><h3>Maintain</h3><p>Scheduled maintenance, compliance testing and 24/7 breakdown support for the life of the asset.</p><div class="step__code">PM · Audit · Respond</div></div>
+    </div>
+  </div>
 </section>
 
-
-<!-- ══ COMPLIANCE ════════════════════════════════════════════════ -->
-<section id="compliance" class="panel">
-    <div class="panel-bg"></div>
-    <div class="panel-content">
-        <div class="panel-label reveal">03 — Compliance Services</div>
-        <h2 class="panel-headline reveal">Safe. Certified.<br>Compliant.</h2>
-        <p class="panel-sub reveal">Keep your business legally compliant and your people protected. We provide thorough testing, auditing and documentation to AS/NZS standards.</p>
-        <div class="service-detail reveal">
-            <div class="sd-card">
-                <div class="sd-title">Compliance Auditing</div>
-                <div class="sd-desc">Full site electrical audits with detailed written reports for insurance and regulatory purposes.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">RCD Testing</div>
-                <div class="sd-desc">Residual current device testing and certification to AS/NZS 3017.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Test &amp; Tag</div>
-                <div class="sd-desc">Portable appliance testing and tagging to AS/NZS 3760 — on-site, efficient, documented.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Emergency Lighting</div>
-                <div class="sd-desc">Emergency and exit lighting testing, maintenance and six-monthly inspections to AS/NZS 2293.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Switchboard Assessment</div>
-                <div class="sd-desc">Safety condition reports on main switchboards and distribution boards.</div>
-            </div>
-            <div class="sd-card">
-                <div class="sd-title">Safety Reports</div>
-                <div class="sd-desc">Documented compliance records suitable for insurers, regulators and due diligence.</div>
-            </div>
-        </div>
-        <div class="panel-actions reveal">
-            <a href="#contact" class="btn">Book an Inspection</a>
-        </div>
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section__head">
+      <div class="reveal">
+        <span class="eyebrow">Sectors</span>
+        <h2>Where our systems run.</h2>
+      </div>
+      <p class="lead reveal" data-d="1">Trusted by operators across regional NSW, from quarries and processing plants to offices, retail and public facilities.</p>
     </div>
+    <div class="sectors">
+      <div class="sector reveal"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 30h30L22 12l-5 7-4-4z"/><circle cx="26" cy="6" r="3"/></svg><div><h3>Quarries &amp; Extraction</h3><p>Crushing plant, conveyors, pumps and site distribution, maintained to schedule.</p></div></div>
+      <div class="sector reveal" data-d="1"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 30V12l5-6 5 6v18M18 30V16h8v14M4 30h26M11 18h4M11 23h4"/></svg><div><h3>Agriculture &amp; Grain</h3><p>Silos, handling equipment, irrigation and rural power infrastructure.</p></div></div>
+      <div class="sector reveal" data-d="2"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="17" cy="17" r="5"/><path d="M17 3v5M17 26v5M3 17h5M26 17h5M7 7l3.5 3.5M23.5 23.5 27 27M7 27l3.5-3.5M23.5 10.5 27 7"/></svg><div><h3>Manufacturing</h3><p>Machinery wiring, automation, drives and production-critical maintenance.</p></div></div>
+      <div class="sector reveal"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M17 3s10 11 10 18a10 10 0 0 1-20 0C7 14 17 3 17 3z"/><path d="M12 22a5 5 0 0 0 5 5"/></svg><div><h3>Water &amp; Utilities</h3><p>Pump stations, telemetry and control panels for continuous operation.</p></div></div>
+      <div class="sector reveal" data-d="1"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="4" y="8" width="26" height="22"/><path d="M4 14h26M10 4v8M24 4v8M10 20h4M20 20h4M10 25h4"/></svg><div><h3>Commercial &amp; Retail</h3><p>Fit-outs, upgrades, lighting, data and security for business premises.</p></div></div>
+      <div class="sector reveal" data-d="2"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 12 17 4l14 8zM6 12v14M12 12v14M22 12v14M28 12v14M3 30h28M4 26h26"/></svg><div><h3>Public &amp; Institutional</h3><p>Facility maintenance and compliance programs for public buildings.</p></div></div>
+    </div>
+  </div>
 </section>
 
-
-<!-- ══ ABOUT ══════════════════════════════════════════════════════ -->
-<section id="about" class="panel">
-    <div class="panel-bg"></div>
-    <div class="panel-content">
-        <div class="panel-label reveal">Since 1986</div>
-        <h2 class="panel-headline reveal">Built for the<br>Central West</h2>
-        <p class="about-text reveal">Locally owned and operated from Dubbo, Weiley Electrical has spent four decades building trusted relationships with businesses across the Central West — from agriculture and mining to manufacturing, retail and hospitality.</p>
-        <p class="about-text reveal">ISO 9001:2018 quality certified. ISO 45001:2018 safety certified. We show up, we do the job right, and we stand behind our work.</p>
-        <div class="panel-actions reveal" style="margin-top: 1.5rem;">
-            <a href="#contact" class="btn">Work With Us</a>
-        </div>
+<section class="section" style="padding-top:0" id="coverage">
+  <div class="wrap coverage">
+    <div>
+      <span class="eyebrow reveal">Service Coverage</span>
+      <h2 class="reveal" data-d="1" style="margin-top:20px">Dubbo-based.<br><span class="grad">Region-wide.</span></h2>
+      <p class="lead reveal" data-d="2" style="margin-top:24px">Our crews and service vehicles operate from Dubbo across the Central West and Orana, with rapid dispatch for industrial breakdowns.</p>
+      <div class="towns reveal" data-d="3">
+        <div>Dubbo <span>HQ</span></div>
+        <div>Wellington <span>~50 km</span></div>
+        <div>Narromine <span>~40 km</span></div>
+        <div>Gilgandra <span>~65 km</span></div>
+        <div>Orange <span>~150 km</span></div>
+        <div>Parkes <span>~120 km</span></div>
+        <div>Mudgee <span>~125 km</span></div>
+        <div>Central West <span>&amp; beyond</span></div>
+      </div>
     </div>
+    <div class="map reveal" data-d="1" aria-label="Service radius diagram centred on Dubbo">
+      <svg viewBox="0 0 600 600" fill="none">
+        <defs>
+          <radialGradient id="sw" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 300) scale(260)">
+            <stop offset="0" stop-color="#19e3ff" stop-opacity=".35"/><stop offset="1" stop-color="#19e3ff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <g stroke="rgba(120,190,255,.18)">
+          <circle cx="300" cy="300" r="80"/><circle cx="300" cy="300" r="160"/><circle cx="300" cy="300" r="240"/>
+          <path d="M300 30v540M30 300h540"/>
+        </g>
+        <g class="sweep"><path d="M300 300 L300 40 A260 260 0 0 1 484 116 Z" fill="url(#sw)"/></g>
+        <g font-family="JetBrains Mono, monospace" font-size="11" fill="#8b9bb0" letter-spacing="1.5">
+          <text x="306" y="214">50 KM</text><text x="306" y="134">100 KM</text><text x="306" y="54">150 KM</text>
+        </g>
+        <g fill="#19e3ff" font-family="JetBrains Mono, monospace" font-size="12" letter-spacing="1.5">
+          <circle cx="300" cy="300" r="7"/><circle cx="300" cy="300" r="16" fill="none" stroke="#19e3ff"><animate attributeName="r" from="8" to="34" dur="2.2s" repeatCount="indefinite"/><animate attributeName="opacity" from="1" to="0" dur="2.2s" repeatCount="indefinite"/></circle>
+          <text x="318" y="296" fill="#e8eef6" font-size="14">DUBBO · HQ</text>
+          <circle cx="330" cy="382" r="4"/><text x="342" y="386">WELLINGTON</text>
+          <circle cx="232" cy="318" r="4"/><text x="126" y="322">NARROMINE</text>
+          <circle cx="268" cy="196" r="4"/><text x="178" y="192">GILGANDRA</text>
+          <circle cx="368" cy="520" r="4"/><text x="380" y="524">ORANGE</text>
+          <circle cx="200" cy="468" r="4"/><text x="128" y="490">PARKES</text>
+          <circle cx="472" cy="378" r="4"/><text x="484" y="382">MUDGEE</text>
+        </g>
+      </svg>
+    </div>
+  </div>
 </section>
 
-
-<!-- ══ CONTACT ═══════════════════════════════════════════════════ -->
-<section id="contact">
-    <div class="contact-inner">
-        <div class="contact-head">
-            <div class="contact-label reveal">Contact</div>
-            <h2 class="contact-title reveal">Start Your Project</h2>
-        </div>
-        <div class="contact-grid">
-            <div class="reveal">
-                <form action="mailto:service@wyelec.com.au" method="POST" enctype="text/plain">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="name">Full Name</label>
-                            <input class="form-input" type="text" id="name" name="name" placeholder="Your name" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="company">Company</label>
-                            <input class="form-input" type="text" id="company" name="company" placeholder="Business name">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="phone">Phone</label>
-                            <input class="form-input" type="tel" id="phone" name="phone" placeholder="02 xxxx xxxx">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="email">Email</label>
-                            <input class="form-input" type="email" id="email" name="email" placeholder="you@company.com.au">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="service">Service Type</label>
-                        <select class="form-select" id="service" name="service">
-                            <option value="">Select a service...</option>
-                            <optgroup label="Industrial">
-                                <option>Installations &amp; Machinery Wiring</option>
-                                <option>PLC &amp; SCADA Systems</option>
-                                <option>Hazardous-Area Electrical</option>
-                                <option>Automation &amp; Control Systems</option>
-                                <option>Preventive Maintenance</option>
-                                <option>Emergency Breakdown</option>
-                            </optgroup>
-                            <optgroup label="Commercial">
-                                <option>Electrical Installations &amp; Upgrades</option>
-                                <option>Repairs &amp; Fault Finding</option>
-                                <option>Data &amp; Fibre Cabling</option>
-                                <option>Security Systems</option>
-                                <option>Facility Maintenance</option>
-                                <option>Complex Cabling</option>
-                            </optgroup>
-                            <optgroup label="Compliance">
-                                <option>Compliance Auditing</option>
-                                <option>RCD Testing</option>
-                                <option>Test &amp; Tag</option>
-                                <option>Emergency Lighting Inspection</option>
-                                <option>Switchboard Assessment</option>
-                                <option>Safety Reports</option>
-                            </optgroup>
-                            <option>Other / Not Sure</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="message">Project Details</label>
-                        <textarea class="form-textarea" id="message" name="message" placeholder="Describe your project or requirements..."></textarea>
-                    </div>
-                    <button type="submit" class="btn" style="margin-top:1rem;">Send Enquiry</button>
-                </form>
-            </div>
-            <div class="reveal">
-                <div class="info-row">
-                    <div class="info-label">Phone</div>
-                    <div class="info-val"><a href="tel:0268849292">02 6884 9292</a></div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Email</div>
-                    <div class="info-val"><a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a></div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Address</div>
-                    <div class="info-val">Unit 9B, 55 Wheelers Lane<br>Dubbo, NSW 2830</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Hours</div>
-                    <div class="info-val">Monday – Friday, 7:30am – 4:00pm</div>
-                    <div class="info-note">24/7 Emergency breakdown — industrial clients</div>
-                </div>
-                <div class="info-row">
-                    <div class="info-label">Social</div>
-                    <div class="info-val"><a href="https://facebook.com/weileyelec/" target="_blank" rel="noopener noreferrer">Facebook — @weileyelec</a></div>
-                </div>
-            </div>
-        </div>
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="alert reveal">
+      <svg class="alert__icon" viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M36 6 68 62H4z"/><path d="M38 24 28 42h8l-2 12 10-18h-8z" fill="currentColor" stroke="none"/></svg>
+      <div>
+        <span class="eyebrow">Priority response · Industrial clients</span>
+        <h2>Production down? We're already rolling.</h2>
+        <p>24/7 breakdown service for industrial clients across the Central West. Rapid diagnosis, repair and restoration, any hour, any day.</p>
+      </div>
+      <div>
+        <a class="alert__phone" href="tel:0268849292">02 6884 9292</a>
+        <a class="btn btn--amber" href="tel:0268849292"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h3l1.5 3.5-2 1.2a8 8 0 0 0 3.8 3.8l1.2-2L14 10v3a1 1 0 0 1-1 1A11 11 0 0 1 2 3a1 1 0 0 1 1-1z"/></svg> Call Breakdown Line</a>
+      </div>
     </div>
+  </div>
 </section>
 
-
-<!-- ══ FOOTER ════════════════════════════════════════════════════ -->
-<footer>
-    <div class="footer-inner">
-        <div class="footer-copy">
-            <p>© 2026 Weiley Electrical — Unit 9B, 55 Wheelers Lane, Dubbo NSW 2830</p>
-            <p>Licensed Electrical Contractor — Serving Central West NSW since 1986</p>
-        </div>
-        <div class="footer-links">
-            <a href="#industrial">Industrial</a>
-            <a href="#commercial">Commercial</a>
-            <a href="#compliance">Compliance</a>
-            <a href="hire.html">Hire</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
-        </div>
+<section class="section" id="contact" style="padding-top:0">
+  <div class="wrap contact">
+    <div>
+      <span class="eyebrow reveal">Contact</span>
+      <h2 class="reveal" data-d="1" style="margin-top:20px">Get a free quote.</h2>
+      <p class="lead reveal" data-d="2" style="margin-top:24px">Tell us about your site, system or project. We'll respond with a clear scope and transparent pricing.</p>
+      <dl class="contact__info reveal" data-d="3">
+        <div><dt>Phone</dt><dd><a href="tel:0268849292">02 6884 9292</a></dd></div>
+        <div><dt>Email</dt><dd><a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a></dd></div>
+        <div><dt>Address</dt><dd>Unit 9B, 55 Wheelers Lane<br>Dubbo NSW 2830</dd></div>
+        <div><dt>Hours</dt><dd>Mon–Fri · 7:30am – 4:00pm</dd></div>
+        <div><dt>Breakdown</dt><dd>24/7 · Industrial clients only</dd></div>
+      </dl>
     </div>
+    <form class="hud form reveal" data-d="1" id="quote-form">
+      <div class="hud__head"><span>REQUEST // QUOTE</span><span class="live"><i class="dot"></i> READY</span></div>
+      <div class="form__grid">
+        <div class="field"><label for="f-name">Name *</label><input id="f-name" name="name" required autocomplete="name"></div>
+        <div class="field"><label for="f-company">Company</label><input id="f-company" name="company" autocomplete="organization"></div>
+        <div class="field"><label for="f-phone">Phone *</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel"></div>
+        <div class="field"><label for="f-email">Email *</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+        <div class="field field--full"><label for="f-service">Service</label>
+          <select id="f-service" name="service">
+            <option>Industrial electrical</option>
+            <option>PLC / SCADA / Automation</option>
+            <option>Commercial electrical</option>
+            <option>Data &amp; fibre cabling</option>
+            <option>Security systems</option>
+            <option>Compliance &amp; testing</option>
+            <option>Maintenance contract</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field field--full"><label for="f-msg">Project details *</label><textarea id="f-msg" name="message" required placeholder="Site location, scope, timeframe…"></textarea></div>
+      </div>
+      <div class="form__foot">
+        <span class="form__note">Free · No obligation</span>
+        <button class="btn" type="submit">Send Request <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h11M9 4l4 4-4 4"/></svg></button>
+      </div>
+      <div class="form__status" id="form-status" role="status"></div>
+    </form>
+  </div>
+</section>
+</main>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__about">
+        <a class="logo" href="index.html"><svg class="logo__mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+  <path d="M20 2 36 11v18L20 38 4 29V11z" stroke="#19e3ff" stroke-width="1.2"/>
+  <path d="M20 7.5 31.5 14v12L20 32.5 8.5 26V14z" stroke="rgba(120,190,255,.35)" stroke-width="1"/>
+  <path d="M22.5 9 13 22h6.5L17.5 31 27 18h-6.5z" fill="#19e3ff"/>
+</svg><span class="logo__text"><span class="logo__name">WEILEY</span><span class="logo__sub">ELECTRICAL · ENGINEERING</span></span></a>
+        <p>Industrial, commercial and compliance electrical engineering for Dubbo and the Central West since 1986. Locally owned and operated.</p>
+        <div class="badges">
+          <div class="badge"><small>ISO</small>9001:2018</div>
+          <div class="badge"><small>ISO</small>45001:2018</div>
+          <div class="badge"><small>SINCE</small>1986</div>
+        </div>
+      </div>
+      <div>
+        <h4>Industrial</h4>
+        <ul>
+          <li><a href="industrial.html#installations">Installations &amp; Wiring</a></li>
+          <li><a href="industrial.html#automation">PLC, SCADA &amp; Automation</a></li>
+          <li><a href="industrial.html#maintenance">Preventive Maintenance</a></li>
+          <li><a href="industrial.html#breakdown">24/7 Breakdown</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Commercial &amp; Compliance</h4>
+        <ul>
+          <li><a href="commercial.html">Commercial Electrical</a></li>
+          <li><a href="commercial.html#data">Data &amp; Fibre</a></li>
+          <li><a href="commercial.html#security">Security Systems</a></li>
+          <li><a href="compliance.html">Testing &amp; Compliance</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li><a href="tel:0268849292">02 6884 9292</a></li>
+          <li><a href="mailto:service@wyelec.com.au">service@wyelec.com.au</a></li>
+          <li><a href="https://maps.google.com/?q=Unit+9B+55+Wheelers+Lane+Dubbo+NSW+2830" target="_blank" rel="noopener">Unit 9B, 55 Wheelers Lane<br>Dubbo NSW 2830</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__base">
+      <span>© <span data-year>2026</span> Weiley Electrical · wyelec.com.au</span>
+      <span>Dubbo · Central West · NSW · Australia</span>
+    </div>
+  </div>
 </footer>
-
-
-<script>
-    // Nav background
-    const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-        nav.classList.toggle('scrolled', window.scrollY > 40);
-    }, { passive: true });
-
-    // Reveal animations
-    const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-            if (e.isIntersecting) {
-                e.target.classList.add('visible');
-                e.target.querySelectorAll && e.target.querySelectorAll('.reveal').forEach(r => r.classList.add('visible'));
-            }
-        });
-    }, { threshold: 0.14 });
-    document.querySelectorAll('.panel, .stats-band, #contact').forEach(el => io.observe(el));
-
-    // Hero immediate
-    document.getElementById('hero').classList.add('visible');
-    document.querySelectorAll('#hero .reveal').forEach(r => r.classList.add('visible'));
-
-    // Stat counters
-    let counted = false;
-    const statsIO = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-            if (e.isIntersecting && !counted) {
-                counted = true;
-                document.querySelectorAll('[data-count]').forEach(el => {
-                    const target = parseInt(el.dataset.count, 10);
-                    const suffix = el.dataset.suffix || '';
-                    const dur = 1400;
-                    const start = performance.now();
-                    const tick = (now) => {
-                        const p = Math.min((now - start) / dur, 1);
-                        const eased = 1 - Math.pow(1 - p, 3);
-                        el.textContent = Math.round(target * eased) + suffix;
-                        if (p < 1) requestAnimationFrame(tick);
-                    };
-                    requestAnimationFrame(tick);
-                });
-            }
-        });
-    }, { threshold: 0.35 });
-    statsIO.observe(document.getElementById('stats'));
-
-    // Close dropdowns on outside click
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.nav-item')) {
-            document.querySelectorAll('.nav-item.open').forEach(i => i.classList.remove('open'));
-        }
-    });
-
-    // Touch-friendly dropdown toggle
-    document.querySelectorAll('.nav-link[href]').forEach(link => {
-        const item = link.closest('.nav-item');
-        if (!item.querySelector('.dropdown')) return;
-        link.addEventListener('click', (e) => {
-            if (window.innerWidth <= 900) return;
-            // On desktop allow natural hover; this just handles keyboard/touch
-        });
-    });
-
-    // Mobile menu
-    (function() {
-        const overlay  = document.getElementById('mobOverlay');
-        const openBtn  = document.getElementById('menuBtn');
-        const closeBtn = document.getElementById('mobClose');
-        if (!overlay || !openBtn) return;
-
-        function openMenu() {
-            overlay.classList.add('is-open');
-            openBtn.classList.add('is-open');
-            document.body.style.overflow = 'hidden';
-        }
-        function closeMenu() {
-            overlay.classList.remove('is-open');
-            openBtn.classList.remove('is-open');
-            document.body.style.overflow = '';
-        }
-
-        openBtn.addEventListener('click', openMenu);
-        closeBtn.addEventListener('click', closeMenu);
-
-        // Accordion toggles
-        ['mobInd','mobCom','mobComp'].forEach(id => {
-            const item = document.getElementById(id);
-            if (!item) return;
-            item.querySelector('.mob-nav-row').addEventListener('click', () => {
-                item.classList.toggle('is-open');
-            });
-            item.querySelector('.mob-nav-row').addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.classList.toggle('is-open'); }
-            });
-        });
-
-        // Close on outside tap
-        overlay.addEventListener('click', e => {
-            if (e.target === overlay) closeMenu();
-        });
-    })();
-</script>
+<script src="assets/js/main.js" defer></script>
 </body>
 </html>
