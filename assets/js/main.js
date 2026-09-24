@@ -162,21 +162,21 @@
     function spawn() {
       if (!traces.length) return;
       var tr = traces[Math.floor(Math.random() * traces.length)];
-      pulses.push({ tr: tr, d: 0, speed: 1.2 + Math.random() * 2.2, amber: Math.random() < 0.12 });
+      pulses.push({ tr: tr, d: 0, speed: 1.2 + Math.random() * 2.2, amber: Math.random() < 0.3 });
     }
 
     function drawStatic() {
       ctx.clearRect(0, 0, W, H);
       ctx.lineWidth = 1;
       traces.forEach(function (tr) {
-        ctx.strokeStyle = "rgba(90, 170, 230, 0.13)";
+        ctx.strokeStyle = "rgba(80, 130, 210, 0.15)";
         ctx.beginPath();
         tr.pts.forEach(function (p, i) { i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); });
         ctx.stroke();
         var a = tr.pts[0], b = tr.pts[tr.pts.length - 1];
-        ctx.fillStyle = "rgba(25, 227, 255, 0.35)";
+        ctx.fillStyle = "rgba(74, 144, 232, 0.4)";
         ctx.fillRect(a[0] - 2, a[1] - 2, 4, 4);
-        ctx.strokeStyle = "rgba(25, 227, 255, 0.35)";
+        ctx.strokeStyle = "rgba(74, 144, 232, 0.4)";
         ctx.beginPath(); ctx.arc(b[0], b[1], 3, 0, Math.PI * 2); ctx.stroke();
       });
     }
@@ -187,7 +187,7 @@
       pulses = pulses.filter(function (p) { return p.d < p.tr.len; });
       pulses.forEach(function (p) {
         p.d += p.speed;
-        var col = p.amber ? "255, 176, 32" : "25, 227, 255";
+        var col = p.amber ? "232, 50, 58" : "74, 144, 232";
         var tail = 60;
         for (var k = 0; k < tail; k += 3) {
           var pt = pointAt(p.tr, Math.max(0, p.d - k));
