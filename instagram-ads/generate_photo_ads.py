@@ -14,6 +14,7 @@ Run:  python3 generate_photo_ads.py
 
 import os
 import io
+import sys
 import base64
 
 import cairosvg
@@ -66,13 +67,13 @@ def cover(im, w, h, cx=0.5, cy=0.5):
     return im.crop((x, y, x + w, y + h))
 
 
-def duo_red(im):
-    """Blue duotone, keeping saturated reds in colour."""
+def duo_red(im, hmax=9):
+    """Blue duotone, keeping saturated reds (hue < hmax on 0-255) in colour."""
     g_ = np.array(ImageOps.autocontrast(im.convert("L"), cutoff=1))
     duo = DUO[g_].astype(float)
     hsv = np.array(im.convert("HSV")).astype(float)
     h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
-    red = ((h < 9) | (h > 238)) & (s > 110) & (v > 70)
+    red = ((h < hmax) | (h > 238)) & (s > 110) & (v > 70)
     m = Image.fromarray((red * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2))
     m = (np.array(m).astype(float) / 255)[..., None]
     out = duo * (1 - m) + np.array(im).astype(float) * m
@@ -130,6 +131,10 @@ def extra_defs():
         f'<stop offset="1" stop-color="{INK}" stop-opacity="1"/></linearGradient>'
         f'<linearGradient id="fadeUp" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="{INK}" stop-opacity="0.95"/>'
+        f'<stop offset="1" stop-color="{INK}" stop-opacity="0"/></linearGradient>'
+        f'<linearGradient id="fadeUpLong" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="{INK}" stop-opacity="0.92"/>'
+        f'<stop offset="0.72" stop-color="{INK}" stop-opacity="0.78"/>'
         f'<stop offset="1" stop-color="{INK}" stop-opacity="0"/></linearGradient>'
         f'<linearGradient id="thermBar" x1="0" y1="0" x2="0" y2="1">'
         f'<stop offset="0" stop-color="#FFFFFF"/><stop offset="0.12" stop-color="#FF6A4D"/>'
@@ -442,6 +447,184 @@ def ad_ute():
 
 
 # ----------------------------------------------------------------------------
+# Helpers for the second batch
+# ----------------------------------------------------------------------------
+ON_OUR_WAY = "WE'RE ON OUR WAY."
+POWER_IT   = "WE'LL POWER IT."
+
+
+def card_photo(name, box, w, h, grade=None):
+    """Crop a source region, cover it into w x h; return (image, source->card mapper)."""
+    im = load(name).crop(box)
+    s = max(w / im.width, h / im.height)
+    ox, oy = (im.width * s - w) / 2, (im.height * s - h) / 2
+    img = cover(im, w, h)
+    if grade:
+        img = grade(img)
+    return img, (lambda x, y: ((x - box[0]) * s - ox, (y - box[1]) * s - oy))
+
+
+def tag(x, y, text):
+    w = len(text) * 11.1 + 30
+    return (f'<rect x="{x}" y="{y}" width="{w:.0f}" height="30" rx="4" fill="{INK}" opacity="0.92"/>'
+            f'<text x="{x+15}" y="{y+21}" font-family="{FONT_M}" font-size="16" font-weight="bold" '
+            f'letter-spacing="1.5" fill="{RED}">{esc(text)}</text>')
+
+
+def duo_warm(im):
+    """duo_red variant that also keeps orange (e.g. orange cabling) in colour."""
+    return duo_red(im, hmax=18)
+
+
+# ----------------------------------------------------------------------------
+# 15 — Custom control panel builds (own workshop photos)
+# ----------------------------------------------------------------------------
+def ad_panel_build():
+    S = 460
+    ax, bx, cy_ = 64, 556, 150
+    front, fa = card_photo("panel_front.jpg", (60, 250, 1115, 1290), S, S, duo_red)
+    inside, fb = card_photo("panel_inside.jpg", (15, 250, 1200, 1440), S, S, duo_red)
+
+    def A(x, y):
+        u, v = fa(x, y); return ax + u, cy_ + v
+
+    def B(x, y):
+        u, v = fb(x, y); return bx + u, cy_ + v
+
+    ex, ey = A(580, 420)          # e-stop
+    lx_, ly_ = A(447, 578)        # status lamp
+    mx, my = B(360, 660)          # circuit breakers
+    rx, ry = B(800, 620)          # ELPRO telemetry I/O
+    tx, ty = B(580, 1060)         # terminals
+    inner = (
+        f'{ground()}'
+        f'{g.glow(540, 380, 520, "gRed", 0.3)}'
+        f'{image(front, ax, cy_, S, S)}{photo_frame(ax, cy_, S, S, b=26)}'
+        f'{image(inside, bx, cy_, S, S)}{photo_frame(bx, cy_, S, S, b=26)}'
+        f'{tag(ax + 14, cy_ + 14, "OUTSIDE")}{tag(bx + 14, cy_ + 14, "INSIDE")}'
+        f'{callout(ex, ey, ex + 70, ey + 70, "E-STOP")}'
+        f'{callout(lx_, ly_, lx_ + 60, ly_ + 90, "STATUS LIGHTS")}'
+        f'{callout(rx, ry, rx - 20, ry - 100, "TELEMETRY I/O", side="left")}'
+        f'{callout(mx, my, mx + 30, my + 96, "CIRCUIT PROTECTION")}'
+        f'{callout(tx, ty, tx - 200, ty + 96, "LABELLED TERMINALS")}'
+        f'{real_logo(64, 40, 0.8)}'
+        f'{g.kicker(64, 676, "CUSTOM CONTROL PANELS")}'
+        f'{headline(58, 758, "BUILT TO SPEC.", 78)}'
+        f'{headline(58, 840, "INSIDE & OUT.", 78, RED)}'
+        f'{mono(64, 886, "DESIGNED, WIRED & LABELLED IN-HOUSE", fs=20)}'
+        f'{finish(crosshairs=False)}'
+    )
+    return frame(inner)
+
+
+# ----------------------------------------------------------------------------
+# 16 — 24/7 breakdown (night)
+# ----------------------------------------------------------------------------
+def ad_breakdown():
+    H = 968
+    src = load("utes_night.jpg")                    # 997 x 1600
+    # blur out a burned-in social handle and the rear number plate (source coords)
+    blurred = src.filter(ImageFilter.GaussianBlur(16))
+    mask = Image.new("L", src.size, 0)
+    for box in [(150, 1068, 395, 1127), (468, 1048, 532, 1087)]:
+        mask.paste(255, box)
+    src = Image.composite(blurred, src, mask.filter(ImageFilter.GaussianBlur(10)))
+    photo = duo_red(cover(src, SIZE, H, cy=0.567))
+    inner = (
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#ink)"/>'
+        f'{image(photo, 0, 0, SIZE, H)}'
+        f'<rect x="0" y="0" width="{SIZE}" height="480" fill="url(#fadeUp)"/>'
+        f'<rect x="0" y="{H-220}" width="{SIZE}" height="220" fill="url(#fadeDown)"/>'
+        f'{real_logo(64, 52, 0.9, plate=True)}'
+        f'{g.kicker(64, 206, "24/7 BREAKDOWN SERVICE")}'
+        f'{headline(58, 296, "LINE DOWN AT 2AM?", 72)}'
+        f'{headline(58, 376, ON_OUR_WAY, 72, RED)}'
+        f'{mono(64, 422, "FOR INDUSTRIAL CLIENTS • DUBBO & CENTRAL WEST", fs=19, fill=WHITE)}'
+        f'{g.cta_pill(64, 876, "CALL 02 6884 9292", fs=26)}'
+        f'{finish(crosshairs=False)}'
+    )
+    return frame(inner)
+
+
+# ----------------------------------------------------------------------------
+# 17 — Fleet / free quotes (natural colour)
+# ----------------------------------------------------------------------------
+def ad_fleet():
+    H = 600
+    photo = cover(load("fleet_utes.jpg"), SIZE, H, cy=0.62)
+    inner = (
+        f'{ground()}'
+        f'{image(photo, 0, 0, SIZE, H)}'
+        f'<rect x="0" y="0" width="{SIZE}" height="220" fill="url(#fadeUp)"/>'
+        f'<rect x="0" y="{H-170}" width="{SIZE}" height="170" fill="url(#fadeDown)"/>'
+        f'{real_logo(64, 52, 0.9, plate=True)}'
+        f'{g.kicker(64, 640, "FREE QUOTES")}'
+        f'{headline(58, 720, "LOCAL CREWS.", 80)}'
+        f'{headline(58, 798, "READY TO ROLL.", 80, RED)}'
+        f'{mono(64, 842, "NO-OBLIGATION QUOTES ACROSS DUBBO & THE CENTRAL WEST", fs=18)}'
+        f'{g.cta_pill(64, 870, "GET A FREE QUOTE", fs=22)}'
+        f'{finish(crosshairs=False)}'
+    )
+    return frame(inner)
+
+
+# ----------------------------------------------------------------------------
+# 18 — Commercial fit-outs
+# ----------------------------------------------------------------------------
+def ad_fitout():
+    H = 968
+    photo = duo_red(cover(load("warehouse_fitout.jpg"), SIZE, H, cy=0.661))
+    inner = (
+        f'<rect width="{SIZE}" height="{SIZE}" fill="url(#ink)"/>'
+        f'{image(photo, 0, 0, SIZE, H)}'
+        f'<rect x="0" y="0" width="{SIZE}" height="640" fill="url(#fadeUpLong)"/>'
+        f'{g.grid()}'
+        f'{real_logo(64, 52, 0.9, plate=True)}'
+        f'{g.kicker(64, 206, "COMMERCIAL INSTALLS")}'
+        f'{headline(58, 304, "NEW BUILD?", 96)}'
+        f'{headline(58, 386, POWER_IT, 72, RED)}'
+        f'{mono(64, 432, "FIT-OUTS • LIGHTING & POWER • DATA & FIBRE", fs=20, fill=WHITE)}'
+        f'{callout(590, 560, 700, 650, "ON THE TOOLS")}'
+        f'{finish()}'
+    )
+    return frame(inner)
+
+
+# ----------------------------------------------------------------------------
+# 19 — Machinery wiring
+# ----------------------------------------------------------------------------
+def ad_machinery():
+    H = 580
+    src = load("motor_wiring.jpg")                  # 1072 x 801
+    photo = duo_warm(cover(src, SIZE, H, cy=0.582))
+    s = SIZE / 1072
+    off = min(max(round(801 * s * 0.582 - H / 2), 0), round(801 * s) - H)
+
+    def P(x, y):
+        return x * s, y * s - off
+
+    ix, iy = P(505, 390)          # local isolator
+    mx, my = P(340, 525)          # motor terminal box
+    cx_, cy_ = P(555, 560)        # orange field cabling
+    inner = (
+        f'{ground()}'
+        f'{image(photo, 0, 0, SIZE, H)}'
+        f'<rect x="0" y="0" width="{SIZE}" height="240" fill="url(#fadeUp)"/>'
+        f'<rect x="0" y="{H-170}" width="{SIZE}" height="170" fill="url(#fadeDown)"/>'
+        f'{callout(ix, iy, ix + 150, iy - 50, "LOCAL ISOLATOR")}'
+        f'{callout(mx, my, 120, my + 100, "MOTOR TERMINATION")}'
+        f'{callout(cx_, cy_, cx_ + 150, cy_ + 50, "FIELD CABLING")}'
+        f'{real_logo(64, 52, 0.9, plate=True)}'
+        f'{g.kicker(64, 628, "MACHINERY WIRING")}'
+        f'{headline(58, 712, "WIRED RIGHT.", 80)}'
+        f'{headline(58, 792, "RUNS RIGHT.", 80, RED)}'
+        f'{bus_pair(858, ["Industrial equipment wiring", "Machinery installs & upgrades"], ["Fault finding & repairs", "Preventive maintenance"], step=48, fs=23)}'
+        f'{finish(crosshairs=False)}'
+    )
+    return frame(inner)
+
+
+# ----------------------------------------------------------------------------
 ADS = {
     "08_plc_programming":    ad_plc,
     "09_hmi_scada":          ad_hmi,
@@ -450,11 +633,21 @@ ADS = {
     "12_telemetry_remote":   ad_telemetry,
     "13_pump_control":       ad_pump,
     "14_brand_on_the_road":  ad_ute,
+    "15_custom_panel_builds": ad_panel_build,
+    "16_247_breakdown":      ad_breakdown,
+    "17_local_crews_quotes": ad_fleet,
+    "18_commercial_fitouts": ad_fitout,
+    "19_machinery_wiring":   ad_machinery,
 }
+
+# render only some: python3 generate_photo_ads.py 15 16
 
 
 def main():
+    only = sys.argv[1:]
     for name, fn in ADS.items():
+        if only and name[:2] not in only:
+            continue
         svg = fn()
         cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(HERE, name + ".png"),
                          output_width=SIZE, output_height=SIZE)
